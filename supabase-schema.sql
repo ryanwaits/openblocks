@@ -10,7 +10,7 @@ CREATE TABLE boards (
 CREATE TABLE board_objects (
   id UUID PRIMARY KEY,
   board_id UUID NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('sticky', 'rectangle')),
+  type TEXT NOT NULL CHECK (type IN ('sticky', 'rectangle', 'block', 'text')),
   x DOUBLE PRECISION NOT NULL DEFAULT 0,
   y DOUBLE PRECISION NOT NULL DEFAULT 0,
   width DOUBLE PRECISION NOT NULL DEFAULT 200,
