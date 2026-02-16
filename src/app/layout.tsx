@@ -13,8 +13,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Whiteboard",
-  description: "Collaborative whiteboard for real-time teamwork",
+  title: "Gauntlet AI – Whiteboard",
+  description: "The next gen of UI generation",
+  openGraph: {
+    title: "Gauntlet AI – Whiteboard",
+    description: "The next gen of UI generation",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Gauntlet AI – Whiteboard",
+    description: "The next gen of UI generation",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({
