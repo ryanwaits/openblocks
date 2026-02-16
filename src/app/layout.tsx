@@ -13,11 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gauntlet AI – Whiteboard",
-  description: "The next gen of UI generation",
+  title: "CollabBoard",
+  description: "Real-Time Collaborative Whiteboard Tools with AI-First Development",
   openGraph: {
-    title: "Gauntlet AI – Whiteboard",
-    description: "The next gen of UI generation",
+    title: "CollabBoard",
+    description: "Real-Time Collaborative Whiteboard Tools with AI-First Development",
     images: [
       {
         url: "/og.png",
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Gauntlet AI – Whiteboard",
-    description: "The next gen of UI generation",
+    title: "CollabBoard",
+    description: "Real-Time Collaborative Whiteboard Tools with AI-First Development",
     images: ["/og.png"],
   },
 };
