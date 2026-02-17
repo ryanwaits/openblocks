@@ -4,6 +4,7 @@ import { memo } from "react";
 import { Group, Rect, Text } from "react-konva";
 import type Konva from "konva";
 import { ResizeHandles } from "./resize-handles";
+import { RotationHandle } from "./rotation-handle";
 import type { BoardObject } from "@/types/board";
 
 interface TextShapeProps {
@@ -16,6 +17,8 @@ interface TextShapeProps {
   onDoubleClick?: (id: string) => void;
   onResize?: (id: string, updates: { x: number; y: number; width: number; height: number }) => void;
   onResizeEnd?: (id: string, updates: { x: number; y: number; width: number; height: number }) => void;
+  onRotate?: (id: string, rotation: number) => void;
+  onRotateEnd?: (id: string, rotation: number) => void;
   interactive?: boolean;
   isEditing?: boolean;
   scale?: number;
@@ -31,22 +34,29 @@ export const TextShape = memo(function TextShape({
   onDoubleClick,
   onResize,
   onResizeEnd,
+  onRotate,
+  onRotateEnd,
   interactive = true,
   isEditing = false,
   scale = 1,
 }: TextShapeProps) {
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
-    onDragMove?.(id, e.target.x(), e.target.y());
+    const node = e.target;
+    onDragMove?.(id, node.x() - node.offsetX(), node.y() - node.offsetY());
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    onDragEnd?.(id, e.target.x(), e.target.y());
+    const node = e.target;
+    onDragEnd?.(id, node.x() - node.offsetX(), node.y() - node.offsetY());
   };
 
   return (
     <Group
-      x={object.x}
-      y={object.y}
+      x={object.x + object.width / 2}
+      y={object.y + object.height / 2}
+      offsetX={object.width / 2}
+      offsetY={object.height / 2}
+      rotation={object.rotation || 0}
       draggable={interactive}
       listening={interactive}
       onClick={(e) => onSelect?.(id, e.evt.shiftKey)}
@@ -88,8 +98,22 @@ export const TextShape = memo(function TextShape({
           width={object.width}
           height={object.height}
           scale={scale}
+          rotation={object.rotation}
+          objectX={object.x}
+          objectY={object.y}
           onResize={(updates) => onResize(id, updates)}
           onResizeEnd={(updates) => onResizeEnd(id, updates)}
+          visible
+        />
+      )}
+      {isSelected && interactive && onRotate && onRotateEnd && (
+        <RotationHandle
+          width={object.width}
+          height={object.height}
+          scale={scale}
+          rotation={object.rotation || 0}
+          onRotate={(r) => onRotate(id, r)}
+          onRotateEnd={(r) => onRotateEnd(id, r)}
           visible
         />
       )}

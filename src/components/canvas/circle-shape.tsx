@@ -36,18 +36,21 @@ export const CircleShape = memo(function CircleShape({
 
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
-    onDragMove?.(id, node.x(), node.y());
+    onDragMove?.(id, node.x() - node.offsetX(), node.y() - node.offsetY());
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
-    onDragEnd?.(id, node.x(), node.y());
+    onDragEnd?.(id, node.x() - node.offsetX(), node.y() - node.offsetY());
   };
 
   return (
     <Group
-      x={object.x}
-      y={object.y}
+      x={object.x + object.width / 2}
+      y={object.y + object.height / 2}
+      offsetX={object.width / 2}
+      offsetY={object.height / 2}
+      rotation={object.rotation || 0}
       draggable={interactive}
       listening={interactive}
       onClick={(e) => onSelect?.(id, e.evt.shiftKey)}
@@ -92,6 +95,9 @@ export const CircleShape = memo(function CircleShape({
           width={object.width}
           height={object.height}
           scale={scale}
+          rotation={object.rotation}
+          objectX={object.x}
+          objectY={object.y}
           onResize={(updates) => onResize(id, updates)}
           onResizeEnd={(updates) => onResizeEnd(id, updates)}
           visible
