@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Square, Sparkles, X, GripHorizontal } from "lucide-react";
+import { renderMarkdown } from "@/lib/render-markdown";
 
 interface Message {
   role: "user" | "assistant";
@@ -276,7 +277,13 @@ export function AICommandBar({
                     : "border border-slate-100 bg-white text-slate-700 shadow-sm"
                 }`}
               >
-                {msg.content}
+                {msg.role === "assistant" ? (
+                  <div className="flex flex-col gap-1.5">
+                    {renderMarkdown(msg.content)}
+                  </div>
+                ) : (
+                  msg.content
+                )}
               </div>
             </div>
           ))}
