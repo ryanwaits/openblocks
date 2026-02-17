@@ -5,6 +5,8 @@ import { StickyNote } from "./sticky-note";
 import { RectangleShape } from "./rectangle-shape";
 import { TextShape } from "./text-shape";
 import { CircleShape } from "./circle-shape";
+import { DiamondShape } from "./diamond-shape";
+import { PillShape } from "./pill-shape";
 import { LineShape } from "./line-shape";
 import type { BoardObject } from "@/types/board";
 
@@ -92,6 +94,26 @@ export const CanvasObjects = memo(function CanvasObjects({
           case "circle":
             return (
               <CircleShape
+                key={obj.id}
+                {...shared}
+                onResize={interactive ? onResize : undefined}
+                onResizeEnd={interactive ? onResizeEnd : undefined}
+                scale={scale}
+              />
+            );
+          case "diamond":
+            return (
+              <DiamondShape
+                key={obj.id}
+                {...shared}
+                onResize={interactive ? onResize : undefined}
+                onResizeEnd={interactive ? onResizeEnd : undefined}
+                scale={scale}
+              />
+            );
+          case "pill":
+            return (
+              <PillShape
                 key={obj.id}
                 {...shared}
                 onResize={interactive ? onResize : undefined}

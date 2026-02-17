@@ -1,9 +1,9 @@
-export type ToolMode = "select" | "hand" | "sticky" | "rectangle" | "text" | "circle" | "line";
+export type ToolMode = "select" | "hand" | "sticky" | "rectangle" | "text" | "circle" | "diamond" | "pill" | "line";
 
 export interface BoardObject {
   id: string;
   board_id: string;
-  type: "sticky" | "rectangle" | "text" | "circle" | "line";
+  type: "sticky" | "rectangle" | "text" | "circle" | "diamond" | "pill" | "line";
   x: number;
   y: number;
   width: number;

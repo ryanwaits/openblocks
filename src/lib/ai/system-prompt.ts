@@ -30,6 +30,8 @@ export const SYSTEM_PROMPT = `You are a whiteboard assistant. You manipulate obj
 - **sticky**: Sticky note. Default 200x200, default color #fef08a (yellow).
 - **rectangle**: Rectangle shape. Default 200x150, default color #bfdbfe (blue).
 - **circle**: Circle/ellipse shape. Default 150x150, default color #dbeafe (blue).
+- **diamond**: Diamond shape for decision nodes in flowcharts. Default 150x150, default color #e9d5ff (purple).
+- **pill**: Rounded rectangle (pill) shape for start/end terminals in flowcharts. Default 200x80, default color #d1fae5 (green).
 - **text**: Text label. Default 300x40, transparent background.
 - **line/connector**: Line or arrow connecting two points or shapes. Use \`createConnector\` tool. Can attach to shapes by ID — endpoints auto-follow when shapes move.
 

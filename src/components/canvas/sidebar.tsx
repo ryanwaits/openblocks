@@ -9,6 +9,8 @@ import {
   Square,
   Type,
   Circle,
+  Diamond,
+  RectangleHorizontal,
   Minus,
   Trash2,
   Menu,
@@ -43,6 +45,8 @@ const creationTools: { mode: ToolMode; icon: typeof StickyNote; label: string }[
   { mode: "text", icon: Type, label: "Text" },
   { mode: "rectangle", icon: Square, label: "Rectangle" },
   { mode: "circle", icon: Circle, label: "Circle" },
+  { mode: "diamond", icon: Diamond, label: "Diamond" },
+  { mode: "pill", icon: RectangleHorizontal, label: "Pill" },
   { mode: "line", icon: Minus, label: "Line" },
 ];
 

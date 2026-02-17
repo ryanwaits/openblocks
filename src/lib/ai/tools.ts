@@ -23,11 +23,11 @@ export const AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "createShape",
     description:
-      "Create a shape or text label on the whiteboard. Rectangle default: 200x150, #bfdbfe. Text default: 300x40, transparent.",
+      "Create a shape or text label on the whiteboard. Rectangle: 200x150, #bfdbfe. Circle: 150x150, #dbeafe. Diamond: 150x150, #e9d5ff. Pill: 200x80, #d1fae5. Text: 300x40, transparent.",
     input_schema: {
       type: "object" as const,
       properties: {
-        type: { type: "string", enum: ["rectangle", "text", "circle"], description: "Shape type" },
+        type: { type: "string", enum: ["rectangle", "text", "circle", "diamond", "pill"], description: "Shape type" },
         x: { type: "number", description: "X position" },
         y: { type: "number", description: "Y position" },
         width: { type: "number", description: "Width in pixels" },

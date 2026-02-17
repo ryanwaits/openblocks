@@ -40,7 +40,7 @@ const LineDrawingLayer = dynamic(
   { ssr: false }
 );
 
-const CREATION_TOOLS: ToolMode[] = ["sticky", "rectangle", "text", "circle"];
+const CREATION_TOOLS: ToolMode[] = ["sticky", "rectangle", "text", "circle", "diamond", "pill"];
 const EDITABLE_TYPES: BoardObject["type"][] = ["sticky", "text"];
 
 export default function BoardPage() {
@@ -122,6 +122,8 @@ export default function BoardPage() {
         rectangle: { width: 200, height: 150, color: "#bfdbfe" },
         text: { width: 300, height: 40, color: "transparent" },
         circle: { width: 150, height: 150, color: "#dbeafe" },
+        diamond: { width: 150, height: 150, color: "#e9d5ff" },
+        pill: { width: 200, height: 80, color: "#d1fae5" },
         line: { width: 0, height: 0, color: "transparent" }, // lines don't use this path
       };
       const d = defaults[type];
@@ -443,7 +445,7 @@ export default function BoardPage() {
       }
 
       // Number keys 1-6 for direct tool selection, L for line
-      const toolKeys: Record<string, ToolMode> = { "1": "select", "2": "hand", "3": "sticky", "4": "rectangle", "5": "text", "6": "circle" };
+      const toolKeys: Record<string, ToolMode> = { "1": "select", "2": "hand", "3": "sticky", "4": "rectangle", "5": "text", "6": "circle", "7": "diamond", "8": "pill" };
       if (!editingId && toolKeys[e.key]) {
         setActiveTool(toolKeys[e.key]);
         return;

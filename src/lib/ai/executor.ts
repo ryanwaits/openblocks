@@ -135,12 +135,17 @@ export async function executeToolCall(
       const rawType = toolInput.type as string;
       const shapeType = rawType === "text" ? "text" as const
         : rawType === "circle" ? "circle" as const
+        : rawType === "diamond" ? "diamond" as const
+        : rawType === "pill" ? "pill" as const
         : "rectangle" as const;
-      const defaults = shapeType === "text"
-        ? { width: 300, height: 40, color: "transparent" }
-        : shapeType === "circle"
-        ? { width: 150, height: 150, color: "#dbeafe" }
-        : { width: 200, height: 150, color: "#bfdbfe" };
+      const shapeDefaults: Record<string, { width: number; height: number; color: string }> = {
+        text: { width: 300, height: 40, color: "transparent" },
+        circle: { width: 150, height: 150, color: "#dbeafe" },
+        diamond: { width: 150, height: 150, color: "#e9d5ff" },
+        pill: { width: 200, height: 80, color: "#d1fae5" },
+        rectangle: { width: 200, height: 150, color: "#bfdbfe" },
+      };
+      const defaults = shapeDefaults[shapeType] || shapeDefaults.rectangle;
       const obj = makeObject(ctx, {
         type: shapeType,
         x: toolInput.x as number | undefined,
