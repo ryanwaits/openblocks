@@ -74,15 +74,16 @@ export function AICommandBar({
   const abortRef = useRef<AbortController | null>(null);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, left: 0, bottom: 0 });
 
-  // Initialize position centered above sidebar
+  // Initialize position centered, or clamp stored position
   useEffect(() => {
-    if (isOpen && !pos) {
-      setPos({
-        left: Math.max(0, (window.innerWidth - 380) / 2),
-        bottom: 80,
-      });
+    if (!isOpen) return;
+    if (!pos) {
+      setPos(clampPos((window.innerWidth - 380) / 2, 80));
+    } else {
+      setPos(clampPos(pos.left, pos.bottom));
     }
-  }, [isOpen, pos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // Focus input when opened or done processing
   useEffect(() => {
@@ -106,6 +107,24 @@ export function AICommandBar({
     return () => window.removeEventListener("keydown", handler);
   }, [isOpen, onClose]);
 
+  // Clamp position within viewport
+  const clampPos = useCallback(
+    (left: number, bottom: number) => ({
+      left: Math.max(0, Math.min(left, window.innerWidth - 380)),
+      bottom: Math.max(0, Math.min(bottom, window.innerHeight - 100)),
+    }),
+    []
+  );
+
+  // Re-clamp on window resize (fixes off-screen after resize)
+  useEffect(() => {
+    const handleResize = () => {
+      setPos((prev) => (prev ? clampPos(prev.left, prev.bottom) : prev));
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [clampPos]);
+
   // Drag handlers
   const handleDragStart = useCallback(
     (e: React.MouseEvent) => {
@@ -126,10 +145,12 @@ export function AICommandBar({
     const handleMouseMove = (e: MouseEvent) => {
       const dx = e.clientX - dragStartRef.current.mouseX;
       const dy = e.clientY - dragStartRef.current.mouseY;
-      setPos({
-        left: dragStartRef.current.left + dx,
-        bottom: dragStartRef.current.bottom - dy,
-      });
+      setPos(
+        clampPos(
+          dragStartRef.current.left + dx,
+          dragStartRef.current.bottom - dy,
+        )
+      );
     };
     const handleMouseUp = () => setIsDragging(false);
     window.addEventListener("mousemove", handleMouseMove);
@@ -138,7 +159,7 @@ export function AICommandBar({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, clampPos]);
 
   // Submit
   const handleSubmit = useCallback(async () => {
@@ -233,16 +254,17 @@ export function AICommandBar({
         </div>
       </div>
 
-      {/* Messages area — grows upward */}
+      {/* Messages area — grows upward, draggable */}
       <div
         className={`overflow-hidden transition-all duration-500 ${
           hasMessages
-            ? "mb-2 max-h-[280px] opacity-100"
+            ? "mb-2 max-h-[280px] cursor-grab opacity-100 active:cursor-grabbing"
             : "mb-0 max-h-0 opacity-0"
         }`}
         style={{
           transitionTimingFunction: "cubic-bezier(0.23, 1, 0.32, 1)",
         }}
+        onMouseDown={handleDragStart}
       >
         <div className="ai-messages-scroll flex max-h-[280px] flex-col gap-2 overflow-y-auto rounded-xl border border-slate-200/60 bg-white/70 p-2.5 backdrop-blur-sm">
           {messages.map((msg, i) => (
