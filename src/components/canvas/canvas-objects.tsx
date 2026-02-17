@@ -1,31 +1,37 @@
 "use client";
 
+import { memo } from "react";
 import { StickyNote } from "./sticky-note";
 import { RectangleShape } from "./rectangle-shape";
-import { BlockShape } from "./block-shape";
 import { TextShape } from "./text-shape";
 import type { BoardObject } from "@/types/board";
 
 interface CanvasObjectsProps {
   objects: Map<string, BoardObject>;
-  selectedId: string | null;
+  selectedIds: Set<string>;
   onSelect: (id: string | null) => void;
   onDragMove: (id: string, x: number, y: number) => void;
   onDragEnd: (id: string, x: number, y: number) => void;
-  onDoubleClick: (obj: BoardObject) => void;
+  onDoubleClick: (id: string) => void;
+  onResize?: (id: string, updates: { x: number; y: number; width: number; height: number }) => void;
+  onResizeEnd?: (id: string, updates: { x: number; y: number; width: number; height: number }) => void;
   interactive?: boolean;
   editingId?: string | null;
+  scale?: number;
 }
 
-export function CanvasObjects({
+export const CanvasObjects = memo(function CanvasObjects({
   objects,
-  selectedId,
+  selectedIds,
   onSelect,
   onDragMove,
   onDragEnd,
   onDoubleClick,
+  onResize,
+  onResizeEnd,
   interactive = true,
   editingId,
+  scale = 1,
 }: CanvasObjectsProps) {
   const sorted = Array.from(objects.values()).sort((a, b) => a.z_index - b.z_index);
 
@@ -33,11 +39,12 @@ export function CanvasObjects({
     <>
       {sorted.map((obj) => {
         const shared = {
+          id: obj.id,
           object: obj,
-          isSelected: selectedId === obj.id,
-          onSelect: interactive ? () => onSelect(obj.id) : undefined,
-          onDragMove: interactive ? (x: number, y: number) => onDragMove(obj.id, x, y) : undefined,
-          onDragEnd: interactive ? (x: number, y: number) => onDragEnd(obj.id, x, y) : undefined,
+          isSelected: selectedIds.has(obj.id),
+          onSelect: interactive ? onSelect : undefined,
+          onDragMove: interactive ? onDragMove : undefined,
+          onDragEnd: interactive ? onDragEnd : undefined,
           interactive,
         };
 
@@ -47,19 +54,21 @@ export function CanvasObjects({
               <StickyNote
                 key={obj.id}
                 {...shared}
-                onDoubleClick={interactive ? () => onDoubleClick(obj) : undefined}
+                onDoubleClick={interactive ? onDoubleClick : undefined}
                 isEditing={editingId === obj.id}
+                onResize={interactive ? onResize : undefined}
+                onResizeEnd={interactive ? onResizeEnd : undefined}
+                scale={scale}
               />
             );
           case "rectangle":
-            return <RectangleShape key={obj.id} {...shared} />;
-          case "block":
             return (
-              <BlockShape
+              <RectangleShape
                 key={obj.id}
                 {...shared}
-                onDoubleClick={interactive ? () => onDoubleClick(obj) : undefined}
-                isEditing={editingId === obj.id}
+                onResize={interactive ? onResize : undefined}
+                onResizeEnd={interactive ? onResizeEnd : undefined}
+                scale={scale}
               />
             );
           case "text":
@@ -67,8 +76,11 @@ export function CanvasObjects({
               <TextShape
                 key={obj.id}
                 {...shared}
-                onDoubleClick={interactive ? () => onDoubleClick(obj) : undefined}
+                onDoubleClick={interactive ? onDoubleClick : undefined}
                 isEditing={editingId === obj.id}
+                onResize={interactive ? onResize : undefined}
+                onResizeEnd={interactive ? onResizeEnd : undefined}
+                scale={scale}
               />
             );
           default:
@@ -77,4 +89,4 @@ export function CanvasObjects({
       })}
     </>
   );
-}
+});

@@ -1,15 +1,17 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
+import { useViewportStore } from "@/lib/store/viewport-store";
 
 interface ZoomControlsProps {
-  scale: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onReset: () => void;
 }
 
-export function ZoomControls({ scale, onZoomIn, onZoomOut, onReset }: ZoomControlsProps) {
+export function ZoomControls({ onZoomIn, onZoomOut, onReset }: ZoomControlsProps) {
+  const scale = useViewportStore((s) => s.scale);
+
   return (
     <div className="absolute bottom-6 right-6 z-40 flex items-center gap-0.5 rounded-lg border border-gray-200 bg-white p-1 shadow-lg">
       <button

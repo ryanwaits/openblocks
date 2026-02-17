@@ -2,12 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { usePresenceStore } from "@/lib/store/presence-store";
+import { useViewportStore } from "@/lib/store/viewport-store";
 import type { CursorData } from "@/types/board";
 
 interface CursorsOverlayProps {
-  stageScale: number;
-  stagePos: { x: number; y: number };
   currentUserId: string;
+  mousePosition?: { x: number; y: number } | null;
+  currentUserColor?: string;
 }
 
 interface InterpolatedCursor {
@@ -17,11 +18,13 @@ interface InterpolatedCursor {
   currentY: number;
 }
 
-export function CursorsOverlay({ stageScale, stagePos, currentUserId }: CursorsOverlayProps) {
+export function CursorsOverlay({ currentUserId, mousePosition, currentUserColor }: CursorsOverlayProps) {
   const cursors = usePresenceStore((s) => s.cursors);
   const interpolatedRef = useRef<Map<string, InterpolatedCursor>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
+  const mousePosRef = useRef(mousePosition);
+  mousePosRef.current = mousePosition;
 
   useEffect(() => {
     // Update targets when cursors change
@@ -56,6 +59,8 @@ export function CursorsOverlay({ stageScale, stagePos, currentUserId }: CursorsO
         return;
       }
 
+      const { scale, pos } = useViewportStore.getState();
+
       interpolatedRef.current.forEach((interp, userId) => {
         // Lerp toward target
         const lerpFactor = 0.3;
@@ -63,8 +68,8 @@ export function CursorsOverlay({ stageScale, stagePos, currentUserId }: CursorsO
         interp.currentY += (interp.targetY - interp.currentY) * lerpFactor;
 
         // Transform stage-space to screen-space
-        const screenX = interp.currentX * stageScale + stagePos.x;
-        const screenY = interp.currentY * stageScale + stagePos.y;
+        const screenX = interp.currentX * scale + pos.x;
+        const screenY = interp.currentY * scale + pos.y;
 
         const el = container.querySelector(`[data-cursor-id="${userId}"]`) as HTMLElement;
         if (el) {
@@ -72,12 +77,26 @@ export function CursorsOverlay({ stageScale, stagePos, currentUserId }: CursorsO
         }
       });
 
+      // Update "You" cursor position
+      const youEl = container.querySelector("[data-cursor-you]") as HTMLElement;
+      if (youEl) {
+        const mp = mousePosRef.current;
+        if (mp) {
+          const screenX = mp.x * scale + pos.x;
+          const screenY = mp.y * scale + pos.y;
+          youEl.style.transform = `translate(${screenX}px, ${screenY}px)`;
+          youEl.style.opacity = "1";
+        } else {
+          youEl.style.opacity = "0";
+        }
+      }
+
       rafRef.current = requestAnimationFrame(animate);
     }
 
     rafRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [stageScale, stagePos]);
+  }, []);
 
   const cursorEntries = Array.from(cursors.entries()).filter(
     ([userId]) => userId !== currentUserId
@@ -92,6 +111,21 @@ export function CursorsOverlay({ stageScale, stagePos, currentUserId }: CursorsO
       {cursorEntries.map(([userId, cursor]) => (
         <CursorArrow key={userId} userId={userId} cursor={cursor} />
       ))}
+      {/* "You" cursor label */}
+      <div
+        data-cursor-you
+        className="absolute left-0 top-0"
+        style={{ willChange: "transform", opacity: 0 }}
+      >
+        <div className="ml-5 mt-5">
+          <span
+            className="inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium text-white"
+            style={{ backgroundColor: currentUserColor || "#3b82f6" }}
+          >
+            You
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

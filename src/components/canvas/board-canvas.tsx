@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useCallback, useState, useImperativeHandle, forwardRef, useEffect } from "react";
-import { Stage, Layer, Shape, Rect } from "react-konva";
+import { Stage, Layer, Rect, Shape } from "react-konva";
 import type Konva from "konva";
+import { useViewportStore } from "@/lib/store/viewport-store";
 
 export interface BoardCanvasHandle {
   resetZoom: () => void;
@@ -11,10 +12,13 @@ export interface BoardCanvasHandle {
 }
 
 interface BoardCanvasProps {
-  onStageMouseMove: (stagePos: { x: number; y: number }, scale: number, pointerPos: { x: number; y: number } | null) => void;
-  onStageUpdate: (pos: { x: number; y: number }, scale: number) => void;
+  boardId?: string;
+  onStageMouseMove: (relativePointerPos: { x: number; y: number } | null) => void;
+  onStageMouseLeave?: () => void;
   onClickEmpty?: () => void;
   onCanvasClick?: (canvasX: number, canvasY: number) => void;
+  onSelectionRect?: (rect: { x: number; y: number; width: number; height: number } | null) => void;
+  onSelectionComplete?: (rect: { x: number; y: number; width: number; height: number }) => void;
   mode?: "select" | "hand";
   children?: React.ReactNode;
 }
@@ -29,13 +33,25 @@ const BOARD_OFFSET_X = -BOARD_WIDTH / 2;
 const BOARD_OFFSET_Y = -BOARD_HEIGHT / 2;
 
 export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(function BoardCanvas(
-  { onStageMouseMove, onStageUpdate, onClickEmpty, onCanvasClick, mode = "select", children },
+  { boardId, onStageMouseMove, onStageMouseLeave, onClickEmpty, onCanvasClick, onSelectionRect, onSelectionComplete, mode = "select", children },
   ref
 ) {
   const stageRef = useRef<Konva.Stage>(null);
+  const boardLayerRef = useRef<Konva.Layer>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
+  const dragSelectRef = useRef<{ startX: number; startY: number } | null>(null);
+  const didDragSelectRef = useRef(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const debouncedSave = useCallback((pos: { x: number; y: number }, scale: number) => {
+    if (!boardId) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      useViewportStore.getState().saveForBoard(boardId);
+    }, 300);
+  }, [boardId]);
 
   const centerBoard = useCallback((w: number, h: number, scale: number) => {
     const pos = { x: w / 2, y: h / 2 };
@@ -65,19 +81,21 @@ export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(funct
         y: center.y - mousePointTo.y * newScale,
       };
       stage.position(newPos);
-      onStageUpdate(newPos, newScale);
+      useViewportStore.getState().setViewport(newPos, newScale);
+      debouncedSave(newPos, newScale);
     },
-    [dimensions, onStageUpdate]
+    [dimensions, debouncedSave]
   );
 
   useImperativeHandle(ref, () => ({
     resetZoom: () => {
       const pos = centerBoard(dimensions.width, dimensions.height, 1);
-      onStageUpdate(pos, 1);
+      useViewportStore.getState().setViewport(pos, 1);
+      debouncedSave(pos, 1);
     },
     zoomIn: () => zoomBy(ZOOM_STEP),
     zoomOut: () => zoomBy(-ZOOM_STEP),
-  }), [dimensions, centerBoard, onStageUpdate, zoomBy]);
+  }), [dimensions, centerBoard, zoomBy, debouncedSave]);
 
   // Measure container on mount
   const measuredRef = useCallback((node: HTMLDivElement | null) => {
@@ -92,14 +110,25 @@ export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(funct
     }
   }, []);
 
-  // Center board on initial render
+  // Restore saved viewport or center board on initial render
   useEffect(() => {
     if (dimensions.width > 0 && !initialized.current) {
       initialized.current = true;
-      const pos = centerBoard(dimensions.width, dimensions.height, 1);
-      onStageUpdate(pos, 1);
+      const saved = boardId ? useViewportStore.getState().restoreForBoard(boardId, { x: dimensions.width / 2, y: dimensions.height / 2 }) : null;
+      if (saved) {
+        const stage = stageRef.current;
+        if (stage) {
+          stage.scale({ x: saved.scale, y: saved.scale });
+          stage.position(saved.pos);
+        }
+        useViewportStore.getState().setViewport(saved.pos, saved.scale);
+      } else {
+        const pos = centerBoard(dimensions.width, dimensions.height, 1);
+        useViewportStore.getState().setViewport(pos, 1);
+      }
+      boardLayerRef.current?.cache();
     }
-  }, [dimensions, centerBoard, onStageUpdate]);
+  }, [dimensions, centerBoard, boardId]);
 
   const handleWheel = useCallback(
     (e: Konva.KonvaEventObject<WheelEvent>) => {
@@ -128,26 +157,89 @@ export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(funct
       };
       stage.position(newPos);
 
-      onStageUpdate(newPos, newScale);
+      useViewportStore.getState().setViewport(newPos, newScale);
+      debouncedSave(newPos, newScale);
     },
-    [onStageUpdate]
+    [debouncedSave]
   );
 
   const handleDragEnd = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    onStageUpdate(stage.position(), stage.scaleX());
-  }, [onStageUpdate]);
+    const pos = stage.position();
+    const scale = stage.scaleX();
+    useViewportStore.getState().setViewport(pos, scale);
+    debouncedSave(pos, scale);
+  }, [debouncedSave]);
 
-  const handleMouseMove = useCallback(() => {
+  const handleMouseDown = useCallback(
+    (e: Konva.KonvaEventObject<MouseEvent>) => {
+      // Only start drag-select when clicking on empty stage in select mode
+      if (mode !== "select") return;
+      if (e.target !== e.target.getStage()) return;
+      const stage = stageRef.current;
+      if (!stage) return;
+      const pos = stage.getRelativePointerPosition();
+      if (!pos) return;
+      dragSelectRef.current = { startX: pos.x, startY: pos.y };
+    },
+    [mode]
+  );
+
+  const handleMouseMoveSelect = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
+    onStageMouseMove(stage.getRelativePointerPosition());
+
+    // Drag-select tracking
+    if (!dragSelectRef.current) return;
     const pos = stage.getRelativePointerPosition();
-    onStageMouseMove(stage.position(), stage.scaleX(), pos);
-  }, [onStageMouseMove]);
+    if (!pos) return;
+    const { startX, startY } = dragSelectRef.current;
+    const x = Math.min(startX, pos.x);
+    const y = Math.min(startY, pos.y);
+    const width = Math.abs(pos.x - startX);
+    const height = Math.abs(pos.y - startY);
+    // Only show rect if dragged more than 5px
+    if (width > 5 || height > 5) {
+      onSelectionRect?.({ x, y, width, height });
+    }
+  }, [onStageMouseMove, onSelectionRect]);
+
+  const handleMouseUp = useCallback(() => {
+    if (!dragSelectRef.current) return;
+    const stage = stageRef.current;
+    if (!stage) {
+      dragSelectRef.current = null;
+      onSelectionRect?.(null);
+      return;
+    }
+    const pos = stage.getRelativePointerPosition();
+    if (!pos) {
+      dragSelectRef.current = null;
+      onSelectionRect?.(null);
+      return;
+    }
+    const { startX, startY } = dragSelectRef.current;
+    const x = Math.min(startX, pos.x);
+    const y = Math.min(startY, pos.y);
+    const width = Math.abs(pos.x - startX);
+    const height = Math.abs(pos.y - startY);
+    dragSelectRef.current = null;
+    if (width > 5 || height > 5) {
+      didDragSelectRef.current = true;
+      onSelectionComplete?.({ x, y, width, height });
+    }
+    onSelectionRect?.(null);
+  }, [onSelectionRect, onSelectionComplete]);
 
   const handleClick = useCallback(
     (e: Konva.KonvaEventObject<MouseEvent>) => {
+      // Skip click if a drag-select just completed (mouseup fires before click)
+      if (didDragSelectRef.current) {
+        didDragSelectRef.current = false;
+        return;
+      }
       if (e.target === e.target.getStage()) {
         const stage = stageRef.current;
         if (stage && onCanvasClick) {
@@ -166,8 +258,8 @@ export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(funct
   const handleDragMove = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    onStageUpdate(stage.position(), stage.scaleX());
-  }, [onStageUpdate]);
+    useViewportStore.getState().setViewport(stage.position(), stage.scaleX());
+  }, []);
 
   const isHand = mode === "hand";
 
@@ -186,11 +278,14 @@ export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(funct
           onWheel={handleWheel}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
-          onMouseMove={handleMouseMove}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMoveSelect}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={onStageMouseLeave}
           onClick={handleClick}
         >
-          {/* Board boundary + dot grid */}
-          <Layer listening={false}>
+          {/* Board boundary + dot grid — cached as bitmap for perf */}
+          <Layer ref={boardLayerRef} listening={false}>
             <Rect
               x={BOARD_OFFSET_X}
               y={BOARD_OFFSET_Y}
@@ -201,8 +296,10 @@ export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(funct
               shadowColor="rgba(0,0,0,0.12)"
               shadowBlur={40}
               shadowOffsetY={4}
+              perfectDrawEnabled={false}
+              shadowForStrokeEnabled={false}
             />
-            <DotGrid stageRef={stageRef} />
+            <DotGrid />
             <Rect
               x={BOARD_OFFSET_X}
               y={BOARD_OFFSET_Y}
@@ -223,35 +320,45 @@ export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(funct
   );
 });
 
-function DotGrid({
-  stageRef,
-}: {
-  stageRef: React.RefObject<Konva.Stage | null>;
-}) {
+// Pre-render a single dot tile for use as a canvas pattern
+let dotTileCanvas: HTMLCanvasElement | null = null;
+function getDotTile(): HTMLCanvasElement {
+  if (!dotTileCanvas) {
+    dotTileCanvas = document.createElement("canvas");
+    dotTileCanvas.width = DOT_SPACING;
+    dotTileCanvas.height = DOT_SPACING;
+    const tctx = dotTileCanvas.getContext("2d")!;
+    tctx.fillStyle = "#d1d5db";
+    tctx.beginPath();
+    tctx.arc(DOT_SPACING / 2, DOT_SPACING / 2, 1.5, 0, Math.PI * 2);
+    tctx.fill();
+  }
+  return dotTileCanvas;
+}
+
+function DotGrid() {
+  const gridStartX = Math.ceil(BOARD_OFFSET_X / DOT_SPACING) * DOT_SPACING;
+  const gridStartY = Math.ceil(BOARD_OFFSET_Y / DOT_SPACING) * DOT_SPACING;
+
   return (
     <Shape
       sceneFunc={(context) => {
-        const stage = stageRef.current;
-        if (!stage) return;
-
-        const scale = stage.scaleX();
         const ctx = context._context;
+        const tile = getDotTile();
+        const pattern = ctx.createPattern(tile, "repeat");
+        if (!pattern) return;
 
-        const startX = Math.ceil(BOARD_OFFSET_X / DOT_SPACING) * DOT_SPACING;
-        const startY = Math.ceil(BOARD_OFFSET_Y / DOT_SPACING) * DOT_SPACING;
-        const endX = BOARD_OFFSET_X + BOARD_WIDTH;
-        const endY = BOARD_OFFSET_Y + BOARD_HEIGHT;
-        const radius = Math.max(1, 1.5 / scale);
-
-        ctx.fillStyle = "#d1d5db";
-        ctx.beginPath();
-        for (let x = startX; x < endX; x += DOT_SPACING) {
-          for (let y = startY; y < endY; y += DOT_SPACING) {
-            ctx.moveTo(x + radius, y);
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-          }
-        }
-        ctx.fill();
+        ctx.save();
+        // Offset so pattern aligns with the grid origin
+        ctx.translate(gridStartX + DOT_SPACING / 2, gridStartY + DOT_SPACING / 2);
+        ctx.fillStyle = pattern;
+        ctx.fillRect(
+          -DOT_SPACING / 2,
+          -DOT_SPACING / 2,
+          BOARD_WIDTH - (gridStartX - BOARD_OFFSET_X) + DOT_SPACING,
+          BOARD_HEIGHT - (gridStartY - BOARD_OFFSET_Y) + DOT_SPACING
+        );
+        ctx.restore();
       }}
     />
   );

@@ -10,7 +10,6 @@ interface GhostPreviewProps {
 const GHOST_CONFIGS: Partial<Record<ToolMode, { width: number; height: number; color: string; label: string; borderRadius: number }>> = {
   sticky: { width: 200, height: 200, color: "#fef08a", label: "Sticky Note", borderRadius: 8 },
   rectangle: { width: 200, height: 150, color: "#bfdbfe", label: "Rectangle", borderRadius: 4 },
-  block: { width: 400, height: 300, color: "#ffffff", label: "Block", borderRadius: 12 },
   text: { width: 300, height: 40, color: "transparent", label: "Text", borderRadius: 4 },
 };
 
@@ -29,18 +28,12 @@ export function GhostPreview({ activeTool, mousePos }: GhostPreviewProps) {
         backgroundColor: config.color === "transparent" ? undefined : config.color,
         borderRadius: config.borderRadius,
         opacity: 0.4,
-        border: activeTool === "text" ? "2px dashed #9ca3af" : activeTool === "block" ? "2px solid #e5e7eb" : undefined,
+        border: activeTool === "text" ? "2px dashed #9ca3af" : undefined,
         boxShadow: config.color !== "transparent" ? "0 2px 8px rgba(0,0,0,0.1)" : undefined,
       }}
     >
       {activeTool === "text" && (
         <span className="pl-2 text-sm text-gray-400">Text</span>
-      )}
-      {activeTool === "block" && (
-        <div className="p-3">
-          <div className="text-xs font-semibold text-gray-400">Untitled Block</div>
-          <div className="mt-2 h-px bg-gray-200" />
-        </div>
       )}
     </div>
   );

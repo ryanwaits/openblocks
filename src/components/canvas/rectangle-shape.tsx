@@ -1,34 +1,44 @@
 "use client";
 
+import { memo } from "react";
 import { Rect, Group } from "react-konva";
 import type Konva from "konva";
+import { ResizeHandles } from "./resize-handles";
 import type { BoardObject } from "@/types/board";
 
 interface RectangleShapeProps {
+  id: string;
   object: BoardObject;
   isSelected: boolean;
-  onSelect?: () => void;
-  onDragMove?: (x: number, y: number) => void;
-  onDragEnd?: (x: number, y: number) => void;
+  onSelect?: (id: string) => void;
+  onDragMove?: (id: string, x: number, y: number) => void;
+  onDragEnd?: (id: string, x: number, y: number) => void;
+  onResize?: (id: string, updates: { x: number; y: number; width: number; height: number }) => void;
+  onResizeEnd?: (id: string, updates: { x: number; y: number; width: number; height: number }) => void;
   interactive?: boolean;
+  scale?: number;
 }
 
-export function RectangleShape({
+export const RectangleShape = memo(function RectangleShape({
+  id,
   object,
   isSelected,
   onSelect,
   onDragMove,
   onDragEnd,
+  onResize,
+  onResizeEnd,
   interactive = true,
+  scale = 1,
 }: RectangleShapeProps) {
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
-    onDragMove?.(node.x(), node.y());
+    onDragMove?.(id, node.x(), node.y());
   };
 
   const handleDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
-    onDragEnd?.(node.x(), node.y());
+    onDragEnd?.(id, node.x(), node.y());
   };
 
   return (
@@ -36,8 +46,8 @@ export function RectangleShape({
       x={object.x}
       y={object.y}
       draggable={interactive}
-      onClick={onSelect}
-      onTap={onSelect}
+      onClick={() => onSelect?.(id)}
+      onTap={() => onSelect?.(id)}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
     >
@@ -62,7 +72,19 @@ export function RectangleShape({
         shadowColor="rgba(0,0,0,0.1)"
         shadowBlur={4}
         shadowOffsetY={1}
+        perfectDrawEnabled={false}
+        shadowForStrokeEnabled={false}
       />
+      {isSelected && interactive && onResize && onResizeEnd && (
+        <ResizeHandles
+          width={object.width}
+          height={object.height}
+          scale={scale}
+          onResize={(updates) => onResize(id, updates)}
+          onResizeEnd={(updates) => onResizeEnd(id, updates)}
+          visible
+        />
+      )}
     </Group>
   );
-}
+});
