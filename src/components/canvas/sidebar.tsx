@@ -93,7 +93,13 @@ export function Sidebar({
               ? "bg-blue-600 text-white"
               : "text-gray-400 hover:bg-gray-800 hover:text-white"
           }`}
-          onClick={() => onToolChange(mode)}
+          onClick={() => {
+            if (isActive && creationTools.some((t) => t.mode === mode)) {
+              onToolChange("select");
+            } else {
+              onToolChange(mode);
+            }
+          }}
           onMouseEnter={() => setHoveredTool(mode)}
           onMouseLeave={() => setHoveredTool(null)}
         >
