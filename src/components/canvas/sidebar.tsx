@@ -12,6 +12,7 @@ import {
   Menu,
   Home,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 import { ColorPicker } from "./color-picker";
 import { fetchBoards, type Board } from "@/lib/supabase/boards";
@@ -26,6 +27,8 @@ interface SidebarProps {
   onColorChange?: (color: string) => void;
   onDelete?: () => void;
   currentBoardId?: string;
+  onAIToggle?: () => void;
+  aiOpen?: boolean;
 }
 
 const tools: { mode: ToolMode; icon: typeof MousePointer2; label: string }[] = [
@@ -47,6 +50,8 @@ export function Sidebar({
   onColorChange,
   onDelete,
   currentBoardId,
+  onAIToggle,
+  aiOpen,
 }: SidebarProps) {
   const signOut = useAuthStore((s) => s.signOut);
   const [hoveredTool, setHoveredTool] = useState<ToolMode | null>(null);
@@ -181,6 +186,26 @@ export function Sidebar({
       <div className="my-1 h-5 w-px bg-gray-700" />
 
       {creationTools.map((t) => renderButton(t.mode, t.icon, t.label))}
+
+      {onAIToggle && (
+        <>
+          <div className="my-1 h-5 w-px bg-gray-700" />
+          <div className="relative">
+            <button
+              className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                aiOpen
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+              }`}
+              onClick={onAIToggle}
+              onMouseEnter={() => setHoveredTool("select")}
+              onMouseLeave={() => setHoveredTool(null)}
+            >
+              <Sparkles className="h-4 w-4" />
+            </button>
+          </div>
+        </>
+      )}
 
       {hasSelection && (
         <>

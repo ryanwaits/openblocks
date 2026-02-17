@@ -124,3 +124,44 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* AI Command Bar animations */
+@keyframes ai-chat-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ai-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.ai-loading-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%);
+  background-size: 200% 100%;
+  animation: ai-shimmer 1.5s infinite;
+}
+
+.ai-messages-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.ai-messages-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ai-messages-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+.ai-messages-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}

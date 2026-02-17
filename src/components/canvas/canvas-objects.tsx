@@ -9,7 +9,7 @@ import type { BoardObject } from "@/types/board";
 interface CanvasObjectsProps {
   objects: Map<string, BoardObject>;
   selectedIds: Set<string>;
-  onSelect: (id: string | null) => void;
+  onSelect: (id: string | null, shiftKey?: boolean) => void;
   onDragMove: (id: string, x: number, y: number) => void;
   onDragEnd: (id: string, x: number, y: number) => void;
   onDoubleClick: (id: string) => void;

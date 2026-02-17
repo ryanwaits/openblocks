@@ -10,7 +10,7 @@ interface StickyNoteProps {
   id: string;
   object: BoardObject;
   isSelected: boolean;
-  onSelect?: (id: string) => void;
+  onSelect?: (id: string, shiftKey?: boolean) => void;
   onDragMove?: (id: string, x: number, y: number) => void;
   onDragEnd?: (id: string, x: number, y: number) => void;
   onDoubleClick?: (id: string) => void;
@@ -53,7 +53,7 @@ export const StickyNote = memo(function StickyNote({
       y={object.y}
       draggable={interactive}
       listening={interactive}
-      onClick={() => onSelect?.(id)}
+      onClick={(e) => onSelect?.(id, e.evt.shiftKey)}
       onTap={() => onSelect?.(id)}
       onDblClick={() => onDoubleClick?.(id)}
       onDblTap={() => onDoubleClick?.(id)}

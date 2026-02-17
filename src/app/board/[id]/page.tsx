@@ -19,6 +19,7 @@ import { useViewportStore } from "@/lib/store/viewport-store";
 import { broadcastObjectCreate, broadcastObjectUpdate, broadcastObjectDelete } from "@/lib/sync/broadcast";
 import type { BoardObject, ToolMode } from "@/types/board";
 import type { BoardCanvasHandle } from "@/components/canvas/board-canvas";
+import { AICommandBar } from "@/components/ai/ai-command-bar";
 
 const BoardCanvas = dynamic(
   () => import("@/components/canvas/board-canvas").then((m) => ({ default: m.BoardCanvas })),
@@ -47,10 +48,15 @@ export default function BoardPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [stageMousePos, setStageMousePos] = useState<{ x: number; y: number } | null>(null);
   const [selectionRect, setSelectionRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [aiOpen, setAiOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(`ai-open:${roomId}`) === "true";
+  });
   const lastCursorSend = useRef(0);
   const canvasRef = useRef<BoardCanvasHandle>(null);
   const resizeOriginRef = useRef<{ x: number; y: number } | null>(null);
   const multiDragStartRef = useRef<Map<string, { x: number; y: number }> | null>(null);
+  const clipboardRef = useRef<BoardObject[]>([]);
 
   // Derive single selectedId for editing/formatting (first selected if exactly 1)
   const selectedId = selectedIds.size === 1 ? Array.from(selectedIds)[0] : null;
@@ -58,6 +64,10 @@ export default function BoardPage() {
   useEffect(() => {
     restoreSession();
   }, [restoreSession]);
+
+  useEffect(() => {
+    localStorage.setItem(`ai-open:${roomId}`, String(aiOpen));
+  }, [aiOpen, roomId]);
 
   const { sendMessage, isConnected } = useParty({
     roomId,
@@ -124,6 +134,7 @@ export default function BoardPage() {
 
   const handleCanvasClick = useCallback(
     (canvasX: number, canvasY: number) => {
+      (document.activeElement as HTMLElement)?.blur?.();
       if (CREATION_TOOLS.includes(activeTool)) {
         createObjectAt(activeTool as BoardObject["type"], canvasX, canvasY);
         setActiveTool("select");
@@ -308,11 +319,74 @@ export default function BoardPage() {
     setEditingId(null);
   }, [selectedIds, sendMessage, setSelected]);
 
+  const duplicateObjects = useCallback((objs: BoardObject[], offset = 20) => {
+    const now = new Date().toISOString();
+    const maxZ = objects.size > 0
+      ? Math.max(...Array.from(objects.values()).map(o => o.z_index))
+      : -1;
+    const newObjs: BoardObject[] = [];
+    const newIds = new Set<string>();
+    for (let i = 0; i < objs.length; i++) {
+      const obj = objs[i];
+      const newObj: BoardObject = {
+        ...obj,
+        id: crypto.randomUUID(),
+        x: obj.x + offset,
+        y: obj.y + offset,
+        z_index: maxZ + 1 + i,
+        created_by: userId || null,
+        created_by_name: displayName || undefined,
+        updated_at: now,
+      };
+      broadcastObjectCreate(sendMessage, newObj);
+      newObjs.push(newObj);
+      newIds.add(newObj.id);
+    }
+    setSelectedIds(newIds);
+    return newObjs;
+  }, [objects, userId, displayName, sendMessage, setSelectedIds]);
+
   // Keyboard handler
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Zoom shortcuts (work globally, even in inputs)
+      if ((e.metaKey || e.ctrlKey) && (e.key === "=" || e.key === "+")) {
+        e.preventDefault();
+        canvasRef.current?.zoomIn();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "-") {
+        e.preventDefault();
+        canvasRef.current?.zoomOut();
+        return;
+      }
+
       // Skip when in input/textarea
       if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") {
+        return;
+      }
+
+      // Number keys 1-5 for direct tool selection
+      const toolKeys: Record<string, ToolMode> = { "1": "select", "2": "hand", "3": "sticky", "4": "rectangle", "5": "text" };
+      if (!editingId && toolKeys[e.key]) {
+        setActiveTool(toolKeys[e.key]);
+        return;
+      }
+
+      // Copy / Paste / Duplicate
+      if ((e.metaKey || e.ctrlKey) && e.key === "c" && selectedIds.size > 0) {
+        e.preventDefault();
+        clipboardRef.current = Array.from(selectedIds).map(id => objects.get(id)!).filter(Boolean);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "v" && clipboardRef.current.length > 0) {
+        e.preventDefault();
+        clipboardRef.current = duplicateObjects(clipboardRef.current);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "d" && selectedIds.size > 0) {
+        e.preventDefault();
+        duplicateObjects(Array.from(selectedIds).map(id => objects.get(id)!).filter(Boolean));
         return;
       }
 
@@ -322,6 +396,7 @@ export default function BoardPage() {
       }
 
       if (e.key === "Escape") {
+        (document.activeElement as HTMLElement)?.blur?.();
         if (editingId) {
           setEditingId(null);
         } else if (CREATION_TOOLS.includes(activeTool)) {
@@ -329,6 +404,12 @@ export default function BoardPage() {
         } else {
           setSelected(null);
         }
+      }
+
+      if (e.key === "/" && !editingId) {
+        e.preventDefault();
+        setAiOpen(true);
+        return;
       }
 
       if (e.key === "Enter" && !editingId && selectedId) {
@@ -340,7 +421,7 @@ export default function BoardPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleDelete, editingId, selectedId, selectedIds, objects, setSelected, activeTool]);
+  }, [handleDelete, duplicateObjects, editingId, selectedId, selectedIds, objects, setSelected, activeTool]);
 
   const handleSelectionRect = useCallback(
     (rect: { x: number; y: number; width: number; height: number } | null) => {
@@ -422,6 +503,7 @@ export default function BoardPage() {
         onStageMouseMove={handleStageMouseMove}
         onStageMouseLeave={handleStageMouseLeave}
         onClickEmpty={() => {
+          (document.activeElement as HTMLElement)?.blur?.();
           setEditingId(null);
           setSelected(null);
         }}
@@ -432,7 +514,16 @@ export default function BoardPage() {
         <CanvasObjects
           objects={objects}
           selectedIds={selectedIds}
-          onSelect={setSelected}
+          onSelect={(id, shiftKey) => {
+            if (!id) { setSelected(null); return; }
+            if (shiftKey) {
+              const next = new Set(selectedIds);
+              next.has(id) ? next.delete(id) : next.add(id);
+              setSelectedIds(next);
+            } else {
+              setSelected(id);
+            }
+          }}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
           onDoubleClick={handleObjectClick}
@@ -494,6 +585,18 @@ export default function BoardPage() {
         onColorChange={handleColorChange}
         onDelete={handleDelete}
         currentBoardId={roomId}
+        onAIToggle={() => setAiOpen((v) => !v)}
+        aiOpen={aiOpen}
+      />
+
+      {/* AI Command Bar */}
+      <AICommandBar
+        isOpen={aiOpen}
+        onClose={() => setAiOpen(false)}
+        boardId={roomId}
+        userId={userId || ""}
+        displayName={displayName || ""}
+        selectedIds={selectedIds}
       />
 
       {/* Zoom controls */}
