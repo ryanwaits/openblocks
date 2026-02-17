@@ -14,7 +14,7 @@ CREATE TABLE boards (
 CREATE TABLE board_objects (
   id UUID PRIMARY KEY,
   board_id UUID NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('sticky', 'rectangle', 'text')),
+  type TEXT NOT NULL CHECK (type IN ('sticky', 'rectangle', 'text', 'circle', 'line')),
   x DOUBLE PRECISION NOT NULL DEFAULT 0,
   y DOUBLE PRECISION NOT NULL DEFAULT 0,
   width DOUBLE PRECISION NOT NULL DEFAULT 200,
@@ -29,7 +29,15 @@ CREATE TABLE board_objects (
   font_style TEXT,
   text_decoration TEXT,
   text_color TEXT,
-  text_align TEXT
+  text_align TEXT,
+  points JSONB,
+  stroke_color TEXT,
+  stroke_width DOUBLE PRECISION,
+  start_arrow BOOLEAN,
+  end_arrow BOOLEAN,
+  start_object_id UUID,
+  end_object_id UUID,
+  label TEXT
 );
 
 CREATE INDEX idx_board_objects_board_id ON board_objects(board_id);

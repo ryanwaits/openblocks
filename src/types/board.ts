@@ -1,9 +1,9 @@
-export type ToolMode = "select" | "hand" | "sticky" | "rectangle" | "text";
+export type ToolMode = "select" | "hand" | "sticky" | "rectangle" | "text" | "circle" | "line";
 
 export interface BoardObject {
   id: string;
   board_id: string;
-  type: "sticky" | "rectangle" | "text";
+  type: "sticky" | "rectangle" | "text" | "circle" | "line";
   x: number;
   y: number;
   width: number;
@@ -19,6 +19,15 @@ export interface BoardObject {
   text_decoration?: "none" | "underline";
   text_color?: string;
   text_align?: "left" | "center" | "right";
+  // Line/connector fields
+  points?: Array<{ x: number; y: number }>;
+  stroke_color?: string;
+  stroke_width?: number;
+  start_arrow?: boolean;
+  end_arrow?: boolean;
+  start_object_id?: string | null;
+  end_object_id?: string | null;
+  label?: string;
 }
 
 export interface CursorData {
