@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync": "bun run scripts/sync-board.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.74.0",
