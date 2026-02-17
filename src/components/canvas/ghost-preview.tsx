@@ -11,6 +11,7 @@ const GHOST_CONFIGS: Partial<Record<ToolMode, { width: number; height: number; c
   sticky: { width: 200, height: 200, color: "#fef08a", label: "Sticky Note", borderRadius: 8 },
   rectangle: { width: 200, height: 150, color: "#bfdbfe", label: "Rectangle", borderRadius: 4 },
   text: { width: 300, height: 40, color: "transparent", label: "Text", borderRadius: 4 },
+  circle: { width: 150, height: 150, color: "#dbeafe", label: "Circle", borderRadius: 75 },
 };
 
 export function GhostPreview({ activeTool, mousePos }: GhostPreviewProps) {
