@@ -1,5 +1,6 @@
 import type { BoardObject } from "@/types/board";
 import { serializeBoardState } from "./system-prompt";
+import { computeEdgePoint, computeLineBounds } from "@/lib/geometry/edge-intersection";
 
 export interface ExecutorContext {
   boardId: string;
@@ -131,9 +132,14 @@ export async function executeToolCall(
     }
 
     case "createShape": {
-      const shapeType = (toolInput.type as string) === "text" ? "text" as const : "rectangle" as const;
+      const rawType = toolInput.type as string;
+      const shapeType = rawType === "text" ? "text" as const
+        : rawType === "circle" ? "circle" as const
+        : "rectangle" as const;
       const defaults = shapeType === "text"
         ? { width: 300, height: 40, color: "transparent" }
+        : shapeType === "circle"
+        ? { width: 150, height: 150, color: "#dbeafe" }
         : { width: 200, height: 150, color: "#bfdbfe" };
       const obj = makeObject(ctx, {
         type: shapeType,
@@ -190,6 +196,68 @@ export async function executeToolCall(
       await persistToSupabase(ctx, obj);
       await postToPartyKit(ctx, [{ type: "update", object: obj }]);
       return { result: `Changed color of ${obj.id} to ${obj.color}` };
+    }
+
+    case "createConnector": {
+      const fromId = toolInput.fromObjectId as string | undefined;
+      const toId = toolInput.toObjectId as string | undefined;
+      const fromPoint = toolInput.fromPoint as { x: number; y: number } | undefined;
+      const toPoint = toolInput.toPoint as { x: number; y: number } | undefined;
+
+      // Resolve start point
+      let startPt: { x: number; y: number };
+      const fromObj = fromId ? ctx.objects.find((o) => o.id === fromId) : undefined;
+      if (fromObj) {
+        startPt = { x: fromObj.x + fromObj.width / 2, y: fromObj.y + fromObj.height / 2 };
+      } else if (fromPoint) {
+        startPt = fromPoint;
+      } else {
+        return { result: "Error: must provide fromObjectId or fromPoint" };
+      }
+
+      // Resolve end point
+      let endPt: { x: number; y: number };
+      const toObj = toId ? ctx.objects.find((o) => o.id === toId) : undefined;
+      if (toObj) {
+        endPt = { x: toObj.x + toObj.width / 2, y: toObj.y + toObj.height / 2 };
+      } else if (toPoint) {
+        endPt = toPoint;
+      } else {
+        return { result: "Error: must provide toObjectId or toPoint" };
+      }
+
+      // Compute edge intersection if connecting to objects
+      const resolvedStart = fromObj ? computeEdgePoint(fromObj, endPt) : startPt;
+      const resolvedEnd = toObj ? computeEdgePoint(toObj, resolvedStart) : endPt;
+
+      const points = [resolvedStart, resolvedEnd];
+      const bounds = computeLineBounds(points);
+
+      const arrowEnd = (toolInput.arrowEnd as string) || "end";
+      const strokeColor = (toolInput.color as string) || "#374151";
+      const label = (toolInput.label as string) || undefined;
+
+      const obj = makeObject(ctx, {
+        type: "line",
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+        color: "transparent",
+      });
+      obj.points = points;
+      obj.stroke_color = strokeColor;
+      obj.stroke_width = 2;
+      obj.start_arrow = arrowEnd === "start" || arrowEnd === "both";
+      obj.end_arrow = arrowEnd === "end" || arrowEnd === "both";
+      obj.start_object_id = fromId || null;
+      obj.end_object_id = toId || null;
+      if (label) obj.label = label;
+
+      await persistToSupabase(ctx, obj);
+      await postToPartyKit(ctx, [{ type: "create", object: obj }]);
+      ctx.objects.push(obj);
+      return { result: `Created connector (id: ${obj.id})${fromId ? ` from ${fromId}` : ""}${toId ? ` to ${toId}` : ""}`, objects: [obj] };
     }
 
     case "deleteObject": {

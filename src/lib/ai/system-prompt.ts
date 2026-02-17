@@ -2,16 +2,25 @@ import type { BoardObject } from "@/types/board";
 
 export function serializeBoardState(objects: BoardObject[]): string {
   if (objects.length === 0) return "Board is empty — no objects.";
-  const compact = objects.map((o) => ({
-    id: o.id,
-    type: o.type,
-    x: Math.round(o.x),
-    y: Math.round(o.y),
-    w: Math.round(o.width),
-    h: Math.round(o.height),
-    color: o.color,
-    text: o.text || undefined,
-  }));
+  const compact = objects.map((o) => {
+    const base: Record<string, unknown> = {
+      id: o.id,
+      type: o.type,
+      x: Math.round(o.x),
+      y: Math.round(o.y),
+      w: Math.round(o.width),
+      h: Math.round(o.height),
+      color: o.color,
+      text: o.text || undefined,
+    };
+    if (o.type === "line") {
+      base.stroke_color = o.stroke_color;
+      base.start_object_id = o.start_object_id || undefined;
+      base.end_object_id = o.end_object_id || undefined;
+      base.label = o.label || undefined;
+    }
+    return base;
+  });
   return JSON.stringify(compact);
 }
 
@@ -20,7 +29,9 @@ export const SYSTEM_PROMPT = `You are a whiteboard assistant. You manipulate obj
 ## Object Types
 - **sticky**: Sticky note. Default 200x200, default color #fef08a (yellow).
 - **rectangle**: Rectangle shape. Default 200x150, default color #bfdbfe (blue).
+- **circle**: Circle/ellipse shape. Default 150x150, default color #dbeafe (blue).
 - **text**: Text label. Default 300x40, transparent background.
+- **line/connector**: Line or arrow connecting two points or shapes. Use \`createConnector\` tool. Can attach to shapes by ID — endpoints auto-follow when shapes move.
 
 ## Coordinate System
 - Origin is top-left. X increases rightward, Y increases downward.
@@ -85,6 +96,22 @@ Create exactly 10 objects. Follow coordinates precisely.
 **Step 2: 5 header text labels (inside top of each column, 10px inset):**
 - Stages: "Awareness", "Consideration", "Decision", "Onboarding", "Retention"
 - Each createShape: type="text", y=110, x = column_x + 10, width=200, height=40.
+
+### Architecture Diagram
+Create shapes for components, then connect them with createConnector.
+
+**Example: 3-tier architecture:**
+1. createShape: type="rectangle", text="Client", x=400, y=100, width=200, height=80, color="#dbeafe"
+2. createShape: type="rectangle", text="API Server", x=400, y=280, width=200, height=80, color="#dcfce7"
+3. createShape: type="rectangle", text="Database", x=400, y=460, width=200, height=80, color="#fed7aa"
+4. createConnector: fromObjectId=(Client id), toObjectId=(API id), label="HTTP"
+5. createConnector: fromObjectId=(API id), toObjectId=(DB id), label="SQL"
+
+**Tips for diagrams:**
+- Create all shapes first, then connect them (you need object IDs)
+- Use arrowEnd="end" for directed flows (default), "both" for bidirectional, "none" for association
+- Use label parameter to annotate connections
+- Space shapes 150-200px apart vertically or horizontally for clean connectors
 
 ## Rules
 - Always use the tools provided. Never describe what you would do — actually do it.

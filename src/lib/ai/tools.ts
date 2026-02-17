@@ -27,7 +27,7 @@ export const AI_TOOLS: Anthropic.Tool[] = [
     input_schema: {
       type: "object" as const,
       properties: {
-        type: { type: "string", enum: ["rectangle", "text"], description: "Shape type" },
+        type: { type: "string", enum: ["rectangle", "text", "circle"], description: "Shape type" },
         x: { type: "number", description: "X position" },
         y: { type: "number", description: "Y position" },
         width: { type: "number", description: "Width in pixels" },
@@ -97,6 +97,36 @@ export const AI_TOOLS: Anthropic.Tool[] = [
         objectId: { type: "string", description: "ID of the object to delete" },
       },
       required: ["objectId"],
+    },
+  },
+  {
+    name: "createConnector",
+    description:
+      "Create a line/arrow connecting two objects or two points. Use this to draw connectors between shapes for diagrams.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        fromObjectId: { type: "string", description: "ID of the source object to connect from" },
+        toObjectId: { type: "string", description: "ID of the target object to connect to" },
+        fromPoint: {
+          type: "object" as const,
+          properties: { x: { type: "number" }, y: { type: "number" } },
+          description: "Start point if not connecting to an object",
+        },
+        toPoint: {
+          type: "object" as const,
+          properties: { x: { type: "number" }, y: { type: "number" } },
+          description: "End point if not connecting to an object",
+        },
+        arrowEnd: {
+          type: "string",
+          enum: ["none", "end", "start", "both"],
+          description: "Arrow placement. Default: end",
+        },
+        color: { type: "string", description: "Stroke color hex. Default: #374151" },
+        label: { type: "string", description: "Text label rendered at the midpoint of the line" },
+      },
+      required: [],
     },
   },
   {
