@@ -10,7 +10,7 @@
     "sync": "bun run scripts/sync-board.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.74.0",
+    "@anthropic-ai/sdk": "0.75.0",
     "@supabase/supabase-js": "2.95.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

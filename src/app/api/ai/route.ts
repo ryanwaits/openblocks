@@ -123,7 +123,7 @@ export async function POST(request: Request) {
 
     // Agentic loop
     let response = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-sonnet-4-6",
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
       tools: AI_TOOLS,
@@ -156,7 +156,7 @@ export async function POST(request: Request) {
       messages.push({ role: "user", content: toolResults });
 
       response = await anthropic.messages.create({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 4096,
         system: SYSTEM_PROMPT,
         tools: AI_TOOLS,
