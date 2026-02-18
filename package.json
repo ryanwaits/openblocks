@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync": "bun run scripts/sync-board.ts"
+    "sync": "bun run scripts/sync-board.ts",
+    "test": "bun test src party",
+    "test:integration": "bun test tests --timeout 30000",
+    "test:all": "bun test --timeout 30000"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.75.0",
