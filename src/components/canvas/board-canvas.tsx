@@ -116,12 +116,15 @@ export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(funct
       });
       animCancelRef.current = cancel;
 
+      // Track active frame
+      useFrameStore.getState().setActiveFrame(frameIndex, boardId);
+
       // After animation, save viewport
       setTimeout(() => {
         debouncedSave(targetPos, targetScale);
       }, 520);
     },
-    [dimensions, debouncedSave]
+    [dimensions, debouncedSave, boardId]
   );
 
   const zoomToFitAll = useCallback(async () => {
@@ -196,24 +199,33 @@ export const BoardCanvas = forwardRef<BoardCanvasHandle, BoardCanvasProps>(funct
     }
   }, []);
 
-  // Restore saved viewport or center board on initial render
+  // On initial render, navigate to last active frame at 100% zoom
   useEffect(() => {
-    if (dimensions.width > 0 && !initialized.current) {
+    if (dimensions.width > 0 && !initialized.current && frames.length > 0) {
       initialized.current = true;
-      const saved = boardId ? useViewportStore.getState().restoreForBoard(boardId, { x: dimensions.width / 2, y: dimensions.height / 2 }) : null;
-      if (saved) {
-        const stage = stageRef.current;
-        if (stage) {
-          stage.scale({ x: saved.scale, y: saved.scale });
-          stage.position(saved.pos);
-        }
-        useViewportStore.getState().setViewport(saved.pos, saved.scale);
-      } else {
-        const pos = centerBoard(dimensions.width, dimensions.height, 1);
-        useViewportStore.getState().setViewport(pos, 1);
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      const frameIndex = boardId
+        ? useFrameStore.getState().restoreActiveFrame(boardId)
+        : 0;
+
+      const targetScale = 1;
+      const frameCenterX = frameOriginX(frameIndex) + BOARD_WIDTH / 2;
+      const frameCenterY = FRAME_ORIGIN_Y + BOARD_HEIGHT / 2;
+      const targetPos = {
+        x: dimensions.width / 2 - frameCenterX * targetScale,
+        y: dimensions.height / 2 - frameCenterY * targetScale,
+      };
+
+      stage.scale({ x: targetScale, y: targetScale });
+      stage.position(targetPos);
+      useViewportStore.getState().setViewport(targetPos, targetScale);
+      if (boardId) {
+        useViewportStore.getState().saveForBoard(boardId);
       }
     }
-  }, [dimensions, centerBoard, boardId]);
+  }, [dimensions, boardId, frames]);
 
   const handleWheel = useCallback(
     (e: Konva.KonvaEventObject<WheelEvent>) => {
