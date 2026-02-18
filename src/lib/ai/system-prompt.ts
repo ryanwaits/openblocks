@@ -1,4 +1,15 @@
-import type { BoardObject } from "@/types/board";
+import type { BoardObject, Frame } from "@/types/board";
+import { BOARD_WIDTH, BOARD_HEIGHT, frameOriginX, FRAME_ORIGIN_Y } from "@/lib/geometry/frames";
+
+export function serializeFrameState(frames: Frame[]): string {
+  if (frames.length <= 1) return "";
+  const info = frames.map((f) => {
+    const ox = frameOriginX(f.index);
+    const oy = FRAME_ORIGIN_Y;
+    return `  - "${f.label}" (index ${f.index}): origin (${ox}, ${oy}), center (${ox + BOARD_WIDTH / 2}, ${oy + BOARD_HEIGHT / 2})`;
+  });
+  return `\n\n## Frames\nThis board has ${frames.length} frames laid out horizontally. Each frame is ${BOARD_WIDTH}x${BOARD_HEIGHT}.\n${info.join("\n")}\nTo place an object in a specific frame, compute x/y relative to that frame's origin.`;
+}
 
 export function serializeBoardState(objects: BoardObject[]): string {
   if (objects.length === 0) return "Board is empty — no objects.";
@@ -38,6 +49,8 @@ export const SYSTEM_PROMPT = `You are a whiteboard assistant. You manipulate obj
 ## Coordinate System
 - Origin is top-left. X increases rightward, Y increases downward.
 - Typical viewport is ~1200x800. Place objects within this range for visibility.
+- When multiple frames exist, each frame is 4000x3000. Frame origins are provided in the board state.
+- To place objects in a specific frame (e.g. "Frame 2"), offset coordinates by that frame's origin.
 
 ## Color Palette
 - yellow: #fef08a

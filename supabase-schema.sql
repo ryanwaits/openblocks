@@ -7,7 +7,8 @@ CREATE TABLE boards (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL DEFAULT 'Untitled Board',
   created_by UUID REFERENCES auth.users(id),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  frames JSONB DEFAULT '[]'::jsonb
 );
 
 -- Board objects table
@@ -51,6 +52,8 @@ ALTER TABLE board_objects ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "boards_select" ON boards FOR SELECT USING (true);
 -- Authenticated users can insert boards
 CREATE POLICY "boards_insert" ON boards FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+-- Authenticated users can update boards
+CREATE POLICY "boards_update" ON boards FOR UPDATE USING (auth.uid() IS NOT NULL);
 
 -- Anyone can read board objects
 CREATE POLICY "board_objects_select" ON board_objects FOR SELECT USING (true);

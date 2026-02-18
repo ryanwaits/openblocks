@@ -1,8 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AI_TOOLS } from "@/lib/ai/tools";
-import { SYSTEM_PROMPT, serializeBoardState } from "@/lib/ai/system-prompt";
+import { SYSTEM_PROMPT, serializeBoardState, serializeFrameState } from "@/lib/ai/system-prompt";
 import { executeToolCall, type ExecutorContext } from "@/lib/ai/executor";
-import type { BoardObject } from "@/types/board";
+import type { BoardObject, Frame } from "@/types/board";
 
 const anthropic = new Anthropic();
 
@@ -84,6 +84,28 @@ export async function POST(request: Request) {
     }
     const objects: BoardObject[] = await stateRes.json();
 
+    // Fetch frames from boards table
+    let frames: Frame[] = [];
+    try {
+      const framesRes = await fetch(
+        `${supabaseUrl}/rest/v1/boards?id=eq.${boardUUID}&select=frames`,
+        {
+          headers: {
+            apikey: supabaseServiceRoleKey,
+            Authorization: `Bearer ${supabaseServiceRoleKey}`,
+          },
+        }
+      );
+      if (framesRes.ok) {
+        const boards = await framesRes.json();
+        if (boards.length > 0 && Array.isArray(boards[0].frames)) {
+          frames = boards[0].frames;
+        }
+      }
+    } catch {
+      // frames fetch is best-effort
+    }
+
     const ctx: ExecutorContext = {
       boardId,
       boardUUID,
@@ -97,7 +119,7 @@ export async function POST(request: Request) {
     };
 
     // Build user message with board state + selection context
-    let userContent = `Current board state:\n${serializeBoardState(objects)}`;
+    let userContent = `Current board state:\n${serializeBoardState(objects)}${serializeFrameState(frames)}`;
     if (selectedIds && selectedIds.length > 0) {
       const selectedObjs = objects.filter((o) => selectedIds.includes(o.id));
       if (selectedObjs.length > 0) {
