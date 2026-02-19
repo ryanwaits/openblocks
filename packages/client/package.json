@@ -1,0 +1,34 @@
+{
+  "name": "@waits/openblocks-client",
+  "version": "0.0.1",
+  "description": "Client SDK for OpenBlocks real-time collaboration",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@waits/openblocks-types": "workspace:*"
+  },
+  "peerDependencies": {
+    "ws": "^8"
+  },
+  "peerDependenciesMeta": {
+    "ws": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.14",
+    "@waits/openblocks-server": "workspace:*",
+    "typescript": "^5",
+    "ws": "^8.19.0"
+  }
+}
