@@ -18,14 +18,32 @@ const StorageContext: Context<{ root: LiveObject } | null> = createContext<{ roo
 export { StorageContext };
 
 export interface RoomProviderProps {
+  /** Unique room identifier — all clients with the same roomId share a session */
   roomId: string;
+  /** Stable identifier for the current user */
   userId: string;
+  /** Display name shown to other participants */
   displayName: string;
+  /** CRDT values written to storage on first connection if storage is empty */
   initialStorage?: Record<string, unknown>;
+  /** Throttle interval for cursor broadcasts in ms (default: 50) */
   cursorThrottleMs?: number;
   children: ReactNode;
 }
 
+/**
+ * Joins a room and provides it to child hooks. Creates the room synchronously
+ * on first render. Leaves the room on unmount.
+ *
+ * Must be nested inside `<OpenBlocksProvider>`.
+ *
+ * @example
+ * <OpenBlocksProvider client={client}>
+ *   <RoomProvider roomId="my-room" userId={uid} displayName={name}>
+ *     <App />
+ *   </RoomProvider>
+ * </OpenBlocksProvider>
+ */
 export function RoomProvider({
   roomId,
   userId,
@@ -50,9 +68,17 @@ export function RoomProvider({
   }
   const room = roomRef.current.room;
 
+  // Track mount state so deferred cleanup can distinguish strict-mode
+  // remount (immediate re-mount in same tick) from real unmount.
+  const mountedRef = useRef(true);
+
   useEffect(() => {
+    mountedRef.current = true;
     setStorage(null);
     let cancelled = false;
+
+    // Ensure connected — handles strict-mode remount after prior cleanup
+    room.connect();
 
     room.getStorage().then((s) => {
       if (!cancelled) setStorage(s);
@@ -60,8 +86,14 @@ export function RoomProvider({
 
     return () => {
       cancelled = true;
-      client.leaveRoom(roomId);
-      roomRef.current = null;
+      mountedRef.current = false;
+      // Defer leaveRoom so strict-mode's synchronous remount can cancel it
+      const capturedRoomId = roomId;
+      setTimeout(() => {
+        if (!mountedRef.current || roomRef.current?.roomId !== capturedRoomId) {
+          client.leaveRoom(capturedRoomId);
+        }
+      }, 0);
     };
   }, [roomId, room, client]);
 
@@ -72,6 +104,10 @@ export function RoomProvider({
   );
 }
 
+/**
+ * Returns the current `Room` instance. Must be inside `<RoomProvider>`.
+ * Throws if called outside a provider.
+ */
 export function useRoom(): Room {
   const room = useContext(RoomContext);
   if (!room) {
@@ -80,6 +116,10 @@ export function useRoom(): Room {
   return room;
 }
 
+/**
+ * Returns the raw `{ root: LiveObject }` storage object, or `null` while loading.
+ * Prefer `useStorage(selector)` in application code.
+ */
 export function useStorageRoot(): { root: LiveObject } | null {
   return useContext(StorageContext);
 }
