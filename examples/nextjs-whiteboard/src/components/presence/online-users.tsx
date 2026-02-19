@@ -1,6 +1,6 @@
 "use client";
 
-import { usePresenceStore } from "@/lib/store/presence-store";
+import { useOthers, useSelf } from "@waits/openblocks-react";
 
 function getInitials(name: string): string {
   return name
@@ -14,7 +14,9 @@ function getInitials(name: string): string {
 const MAX_VISIBLE = 4;
 
 export function OnlineUsers() {
-  const onlineUsers = usePresenceStore((s) => s.onlineUsers);
+  const others = useOthers();
+  const self = useSelf();
+  const onlineUsers = self ? [self, ...others] : others;
 
   if (onlineUsers.length === 0) return null;
 

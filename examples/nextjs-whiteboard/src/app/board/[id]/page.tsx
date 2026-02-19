@@ -4,7 +4,6 @@ import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useBoardStore } from "@/lib/store/board-store";
-import { usePresenceStore } from "@/lib/store/presence-store";
 import { CursorsOverlay } from "@/components/presence/cursors-overlay";
 import { OnlineUsers } from "@/components/presence/online-users";
 import { NameDialog } from "@/components/auth/name-dialog";
@@ -26,7 +25,8 @@ import { useFrameStore } from "@/lib/store/frame-store";
 import { useLineDrawing } from "@/hooks/use-line-drawing";
 import { useUndoRedo } from "@/hooks/use-undo-redo";
 import { AICommandBar } from "@/components/ai/ai-command-bar";
-import { BoardRoomProvider } from "@/lib/sync/openblocks-provider";
+import { OpenBlocksProvider, RoomProvider, useStatus, useSelf } from "@waits/openblocks-react";
+import { client, buildInitialStorage } from "@/lib/sync/client";
 import { useOpenBlocksSync } from "@/lib/sync/use-openblocks-sync";
 import { useBoardMutations } from "@/lib/sync/use-board-mutations";
 
@@ -59,19 +59,23 @@ export default function BoardPage() {
   }
 
   return (
-    <BoardRoomProvider
-      roomId={roomId}
-      userId={userId || ""}
-      displayName={displayName || ""}
-    >
-      <BoardPageInner roomId={roomId} userId={userId || ""} displayName={displayName || ""} />
-    </BoardRoomProvider>
+    <OpenBlocksProvider client={client}>
+      <RoomProvider
+        roomId={roomId}
+        userId={userId || ""}
+        displayName={displayName || ""}
+        initialStorage={buildInitialStorage()}
+      >
+        <BoardPageInner roomId={roomId} userId={userId || ""} displayName={displayName || ""} />
+      </RoomProvider>
+    </OpenBlocksProvider>
   );
 }
 
 function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userId: string; displayName: string }) {
   const { objects, selectedIds, setSelected, setSelectedIds, connectionIndex } = useBoardStore();
-  const onlineUsers = usePresenceStore((s) => s.onlineUsers);
+  const self = useSelf();
+  const status = useStatus();
   const viewportScale = useViewportStore((s) => s.scale);
   const viewportPos = useViewportStore((s) => s.pos);
   const [activeTool, setActiveTool] = useState<ToolMode>("select");
@@ -99,8 +103,8 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     localStorage.setItem(`ai-open:${roomId}`, String(aiOpen));
   }, [aiOpen, roomId]);
 
-  const { isConnected, room, root } = useOpenBlocksSync();
-  const mutations = useBoardMutations(room, root);
+  useOpenBlocksSync();
+  const mutations = useBoardMutations();
   const { recordAction, undo, redo } = useUndoRedo(mutations);
 
   const handleStageMouseMove = useCallback(
@@ -593,7 +597,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     return findSnapTarget(stageMousePos, objects);
   }, [activeTool, stageMousePos, objects]);
 
-  const currentUserColor = onlineUsers.find((u) => u.userId === userId)?.color || "#3b82f6";
+  const currentUserColor = self?.color || "#3b82f6";
   const isCreationTool = CREATION_TOOLS.includes(activeTool);
   const isLineTool = activeTool === "line";
   const canvasMode: "hand" | "select" = activeTool === "hand" ? "hand" : "select";
@@ -609,7 +613,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     >
       {/* Presence + connection status */}
       <div className="absolute right-4 top-4 z-40 flex items-center gap-3">
-        {!isConnected && (
+        {status !== "connected" && (
           <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700 shadow-sm">
             Reconnecting...
           </span>
@@ -723,7 +727,6 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
 
       {/* Cursor overlay */}
       <CursorsOverlay
-        currentUserId={userId || ""}
         mousePosition={stageMousePos}
         currentUserColor={currentUserColor}
       />

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { type Room, type LiveMap, LiveObject as LO } from "@waits/openblocks-client";
+import { type LiveMap, LiveObject as LO } from "@waits/openblocks-client";
 import type { LiveObject } from "@waits/openblocks-client";
+import { useRoom, useStorageRoot, useUpdateCursor } from "@waits/openblocks-react";
 import type { BoardObject, Frame } from "@/types/board";
 import { frameOriginX, FRAME_ORIGIN_Y, BOARD_WIDTH, BOARD_HEIGHT } from "@/lib/geometry/frames";
 
@@ -15,14 +16,18 @@ function boardObjectToLiveData(obj: BoardObject): Record<string, unknown> {
   return data;
 }
 
-export function useBoardMutations(room: Room, root: LiveObject | null) {
+export function useBoardMutations() {
+  const room = useRoom();
+  const storage = useStorageRoot();
+  const updateCursorFn = useUpdateCursor();
+
   const objectsMap = useMemo(
-    () => root?.get("objects") as LiveMap<LiveObject> | undefined,
-    [root]
+    () => storage?.root.get("objects") as LiveMap<LiveObject> | undefined,
+    [storage]
   );
   const framesMap = useMemo(
-    () => root?.get("frames") as LiveMap<LiveObject> | undefined,
-    [root]
+    () => storage?.root.get("frames") as LiveMap<LiveObject> | undefined,
+    [storage]
   );
 
   const createObject = useCallback(
@@ -145,10 +150,8 @@ export function useBoardMutations(room: Room, root: LiveObject | null) {
   );
 
   const updateCursor = useCallback(
-    (x: number, y: number) => {
-      room.updateCursor(x, y);
-    },
-    [room]
+    (x: number, y: number) => updateCursorFn(x, y),
+    [updateCursorFn]
   );
 
   return { createObject, updateObject, deleteObject, createFrame, deleteFrame, updateCursor };

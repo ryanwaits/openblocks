@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePresenceStore } from "@/lib/store/presence-store";
+import { useCursors, useSelf } from "@waits/openblocks-react";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import type { CursorData } from "@/types/board";
 
 interface CursorsOverlayProps {
-  currentUserId: string;
   mousePosition?: { x: number; y: number } | null;
   currentUserColor?: string;
 }
@@ -18,8 +17,9 @@ interface InterpolatedCursor {
   currentY: number;
 }
 
-export function CursorsOverlay({ currentUserId, mousePosition, currentUserColor }: CursorsOverlayProps) {
-  const cursors = usePresenceStore((s) => s.cursors);
+export function CursorsOverlay({ mousePosition, currentUserColor }: CursorsOverlayProps) {
+  const cursors = useCursors();
+  const self = useSelf();
   const interpolatedRef = useRef<Map<string, InterpolatedCursor>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
@@ -99,7 +99,7 @@ export function CursorsOverlay({ currentUserId, mousePosition, currentUserColor 
   }, []);
 
   const cursorEntries = Array.from(cursors.entries()).filter(
-    ([userId]) => userId !== currentUserId
+    ([userId]) => userId !== self?.userId
   );
 
   return (

@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { LiveObject, LiveMap, PresenceUser, CursorData } from "@waits/openblocks-client";
-import { useBoardRoom } from "./openblocks-provider";
+import type { LiveObject, LiveMap } from "@waits/openblocks-client";
+import { useRoom, useStorageRoot } from "@waits/openblocks-react";
 import { useBoardStore } from "@/lib/store/board-store";
-import { usePresenceStore } from "@/lib/store/presence-store";
 import { useFrameStore } from "@/lib/store/frame-store";
 import { useUndoStore } from "@/lib/store/undo-store";
 import type { BoardObject, Frame } from "@/types/board";
@@ -38,43 +37,15 @@ function liveObjectToFrame(lo: LiveObject): Frame | null {
   return lo.toObject() as unknown as Frame;
 }
 
-export function useOpenBlocksSync() {
-  const { room, root, status } = useBoardRoom();
-  const isConnected = status === "connected";
+export function useOpenBlocksSync(): void {
+  const room = useRoom();
+  const storage = useStorageRoot();
+  const root = storage?.root ?? null;
 
   const { addObject, updateObject, deleteObject, syncAll } = useBoardStore();
-  const { updatePresence, updateCursor } = usePresenceStore();
 
   const prevObjectsRef = useRef<Map<string, BoardObject>>(new Map());
   const initialSyncDone = useRef(false);
-
-  // Bridge presence → Zustand
-  useEffect(() => {
-    const sync = () => {
-      const self = room.getSelf();
-      const others = room.getOthers();
-      const all = self ? [self, ...others] : [...others];
-      // Deduplicate by userId (a user may have multiple connections/tabs)
-      const seen = new Set<string>();
-      const users = all.filter((u) => {
-        if (seen.has(u.userId)) return false;
-        seen.add(u.userId);
-        return true;
-      });
-      updatePresence(users);
-    };
-    sync();
-    return room.subscribe("presence", sync);
-  }, [room, updatePresence]);
-
-  // Bridge cursors → Zustand
-  useEffect(() => {
-    return room.subscribe("cursors", () => {
-      room.getCursors().forEach((cursor: CursorData) => {
-        updateCursor(cursor);
-      });
-    });
-  }, [room, updateCursor]);
 
   // Subscribe to CRDT storage changes → Zustand
   useEffect(() => {
@@ -142,6 +113,4 @@ export function useOpenBlocksSync() {
       unsubFrames?.();
     };
   }, [root, room, syncAll, addObject, updateObject, deleteObject]);
-
-  return { isConnected, room, root };
 }
