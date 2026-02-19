@@ -9,9 +9,13 @@ export type {
   PresenceMessage,
   CursorUpdateMessage,
   ClientCursorMessage,
+  StorageOp,
+  SerializedCrdt,
+  StorageInitMessage,
+  StorageOpsMessage,
 } from "@waits/openblocks-types";
 
-import type { PresenceUser } from "@waits/openblocks-types";
+import type { PresenceUser, StorageOp, SerializedCrdt } from "@waits/openblocks-types";
 
 // --- Auth ---
 
@@ -36,7 +40,20 @@ export interface ServerConfig {
   onMessage?: OnMessageHandler;
   onJoin?: OnJoinHandler;
   onLeave?: OnLeaveHandler;
+  onStorageChange?: OnStorageChangeHandler;
+  initialStorage?: InitialStorageHandler;
 }
+
+// --- Storage Callbacks ---
+
+export type OnStorageChangeHandler = (
+  roomId: string,
+  ops: StorageOp[]
+) => void | Promise<void>;
+
+export type InitialStorageHandler = (
+  roomId: string
+) => Promise<SerializedCrdt | null>;
 
 // --- Callbacks ---
 

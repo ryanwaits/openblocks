@@ -38,6 +38,7 @@
       "name": "@waits/openblocks-client",
       "version": "0.0.1",
       "dependencies": {
+        "@waits/openblocks-storage": "workspace:*",
         "@waits/openblocks-types": "workspace:*",
       },
       "devDependencies": {
@@ -57,11 +58,22 @@
       "name": "@waits/openblocks-server",
       "version": "0.0.1",
       "dependencies": {
+        "@waits/openblocks-storage": "workspace:*",
         "@waits/openblocks-types": "workspace:*",
         "ws": "^8.19.0",
       },
       "devDependencies": {
         "@types/ws": "^8.5.14",
+        "typescript": "^5",
+      },
+    },
+    "packages/storage": {
+      "name": "@waits/openblocks-storage",
+      "version": "0.0.1",
+      "dependencies": {
+        "@waits/openblocks-types": "workspace:*",
+      },
+      "devDependencies": {
         "typescript": "^5",
       },
     },
@@ -625,6 +637,8 @@
     "@waits/openblocks-client": ["@waits/openblocks-client@workspace:packages/client"],
 
     "@waits/openblocks-server": ["@waits/openblocks-server@workspace:packages/server"],
+
+    "@waits/openblocks-storage": ["@waits/openblocks-storage@workspace:packages/storage"],
 
     "@waits/openblocks-types": ["@waits/openblocks-types@workspace:packages/types"],
 

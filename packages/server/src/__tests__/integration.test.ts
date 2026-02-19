@@ -21,9 +21,16 @@ function waitForOpen(ws: WebSocket): Promise<void> {
 
 function nextMessage(ws: WebSocket): Promise<Record<string, unknown>> {
   return new Promise((resolve) => {
-    ws.once("message", (data) => {
-      resolve(JSON.parse(data.toString()));
-    });
+    const handler = (data: any) => {
+      const parsed = JSON.parse(data.toString());
+      // Skip storage:init messages — they're tested separately
+      if (parsed.type === "storage:init") {
+        ws.once("message", handler);
+        return;
+      }
+      resolve(parsed);
+    };
+    ws.once("message", handler);
   });
 }
 

@@ -2,6 +2,8 @@ import http from "node:http";
 import type net from "node:net";
 import { URL } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
+import { StorageDocument } from "@waits/openblocks-storage";
+import type { StorageOp, SerializedCrdt } from "@waits/openblocks-types";
 import { Room } from "./room.js";
 import { RoomManager } from "./room-manager.js";
 import type {
@@ -11,6 +13,8 @@ import type {
   OnMessageHandler,
   OnJoinHandler,
   OnLeaveHandler,
+  OnStorageChangeHandler,
+  InitialStorageHandler,
   AuthHandler,
 } from "./types.js";
 
@@ -48,6 +52,8 @@ export class OpenBlocksServer {
   private onMessage?: OnMessageHandler;
   private onJoin?: OnJoinHandler;
   private onLeave?: OnLeaveHandler;
+  private onStorageChange?: OnStorageChangeHandler;
+  private initialStorage?: InitialStorageHandler;
 
   // Map ws instance → { roomId, connectionId } for close handler
   private wsMetadata = new WeakMap<
@@ -67,6 +73,8 @@ export class OpenBlocksServer {
     this.onMessage = config.onMessage;
     this.onJoin = config.onJoin;
     this.onLeave = config.onLeave;
+    this.onStorageChange = config.onStorageChange;
+    this.initialStorage = config.initialStorage;
 
     this.httpServer = http.createServer((_req, res) => {
       res.writeHead(426);
@@ -245,6 +253,46 @@ export class OpenBlocksServer {
     // Broadcast updated presence to all in room
     this.broadcastPresence(room);
 
+    // Send storage snapshot to new connection
+    if (room.storageInitialized) {
+      const doc = room.getStorageDocument()!;
+      room.send(
+        connectionId,
+        JSON.stringify({ type: "storage:init", root: doc.serialize() })
+      );
+    } else if (this.initialStorage) {
+      // Seed room from callback if available
+      Promise.resolve(this.initialStorage(meta.roomId))
+        .then((data) => {
+          if (data && !room.storageInitialized) {
+            const doc = StorageDocument.deserialize(data);
+            room.initStorage(doc);
+            // Send to all connections in room (could have more by now)
+            room.broadcast(
+              JSON.stringify({ type: "storage:init", root: doc.serialize() })
+            );
+          } else if (!room.storageInitialized) {
+            // No storage yet — tell client
+            room.send(
+              connectionId,
+              JSON.stringify({ type: "storage:init", root: null })
+            );
+          }
+        })
+        .catch(() => {
+          room.send(
+            connectionId,
+            JSON.stringify({ type: "storage:init", root: null })
+          );
+        });
+    } else {
+      // No storage — tell client
+      room.send(
+        connectionId,
+        JSON.stringify({ type: "storage:init", root: null })
+      );
+    }
+
     // Fire onJoin callback
     if (this.onJoin) {
       Promise.resolve(this.onJoin(meta.roomId, user)).catch(() => {});
@@ -280,6 +328,41 @@ export class OpenBlocksServer {
     }
 
     if (typeof parsed.type !== "string") return; // enforce envelope
+
+    // --- Storage message interception (return early to prevent relay) ---
+
+    if (parsed.type === "storage:init") {
+      if (!room.storageInitialized) {
+        const root = parsed.root as SerializedCrdt;
+        if (root) {
+          const doc = StorageDocument.deserialize(root);
+          room.initStorage(doc);
+          room.broadcast(
+            JSON.stringify({ type: "storage:init", root: doc.serialize() })
+          );
+        }
+      }
+      // If already initialized, ignore (race condition guard)
+      return;
+    }
+
+    if (parsed.type === "storage:ops") {
+      if (!room.storageInitialized) {
+        // Storage not initialized — drop ops
+        return;
+      }
+      const ops = parsed.ops as StorageOp[];
+      const doc = room.getStorageDocument()!;
+      doc.applyOps(ops);
+      const clock = doc._clock.value;
+      room.broadcast(
+        JSON.stringify({ type: "storage:ops", ops, clock })
+      );
+      if (this.onStorageChange) {
+        Promise.resolve(this.onStorageChange(roomId, ops)).catch(() => {});
+      }
+      return;
+    }
 
     if (parsed.type === "cursor:update") {
       const cursor: CursorData = {

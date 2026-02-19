@@ -15,6 +15,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@waits/openblocks-storage": "workspace:*",
     "@waits/openblocks-types": "workspace:*",
     "ws": "^8.19.0"
   },

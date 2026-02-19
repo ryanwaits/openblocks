@@ -15,5 +15,7 @@ export type {
   OnMessageHandler,
   OnJoinHandler,
   OnLeaveHandler,
+  OnStorageChangeHandler,
+  InitialStorageHandler,
   Connection,
 } from "./types.js";
