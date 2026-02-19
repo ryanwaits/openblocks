@@ -1,0 +1,2 @@
+# DOM setup is manual in test files via setup.ts
+# Not using preload = ["happy-dom"] because it breaks ws/node packages

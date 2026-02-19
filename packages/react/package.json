@@ -1,0 +1,44 @@
+{
+  "name": "@waits/openblocks-react",
+  "version": "0.0.1",
+  "description": "React hooks for OpenBlocks real-time collaboration",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./suspense": {
+      "types": "./dist/suspense.d.ts",
+      "import": "./dist/suspense.js",
+      "require": "./dist/suspense.js",
+      "default": "./dist/suspense.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@waits/openblocks-client": "workspace:*",
+    "@waits/openblocks-types": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/ws": "^8.5.14",
+    "@waits/openblocks-server": "workspace:*",
+    "happy-dom": "^20.6.3",
+    "react": "^19",
+    "react-dom": "^19",
+    "typescript": "^5",
+    "ws": "^8.19.0"
+  }
+}
