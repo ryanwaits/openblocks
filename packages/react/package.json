@@ -1,26 +1,36 @@
 {
   "name": "@waits/openblocks-react",
   "version": "0.0.1",
+  "type": "module",
   "description": "React hooks for OpenBlocks real-time collaboration",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./suspense": {
-      "types": "./dist/suspense.d.ts",
-      "import": "./dist/suspense.js",
-      "require": "./dist/suspense.js",
-      "default": "./dist/suspense.js"
+      "import": {
+        "types": "./dist/suspense.d.ts",
+        "default": "./dist/suspense.js"
+      },
+      "require": {
+        "types": "./dist/suspense.d.cts",
+        "default": "./dist/suspense.cjs"
+      }
     }
   },
   "files": ["dist"],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "bunup src/index.ts src/suspense.ts --format esm,cjs --dts"
   },
   "dependencies": {
     "@waits/openblocks-client": "workspace:*",

@@ -1,18 +1,26 @@
 {
   "name": "@waits/openblocks-client",
   "version": "0.0.1",
+  "type": "module",
   "description": "Client SDK for OpenBlocks real-time collaboration",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "files": ["dist", "README.md"],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
     "@waits/openblocks-storage": "workspace:*",
