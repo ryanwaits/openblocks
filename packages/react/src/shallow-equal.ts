@@ -6,7 +6,7 @@ export function shallowEqual(a: unknown, b: unknown): boolean {
   if (Array.isArray(a)) {
     if (!Array.isArray(b) || a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
-      if (!Object.is(a[i], b[i])) return false;
+      if (!shallowEqual(a[i], b[i])) return false;
     }
     return true;
   }
