@@ -143,11 +143,12 @@ export class Room {
     }
   }
 
-  batch(fn: () => void): void {
+  batch<T>(fn: () => T): T {
     this.batching = true;
     this.batchStorageOps = [];
     try {
-      fn();
+      const result = fn();
+      return result;
     } finally {
       this.batching = false;
       // Send queued regular messages

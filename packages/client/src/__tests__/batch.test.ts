@@ -77,4 +77,16 @@ describe("Room.batch", () => {
     // Message sent despite error
     expect(ws.send).toHaveBeenCalledTimes(1);
   });
+
+  it("returns callback return value", async () => {
+    const room = createRoom();
+    room.connect();
+    await new Promise((r) => queueMicrotask(r));
+
+    const result = room.batch(() => {
+      room.send({ type: "a", v: 1 });
+      return 42;
+    });
+    expect(result).toBe(42);
+  });
 });
