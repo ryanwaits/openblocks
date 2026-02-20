@@ -617,6 +617,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         ref={canvasRef}
         boardId={roomId}
         mode={canvasMode}
+        isCreationMode={isCreationTool || isLineTool}
         onStageMouseMove={handleStageMouseMove}
         onStageMouseLeave={handleStageMouseLeave}
         onClickEmpty={() => {

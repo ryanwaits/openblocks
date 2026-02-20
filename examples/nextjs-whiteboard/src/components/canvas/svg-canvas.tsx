@@ -26,6 +26,7 @@ interface SvgCanvasProps {
   onSelectionRect?: (rect: { x: number; y: number; width: number; height: number } | null) => void;
   onSelectionComplete?: (rect: { x: number; y: number; width: number; height: number }) => void;
   mode?: "select" | "hand";
+  isCreationMode?: boolean;
   children?: React.ReactNode;
 }
 
@@ -54,7 +55,7 @@ function screenToCanvas(
 }
 
 export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function SvgCanvas(
-  { boardId, onStageMouseMove, onStageMouseLeave, onClickEmpty, onCanvasClick, onCanvasDoubleClick, onSelectionRect, onSelectionComplete, mode = "select", children },
+  { boardId, onStageMouseMove, onStageMouseLeave, onClickEmpty, onCanvasClick, onCanvasDoubleClick, onSelectionRect, onSelectionComplete, mode = "select", isCreationMode = false, children },
   ref,
 ) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -364,7 +365,16 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
         return;
       }
       const target = e.target as SVGElement;
-      if (target === svgRef.current || target.dataset.canvasBg === "true") {
+      const isEmptyArea = target === svgRef.current || target.dataset.canvasBg === "true";
+
+      // In creation mode, allow placing items anywhere (even on top of existing shapes)
+      if (isCreationMode && onCanvasClick) {
+        const pos = getCanvasPos(e.clientX, e.clientY);
+        onCanvasClick(pos.x, pos.y);
+        return;
+      }
+
+      if (isEmptyArea) {
         if (onCanvasClick) {
           const pos = getCanvasPos(e.clientX, e.clientY);
           onCanvasClick(pos.x, pos.y);
@@ -373,7 +383,7 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
         onClickEmpty?.();
       }
     },
-    [onClickEmpty, onCanvasClick, getCanvasPos],
+    [onClickEmpty, onCanvasClick, getCanvasPos, isCreationMode],
   );
 
   const handleDoubleClick = useCallback(
