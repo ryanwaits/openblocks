@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   OpenBlocksClient,
   LiveObject,
@@ -11,6 +11,8 @@ import {
   RoomProvider,
   useStorage,
   useMutation,
+  useLiveState,
+  useHistory,
 } from "@waits/openblocks-react";
 import {
   AvatarStack,
@@ -84,12 +86,28 @@ export default function TodoPage() {
 }
 
 // ── Todo list UI ────────────────────────────────────────────
+type FilterMode = "all" | "active" | "completed";
+
 function TodoContent() {
   const [newText, setNewText] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
 
+  const [filter, setFilter] = useLiveState<FilterMode>("filter", "all");
+  const { undo, redo, canUndo, canRedo } = useHistory();
+
   const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (document.activeElement?.tagName === "INPUT") return;
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && e.shiftKey) { e.preventDefault(); redo(); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [undo, redo]);
 
   const todos = useStorage((root) => {
     const map = root.get("todos") as LiveMap<LiveObject> | undefined;
@@ -148,6 +166,11 @@ function TodoContent() {
   }
 
   const completedCount = todos.filter((t) => t.completed).length;
+  const filteredTodos = todos.filter((t) => {
+    if (filter === "active") return !t.completed;
+    if (filter === "completed") return t.completed;
+    return true;
+  });
 
   const startEditing = (todo: Todo) => {
     setEditingId(todo.id);
@@ -174,7 +197,25 @@ function TodoContent() {
 
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Collaborative Todos</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold">Collaborative Todos</h1>
+            <button
+              onClick={undo}
+              disabled={!canUndo}
+              className="rounded p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+              title="Undo (Cmd+Z)"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h8a3 3 0 010 6H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M5 5L3 8l2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <button
+              onClick={redo}
+              disabled={!canRedo}
+              className="rounded p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+              title="Redo (Cmd+Shift+Z)"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H5a3 3 0 000 6h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M11 5l2 3-2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <ConnectionBadge />
             <AvatarStack />
@@ -207,14 +248,35 @@ function TodoContent() {
           </button>
         </form>
 
+        {/* Filter tabs (synced across clients via useLiveState) */}
+        {todos.length > 0 && (
+          <div className="mb-3 flex gap-1 rounded-lg bg-gray-100 p-1">
+            {(["all", "active", "completed"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  filter === f
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Todo list */}
         <div className="space-y-1">
-          {todos.length === 0 ? (
+          {filteredTodos.length === 0 ? (
             <p className="py-8 text-center text-sm text-gray-400">
-              No todos yet. Add one above!
+              {todos.length === 0
+                ? "No todos yet. Add one above!"
+                : `No ${filter} todos.`}
             </p>
           ) : (
-            todos.map((todo) => (
+            filteredTodos.map((todo) => (
               <div
                 key={todo.id}
                 className="group flex items-center gap-3 rounded-lg bg-white px-4 py-3 shadow-sm"
