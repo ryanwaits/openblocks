@@ -61,6 +61,10 @@ export class OpenBlocksServer {
     { roomId: string; connectionId: string }
   >();
 
+  private heartbeatCheckTimer: ReturnType<typeof setInterval> | null = null;
+  private readonly heartbeatTimeoutMs = 45_000;
+  private readonly heartbeatCheckIntervalMs = 15_000;
+
   // Map req → upgrade metadata (avoids `any` cast on req)
   private reqMetadata = new WeakMap<
     http.IncomingMessage,
@@ -107,13 +111,18 @@ export class OpenBlocksServer {
   start(port?: number): Promise<void> {
     const p = port ?? 0;
     return new Promise((resolve, reject) => {
-      this.httpServer.listen(p, () => resolve());
+      this.httpServer.listen(p, () => {
+        this.startHeartbeatCheck();
+        resolve();
+      });
       this.httpServer.once("error", reject);
     });
   }
 
   /** Gracefully close all connections and stop listening. */
   async stop(): Promise<void> {
+    this.stopHeartbeatCheck();
+
     // Terminate all WebSocket connections
     for (const ws of this.wss.clients) {
       ws.terminate();
@@ -241,11 +250,15 @@ export class OpenBlocksServer {
     const displayName = meta.displayName || "Anonymous";
     const color = colorForUser(userId);
 
+    const now = Date.now();
     const user: PresenceUser = {
       userId,
       displayName,
       color,
-      connectedAt: Date.now(),
+      connectedAt: now,
+      onlineStatus: "online",
+      lastActiveAt: now,
+      isIdle: false,
     };
 
     const room = this.roomManager.getOrCreate(meta.roomId);
@@ -306,6 +319,15 @@ export class OpenBlocksServer {
       room.send(
         connectionId,
         JSON.stringify({ type: "storage:init", root: null })
+      );
+    }
+
+    // Send live state snapshot
+    const allStates = room.liveState.getAll();
+    if (Object.keys(allStates).length > 0) {
+      room.send(
+        connectionId,
+        JSON.stringify({ type: "state:init", states: allStates })
       );
     }
 
@@ -391,6 +413,58 @@ export class OpenBlocksServer {
       return;
     }
 
+    if (parsed.type === "state:update") {
+      const key = parsed.key as string;
+      const value = parsed.value;
+      const timestamp = parsed.timestamp as number;
+      const merge = parsed.merge as boolean | undefined;
+      if (!key || typeof timestamp !== "number") return;
+
+      const accepted = room.liveState.set(key, value, timestamp, conn.user.userId, merge);
+      if (accepted) {
+        // Broadcast to all including sender (with userId)
+        room.broadcast(
+          JSON.stringify({
+            type: "state:update",
+            key,
+            value: room.liveState.get(key)!.value,
+            timestamp: room.liveState.get(key)!.timestamp,
+            userId: conn.user.userId,
+          })
+        );
+      }
+      return;
+    }
+
+    if (parsed.type === "heartbeat") {
+      conn.lastHeartbeat = Date.now();
+      conn.lastActiveAt = Date.now();
+      return;
+    }
+
+    if (parsed.type === "presence:update") {
+      if (parsed.onlineStatus !== undefined) {
+        conn.onlineStatus = parsed.onlineStatus as any;
+        conn.user.onlineStatus = parsed.onlineStatus as any;
+      }
+      if (parsed.isIdle !== undefined) {
+        conn.user.isIdle = parsed.isIdle as boolean;
+      }
+      if (parsed.location !== undefined) {
+        conn.location = parsed.location as string;
+        conn.user.location = parsed.location as string;
+      }
+      if (parsed.metadata !== undefined) {
+        conn.metadata = parsed.metadata as Record<string, unknown>;
+        conn.user.metadata = parsed.metadata as Record<string, unknown>;
+      }
+      conn.lastActiveAt = Date.now();
+      conn.user.lastActiveAt = Date.now();
+      room["_presenceCache"] = null; // invalidate cache
+      this.broadcastPresence(room);
+      return;
+    }
+
     if (parsed.type === "cursor:update") {
       if (
         typeof parsed.x !== "number" ||
@@ -454,5 +528,35 @@ export class OpenBlocksServer {
 
   private broadcastPresence(room: Room): void {
     room.broadcast(room.getPresenceMessage());
+  }
+
+  private startHeartbeatCheck(): void {
+    this.heartbeatCheckTimer = setInterval(() => {
+      const now = Date.now();
+      for (const room of this.roomManager.all()) {
+        let changed = false;
+        for (const [, conn] of room.connections) {
+          if (
+            conn.onlineStatus !== "offline" &&
+            now - conn.lastHeartbeat > this.heartbeatTimeoutMs
+          ) {
+            conn.onlineStatus = "offline";
+            conn.user.onlineStatus = "offline";
+            room["_presenceCache"] = null;
+            changed = true;
+          }
+        }
+        if (changed) {
+          this.broadcastPresence(room);
+        }
+      }
+    }, this.heartbeatCheckIntervalMs);
+  }
+
+  private stopHeartbeatCheck(): void {
+    if (this.heartbeatCheckTimer) {
+      clearInterval(this.heartbeatCheckTimer);
+      this.heartbeatCheckTimer = null;
+    }
   }
 }

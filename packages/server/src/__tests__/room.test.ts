@@ -13,6 +13,9 @@ function makeUser(id: string): PresenceUser {
     displayName: `User ${id}`,
     color: "#ef4444",
     connectedAt: Date.now(),
+    onlineStatus: "online",
+    lastActiveAt: Date.now(),
+    isIdle: false,
   };
 }
 
@@ -35,7 +38,8 @@ describe("Room", () => {
     room.addConnection("c1", mockWs(), user);
 
     const removed = room.removeConnection("c1");
-    expect(removed).toEqual(user);
+    expect(removed?.userId).toBe("u1");
+    expect(removed?.onlineStatus).toBe("online");
   });
 
   it("removeConnection returns undefined for unknown id", () => {

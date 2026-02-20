@@ -35,6 +35,10 @@ export class RoomManager {
     this.cleanupTimers.set(roomId, timer);
   }
 
+  all(): IterableIterator<Room> {
+    return this.rooms.values();
+  }
+
   get roomCount(): number {
     return this.rooms.size;
   }

@@ -3,19 +3,25 @@ import type WebSocket from "ws";
 
 // Re-export shared types from @waits/openblocks-types
 export type {
+  OnlineStatus,
   PresenceUser,
   CursorData,
   ConnectionStatus,
   PresenceMessage,
   CursorUpdateMessage,
   ClientCursorMessage,
+  PresenceUpdateMessage,
+  HeartbeatMessage,
   StorageOp,
   SerializedCrdt,
   StorageInitMessage,
   StorageOpsMessage,
+  LiveStateUpdateMessage,
+  LiveStateInitMessage,
+  LiveStateUpdateBroadcast,
 } from "@waits/openblocks-types";
 
-import type { PresenceUser, StorageOp, SerializedCrdt } from "@waits/openblocks-types";
+import type { OnlineStatus, PresenceUser, StorageOp, SerializedCrdt } from "@waits/openblocks-types";
 
 // --- Auth ---
 
@@ -78,4 +84,9 @@ export type OnLeaveHandler = (
 export interface Connection {
   ws: WebSocket;
   user: PresenceUser;
+  location?: string;
+  metadata?: Record<string, unknown>;
+  onlineStatus: OnlineStatus;
+  lastActiveAt: number;
+  lastHeartbeat: number;
 }

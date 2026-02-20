@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import type { StorageDocument } from "@waits/openblocks-storage";
 import type { Connection, PresenceUser } from "./types.js";
+import { LiveStateStore } from "./live-state.js";
 
 export class Room {
   readonly id: string;
@@ -9,6 +10,7 @@ export class Room {
   private _storageInitialized = false;
   storageInitPromise: Promise<void> | null = null;
   private _presenceCache: string | null = null;
+  readonly liveState: LiveStateStore = new LiveStateStore();
 
   constructor(id: string) {
     this.id = id;
@@ -28,7 +30,19 @@ export class Room {
   }
 
   addConnection(id: string, ws: WebSocket, user: PresenceUser): void {
-    this.connections.set(id, { ws, user });
+    const now = Date.now();
+    this.connections.set(id, {
+      ws,
+      user: {
+        ...user,
+        onlineStatus: user.onlineStatus ?? "online",
+        lastActiveAt: user.lastActiveAt ?? now,
+        isIdle: user.isIdle ?? false,
+      },
+      onlineStatus: "online",
+      lastActiveAt: now,
+      lastHeartbeat: now,
+    });
     this._presenceCache = null;
   }
 
@@ -71,7 +85,14 @@ export class Room {
   }
 
   getUsers(): PresenceUser[] {
-    return Array.from(this.connections.values()).map((c) => c.user);
+    return Array.from(this.connections.values()).map((c) => ({
+      ...c.user,
+      onlineStatus: c.onlineStatus,
+      lastActiveAt: c.lastActiveAt,
+      isIdle: c.user.isIdle,
+      location: c.location ?? c.user.location,
+      metadata: c.metadata ?? c.user.metadata,
+    }));
   }
 
   get size(): number {
