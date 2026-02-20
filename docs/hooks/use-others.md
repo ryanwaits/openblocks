@@ -37,8 +37,11 @@ interface PresenceUser {
 | `useOthers` | `useOthers()` | `PresenceUser[]` | Any other user joins, leaves, or updates presence |
 | `useOther` | `useOther<T>(userId, selector?)` | `T \| null` | That specific user's (selected) data changes |
 | `useOthersMapped` | `useOthersMapped<T>(selector)` | `T[]` | The mapped output array changes |
+| `useOthersUserIds` | `useOthersUserIds()` | `string[]` | A user joins or leaves (NOT on data changes) |
 
-All four subscribe to the room's `"presence"` event internally. The shallow equality cache ensures stable references when nothing has changed.
+All five subscribe to the room's `"presence"` event internally. The shallow equality cache ensures stable references when nothing has changed.
+
+> **See also:** [`useMyPresence`, `useUpdateMyPresence`, `useOthersListener`](./presence-update.md) for presence mutation and event-driven others tracking.
 
 ---
 

@@ -97,6 +97,82 @@ function App() {
 
 ---
 
+## `ClientSideSuspense`
+
+An SSR-safe wrapper that defers rendering until the client has mounted. On the server (and on the first client render), it shows the `fallback`. After mount, it renders `children()` inside a `<Suspense>` boundary.
+
+```ts
+import { ClientSideSuspense } from "@waits/openblocks-react";
+```
+
+### Signature
+
+```ts
+function ClientSideSuspense(props: {
+  children: () => ReactNode;   // render function -- called only on client
+  fallback: ReactNode;         // shown during SSR + initial client render + loading
+}): ReactElement;
+```
+
+> **Why is `children` a function?** If `children` were a regular `ReactNode`, React would evaluate all hooks inside it during server-side rendering. By using a render function, the hooks are only called after client-side mount -- when the room providers are available.
+
+### Example -- SSR-safe room component
+
+```tsx
+import { ClientSideSuspense } from "@waits/openblocks-react";
+import { useStorageSuspense } from "@waits/openblocks-react/suspense";
+
+function Editor() {
+  const doc = useStorageSuspense((root) => root.get("document"));
+  return <textarea defaultValue={doc.get("content")} />;
+}
+
+function EditorSkeleton() {
+  return <div className="h-64 bg-gray-100 rounded-lg animate-pulse" />;
+}
+
+// Works in Next.js App Router, Remix, or any SSR framework
+export default function Page() {
+  return (
+    <RoomProvider roomId="doc-1" userId={uid} displayName={name}>
+      <ClientSideSuspense fallback={<EditorSkeleton />}>
+        {() => <Editor />}
+      </ClientSideSuspense>
+    </RoomProvider>
+  );
+}
+```
+
+### How it works
+
+1. **Server render:** `mounted` is `false` → renders `fallback`
+2. **First client render (hydration):** `mounted` is still `false` → renders `fallback` (matches server output)
+3. **After `useEffect`:** `setMounted(true)` → renders `<Suspense fallback={fallback}>{children()}</Suspense>`
+4. **Storage loading:** If `children()` calls a suspense hook that throws, `<Suspense>` catches it and shows `fallback`
+5. **Storage ready:** Component renders with data
+
+> **Same API as Liveblocks.** If you're migrating from `@liveblocks/react`, `ClientSideSuspense` is a drop-in replacement.
+
+---
+
+## Suspense CRDT Shortcuts
+
+Three additional suspense hooks for direct CRDT access (thin wrappers around `useStorageSuspense`):
+
+| Hook | Signature | Returns |
+|------|-----------|---------|
+| `useObjectSuspense<T>(key)` | `(key: string) => LiveObject<T>` | `LiveObject<T>` |
+| `useMapSuspense<V>(key)` | `(key: string) => LiveMap<string, V>` | `LiveMap<string, V>` |
+| `useListSuspense<T>(key)` | `(key: string) => LiveList<T>` | `LiveList<T>` |
+
+```ts
+import { useObjectSuspense, useMapSuspense, useListSuspense } from "@waits/openblocks-react/suspense";
+```
+
+These never return `null` -- they suspend while storage loads instead. See [crdt-shortcuts.md](./crdt-shortcuts.md) for full documentation and use cases.
+
+---
+
 ## Real-World Use Cases
 
 ### Dashboard with independent panels
@@ -327,17 +403,40 @@ The `/suspense` sub-path re-exports everything you need so you can import from a
 
 | Export | Description |
 |--------|-------------|
-| `useStorageSuspense` | Suspense-compatible storage selector (this hook) |
+| `useStorageSuspense` | Suspense-compatible storage selector |
+| `useObjectSuspense` | Suspense shortcut for `LiveObject` at a top-level key |
+| `useMapSuspense` | Suspense shortcut for `LiveMap` at a top-level key |
+| `useListSuspense` | Suspense shortcut for `LiveList` at a top-level key |
 | `useStatus` | Connection status (`connecting`, `connected`, `disconnected`) |
+| `useSyncStatus` | High-level sync status (`synchronized`, `synchronizing`, `not-synchronized`) |
 | `useLostConnectionListener` | Callback when connection is lost |
+| `useErrorListener` | Callback on WebSocket errors |
 | `useSelf` | Current user's presence data |
+| `useMyPresence` | Tuple of `[self, updatePresence]` |
+| `useUpdateMyPresence` | Stable function to update own presence |
 | `useOthers` | List of other connected users |
 | `useOthersMapped` | Mapped projection of other users |
+| `useOthersUserIds` | Sorted user ID array (re-renders only on join/leave) |
+| `useOthersListener` | Imperative callback on enter/leave/update |
 | `useMutation` | Create a storage mutation callback |
+| `useBatch` | Wrap mutations in a single batch |
 | `useCursors` | Other users' cursor positions |
 | `useUpdateCursor` | Send local cursor position |
 | `useBroadcastEvent` | Broadcast a custom event to the room |
 | `useEventListener` | Listen for custom events from the room |
+| `useOthersOnLocation` | Users at a specific location |
+| `usePresenceEvent` | Subscribe to presence events |
+| `useLiveState` | Ephemeral shared state |
+| `useLiveStateData` | Read-only live state |
+| `useSetLiveState` | Write-only live state |
+| `useUndo` | Undo last mutation |
+| `useRedo` | Redo last undone mutation |
+| `useCanUndo` | Whether undo is available |
+| `useCanRedo` | Whether redo is available |
+| `useHistory` | Access the history manager |
+| `createRoomContext` | Typed hook factory |
+| `ClientSideSuspense` | SSR-safe Suspense wrapper |
+| `useIsInsideRoom` | Check if inside a RoomProvider |
 
 ### Providers
 
@@ -362,8 +461,12 @@ The `/suspense` sub-path re-exports everything you need so you can import from a
 | Export | Description |
 |--------|-------------|
 | `ConnectionStatus` | Union type for connection states |
+| `SyncStatus` | Union type for sync states |
 | `PresenceUser` | Shape of a presence user object |
 | `CursorData` | Shape of cursor position data |
+| `OnlineStatus` | `"online" \| "away" \| "offline"` |
+| `PresenceUpdatePayload` | Partial presence update shape |
+| `OthersEvent` | Discriminated union for others listener |
 
 ---
 

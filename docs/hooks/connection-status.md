@@ -41,9 +41,12 @@ The `ConnectionManager` drives this lifecycle internally. On connection loss, it
 | Export | Package | Signature | Returns | Description |
 |---|---|---|---|---|
 | `useStatus` | `@waits/openblocks-react` | `()` | `ConnectionStatus` | Current connection status. Re-renders on change. |
+| `useSyncStatus` | `@waits/openblocks-react` | `()` | `SyncStatus` | High-level sync status combining connection + storage state. Re-renders on change. |
 | `useLostConnectionListener` | `@waits/openblocks-react` | `(callback: () => void)` | `void` | Fires `callback` once when connection drops from `"connected"` to `"reconnecting"`. |
+| `useErrorListener` | `@waits/openblocks-react` | `(callback: (error: Error) => void)` | `void` | Fires on WebSocket-level errors. See [utility-hooks.md](./utility-hooks.md). |
 | `ConnectionBadge` | `@waits/openblocks-ui` | `({ className? })` | `JSX.Element \| null` | Status pill. Returns `null` when connected. |
 | `ConnectionStatus` | `@waits/openblocks-types` | -- | `type` | `"connecting" \| "connected" \| "reconnecting" \| "disconnected"` |
+| `SyncStatus` | `@waits/openblocks-react` | -- | `type` | `"synchronized" \| "synchronizing" \| "not-synchronized"` |
 
 ---
 
@@ -146,6 +149,82 @@ function ConnectionMonitor() {
   return null;
 }
 ```
+
+---
+
+## `useSyncStatus`
+
+```ts
+import { useSyncStatus } from "@waits/openblocks-react";
+
+const sync = useSyncStatus();
+// "synchronized" | "synchronizing" | "not-synchronized"
+```
+
+A higher-level status that combines connection state with storage loading state. While `useStatus` tells you about the WebSocket, `useSyncStatus` tells you whether the user's data is actually in sync.
+
+### `SyncStatus` type
+
+```ts
+type SyncStatus = "synchronized" | "synchronizing" | "not-synchronized";
+```
+
+### Derivation logic
+
+| Connection | Storage loaded? | SyncStatus |
+|---|---|---|
+| `"connected"` | Yes | `"synchronized"` |
+| `"connected"` | No | `"synchronizing"` |
+| `"connecting"` | -- | `"synchronizing"` |
+| `"reconnecting"` | -- | `"synchronizing"` |
+| `"disconnected"` | -- | `"not-synchronized"` |
+
+### Example -- save indicator
+
+```tsx
+import { useSyncStatus } from "@waits/openblocks-react";
+
+function SyncIndicator() {
+  const sync = useSyncStatus();
+
+  const config = {
+    synchronized: { label: "Saved", color: "text-green-600", dot: "bg-green-500" },
+    synchronizing: { label: "Saving...", color: "text-yellow-600", dot: "bg-yellow-500" },
+    "not-synchronized": { label: "Offline", color: "text-red-600", dot: "bg-red-500" },
+  }[sync];
+
+  return (
+    <div className={`flex items-center gap-1.5 text-sm ${config.color}`}>
+      <div className={`h-2 w-2 rounded-full ${config.dot}`} />
+      {config.label}
+    </div>
+  );
+}
+```
+
+### Example -- disable editing while not synchronized
+
+```tsx
+import { useSyncStatus } from "@waits/openblocks-react";
+
+function Editor() {
+  const sync = useSyncStatus();
+  const canEdit = sync === "synchronized";
+
+  return (
+    <div className={canEdit ? "" : "opacity-50 pointer-events-none"}>
+      <textarea placeholder="Start typing..." disabled={!canEdit} />
+      {!canEdit && (
+        <p className="text-xs text-muted-foreground mt-1">
+          {sync === "synchronizing" ? "Loading..." : "You are offline"}
+        </p>
+      )}
+    </div>
+  );
+}
+```
+
+> **When to use `useSyncStatus` vs `useStatus`:** `useStatus` gives you the raw connection state (4 values). `useSyncStatus` gives you the user-facing sync state (3 values) that accounts for storage initialization. Use `useSyncStatus` for save indicators and edit-ability checks. Use `useStatus` when you need to distinguish `"connecting"` from `"reconnecting"`.
 
 ---
 
