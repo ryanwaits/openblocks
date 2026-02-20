@@ -84,6 +84,36 @@ export function useOther<T = PresenceUser>(
  * @example
  * const names = useOthersMapped(u => u.displayName);
  */
+/**
+ * Returns a sorted array of userIds for all other users in the room.
+ * Only re-renders on join/leave — NOT on presence data changes.
+ *
+ * @example
+ * const ids = useOthersUserIds();
+ * ids.map(id => <Cursor key={id} userId={id} />);
+ */
+export function useOthersUserIds(): string[] {
+  const room = useRoom();
+  const cache = useRef<string[]>([]);
+
+  return useSyncExternalStore(
+    useCallback((cb) => room.subscribe("presence", () => cb()), [room]),
+    useCallback(() => {
+      const next = room.getOthers().map((u) => u.userId).sort();
+      const prev = cache.current;
+      if (
+        prev.length === next.length &&
+        prev.every((id, i) => id === next[i])
+      ) {
+        return prev;
+      }
+      cache.current = next;
+      return next;
+    }, [room]),
+    () => [] as string[]
+  );
+}
+
 export function useOthersMapped<T>(
   selector: (user: PresenceUser) => T
 ): T[] {

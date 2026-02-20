@@ -8,7 +8,7 @@ const { OpenBlocksProvider } = await import("../client-context.js");
 const { RoomProvider } = await import("../room-context.js");
 const { useStatus, useLostConnectionListener } = await import("../use-status.js");
 const { useSelf } = await import("../use-self.js");
-const { useOthers, useOther, useOthersMapped } = await import("../use-others.js");
+const { useOthers, useOther, useOthersMapped, useOthersUserIds } = await import("../use-others.js");
 
 let mockRoom: MockRoom;
 let client: any;
@@ -200,5 +200,43 @@ describe("useLostConnectionListener", () => {
     });
 
     expect(onLost).not.toHaveBeenCalled();
+  });
+});
+
+describe("useOthersUserIds", () => {
+  it("returns [] initially", () => {
+    setup();
+    const { result } = renderHook(() => useOthersUserIds(), { wrapper });
+    expect(result.current).toEqual([]);
+  });
+
+  it("returns sorted userIds after others join", async () => {
+    setup();
+    const { result } = renderHook(() => useOthersUserIds(), { wrapper });
+
+    await act(() => {
+      mockRoom.setOthers([
+        { userId: "u3", displayName: "U3" },
+        { userId: "u2", displayName: "U2" },
+      ]);
+      mockRoom.emit("presence", []);
+    });
+
+    expect(result.current).toEqual(["u2", "u3"]);
+  });
+
+  it("does NOT re-render when presence data changes (same userId set)", async () => {
+    setup();
+    mockRoom.setOthers([{ userId: "u2", displayName: "U2" }]);
+
+    const { result } = renderHook(() => useOthersUserIds(), { wrapper });
+    const first = result.current;
+
+    await act(() => {
+      mockRoom.setOthers([{ userId: "u2", displayName: "U2-renamed" }]);
+      mockRoom.emit("presence", []);
+    });
+
+    expect(result.current).toBe(first); // same reference
   });
 });
