@@ -21,6 +21,15 @@ export { useCursors, useUpdateCursor } from "./use-cursors.js";
 export { useBroadcastEvent } from "./use-broadcast-event.js";
 export { useEventListener } from "./use-event-listener.js";
 
+// Presence hooks
+export { useOthersOnLocation, usePresenceEvent } from "./use-presence-event.js";
+
+// Live state hooks
+export { useLiveState, useLiveStateData, useSetLiveState } from "./use-live-state.js";
+
+// Undo/redo hooks
+export { useUndo, useRedo, useCanUndo, useCanRedo, useHistory } from "./use-undo-redo.js";
+
 // Re-export CRDT types for convenience
 export {
   LiveObject,
@@ -30,6 +39,7 @@ export {
 
 // Re-export client types
 export type {
+  OnlineStatus,
   ConnectionStatus,
   PresenceUser,
   CursorData,

@@ -28,6 +28,14 @@ export interface RoomProviderProps {
   initialStorage?: Record<string, unknown>;
   /** Throttle interval for cursor broadcasts in ms (default: 50) */
   cursorThrottleMs?: number;
+  /** Time in ms before marking user as away */
+  inactivityTime?: number;
+  /** Time in ms before marking user as offline */
+  offlineInactivityTime?: number;
+  /** Location identifier for this client */
+  location?: string;
+  /** Arbitrary presence metadata */
+  presenceMetadata?: Record<string, unknown>;
   children: ReactNode;
 }
 
@@ -50,6 +58,10 @@ export function RoomProvider({
   displayName,
   initialStorage,
   cursorThrottleMs,
+  inactivityTime,
+  offlineInactivityTime,
+  location,
+  presenceMetadata,
   children,
 }: RoomProviderProps): ReactNode {
   const client = useClient();
@@ -63,6 +75,8 @@ export function RoomProvider({
       displayName,
       initialStorage,
       cursorThrottleMs,
+      inactivityTime,
+      offlineInactivityTime,
     });
     roomRef.current = { room, roomId };
   }
@@ -79,6 +93,14 @@ export function RoomProvider({
 
     // Ensure connected — handles strict-mode remount after prior cleanup
     room.connect();
+
+    // Send initial presence metadata if provided
+    if (location || presenceMetadata) {
+      (room as any).updatePresence?.({
+        ...(location && { location }),
+        ...(presenceMetadata && { metadata: presenceMetadata }),
+      });
+    }
 
     room.getStorage().then((s) => {
       if (!cancelled) setStorage(s);

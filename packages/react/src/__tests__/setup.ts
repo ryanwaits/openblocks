@@ -83,6 +83,36 @@ export function createMockRoom(overrides?: {
   let _others: any[] = [];
   let _cursors = new Map();
 
+  let _liveStates = new Map<string, { value: unknown; timestamp: number; userId: string }>();
+  const liveStateListeners = new Map<string, Set<() => void>>();
+
+  function subscribeLiveState(key: string, cb: () => void) {
+    let set = liveStateListeners.get(key);
+    if (!set) { set = new Set(); liveStateListeners.set(key, set); }
+    set.add(cb);
+    return () => { set!.delete(cb); };
+  }
+
+  function emitLiveState(key: string) {
+    const set = liveStateListeners.get(key);
+    if (set) for (const cb of set) cb();
+  }
+
+  // Mock history
+  let _canUndo = false;
+  let _canRedo = false;
+  const historyListeners = new Set<() => void>();
+  const mockHistory = {
+    canUndo: () => _canUndo,
+    canRedo: () => _canRedo,
+    subscribe: (cb: () => void) => {
+      historyListeners.add(cb);
+      return () => { historyListeners.delete(cb); };
+    },
+    setCanUndo(v: boolean) { _canUndo = v; for (const cb of historyListeners) cb(); },
+    setCanRedo(v: boolean) { _canRedo = v; for (const cb of historyListeners) cb(); },
+  };
+
   return {
     roomId: overrides?.roomId ?? "mock",
     subscribe: mock(subscribe as any),
@@ -94,14 +124,33 @@ export function createMockRoom(overrides?: {
     setSelf(s: any) { _self = s; },
     getOthers: mock(() => _others),
     setOthers(o: any[]) { _others = o; },
+    getOthersOnLocation: mock((loc: string) => _others.filter((u: any) => u.location === loc)),
     getCursors: mock(() => new Map(_cursors)),
     setCursors(c: Map<string, any>) { _cursors = c; },
     getStorage: overrides?.getStorage ?? mock(() => Promise.resolve({ root: {} })),
     batch: mock((fn: () => any) => fn()),
     send: mock(() => {}),
     updateCursor: mock((_x: number, _y: number) => {}),
+    updatePresence: mock((_data: any) => {}),
     connect: mock(() => {}),
     disconnect: mock(() => {}),
+    // Live state
+    setLiveState: mock((key: string, value: unknown) => {
+      _liveStates.set(key, { value, timestamp: Date.now(), userId: "mock" });
+      emitLiveState(key);
+    }),
+    getLiveState: mock((key: string) => _liveStates.get(key)?.value),
+    getAllLiveStates: mock(() => new Map(_liveStates)),
+    subscribeLiveState: mock(subscribeLiveState),
+    setMockLiveState(key: string, value: unknown) {
+      _liveStates.set(key, { value, timestamp: Date.now(), userId: "other" });
+      emitLiveState(key);
+    },
+    // Undo/redo
+    undo: mock(() => {}),
+    redo: mock(() => {}),
+    getHistory: mock(() => mockHistory),
+    mockHistory,
   };
 }
 
