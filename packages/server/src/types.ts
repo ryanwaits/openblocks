@@ -49,6 +49,8 @@ export interface ServerConfig {
   onLeave?: OnLeaveHandler;
   onStorageChange?: OnStorageChangeHandler;
   initialStorage?: InitialStorageHandler;
+  initialYjs?: InitialYjsHandler;
+  onYjsChange?: OnYjsChangeHandler;
 }
 
 // --- Storage Callbacks ---
@@ -61,6 +63,17 @@ export type OnStorageChangeHandler = (
 export type InitialStorageHandler = (
   roomId: string
 ) => Promise<SerializedCrdt | null>;
+
+// --- Yjs Callbacks ---
+
+export type InitialYjsHandler = (
+  roomId: string
+) => Promise<Uint8Array | null>;
+
+export type OnYjsChangeHandler = (
+  roomId: string,
+  state: Uint8Array
+) => void | Promise<void>;
 
 // --- Callbacks ---
 

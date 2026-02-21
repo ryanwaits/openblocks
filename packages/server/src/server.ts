@@ -4,6 +4,7 @@ import { URL } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
 import { StorageDocument, LiveObject } from "@waits/openblocks-storage";
 import type { StorageOp, SerializedCrdt } from "@waits/openblocks-types";
+import * as Y from "yjs";
 import { Room } from "./room.js";
 import { RoomManager } from "./room-manager.js";
 import type {
@@ -15,6 +16,8 @@ import type {
   OnLeaveHandler,
   OnStorageChangeHandler,
   InitialStorageHandler,
+  InitialYjsHandler,
+  OnYjsChangeHandler,
   AuthHandler,
 } from "./types.js";
 
@@ -37,6 +40,14 @@ function colorForUser(userId: string): string {
   return COLORS[Math.abs(hashCode(userId)) % COLORS.length];
 }
 
+function toBase64(data: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
+  }
+  return btoa(binary);
+}
+
 const DEFAULT_PATH = "/rooms";
 const DEFAULT_CLEANUP_MS = 30_000;
 
@@ -55,6 +66,8 @@ export class OpenBlocksServer {
   private onLeave?: OnLeaveHandler;
   private onStorageChange?: OnStorageChangeHandler;
   private initialStorage?: InitialStorageHandler;
+  private initialYjs?: InitialYjsHandler;
+  private onYjsChange?: OnYjsChangeHandler;
 
   // Map ws instance → { roomId, connectionId } for close handler
   private wsMetadata = new WeakMap<
@@ -87,6 +100,8 @@ export class OpenBlocksServer {
     this.onLeave = config.onLeave;
     this.onStorageChange = config.onStorageChange;
     this.initialStorage = config.initialStorage;
+    this.initialYjs = config.initialYjs;
+    this.onYjsChange = config.onYjsChange;
 
     this.httpServer = http.createServer((req, res) => {
       if (req.method === "GET" && req.url === this.healthPath) {
@@ -399,6 +414,46 @@ export class OpenBlocksServer {
       );
     }
 
+    // Send Yjs state to new connection
+    if (room.yjsInitialized) {
+      const yjsDoc = room.getYjsDoc()!;
+      const state = Y.encodeStateAsUpdate(yjsDoc);
+      const encoded = toBase64(state);
+      room.send(
+        connectionId,
+        JSON.stringify({ type: "yjs:sync-step2", data: encoded })
+      );
+    } else if (this.initialYjs) {
+      if (!room.yjsInitPromise) {
+        room.yjsInitPromise = Promise.resolve(this.initialYjs(meta.roomId))
+          .then((data) => {
+            if (data && !room.yjsInitialized) {
+              const doc = new Y.Doc();
+              Y.applyUpdate(doc, data);
+              room.initYjs(doc);
+              const state = Y.encodeStateAsUpdate(doc);
+              const encoded = toBase64(state);
+              room.broadcast(
+                JSON.stringify({ type: "yjs:sync-step2", data: encoded })
+              );
+            }
+          })
+          .catch(() => {});
+      } else {
+        room.yjsInitPromise.then(() => {
+          if (room.yjsInitialized) {
+            const yjsDoc = room.getYjsDoc()!;
+            const state = Y.encodeStateAsUpdate(yjsDoc);
+            const encoded = toBase64(state);
+            room.send(
+              connectionId,
+              JSON.stringify({ type: "yjs:sync-step2", data: encoded })
+            );
+          }
+        });
+      }
+    }
+
     // Fire onJoin callback
     if (this.onJoin) {
       Promise.resolve(this.onJoin(meta.roomId, user)).catch(() => {});
@@ -560,6 +615,65 @@ export class OpenBlocksServer {
         JSON.stringify({ type: "cursor:update", cursor }),
         [connectionId]
       );
+      return;
+    }
+
+    // --- Yjs message interception ---
+
+    if (parsed.type === "yjs:update") {
+      const data = parsed.data as string;
+      if (typeof data !== "string") return;
+      const update = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+      // Lazy Y.Doc creation
+      let doc = room.getYjsDoc();
+      if (!doc) {
+        doc = new Y.Doc();
+        room.initYjs(doc);
+      }
+      Y.applyUpdate(doc, update);
+      room.broadcast(JSON.stringify(parsed), [connectionId]);
+      if (this.onYjsChange) {
+        const snapshot = Y.encodeStateAsUpdate(doc);
+        Promise.resolve(this.onYjsChange(roomId, snapshot)).catch(() => {});
+      }
+      return;
+    }
+
+    if (parsed.type === "yjs:sync-step1") {
+      const data = parsed.data as string;
+      if (typeof data !== "string") return;
+      const stateVector = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+      const doc = room.getYjsDoc();
+      if (doc) {
+        const diff = Y.encodeStateAsUpdate(doc, stateVector);
+        const encoded = toBase64(diff);
+        room.send(
+          connectionId,
+          JSON.stringify({ type: "yjs:sync-step2", data: encoded })
+        );
+      }
+      // Also relay to peers so they can respond too
+      room.broadcast(JSON.stringify(parsed), [connectionId]);
+      return;
+    }
+
+    if (parsed.type === "yjs:sync-step2") {
+      const data = parsed.data as string;
+      if (typeof data !== "string") return;
+      const update = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
+      let doc = room.getYjsDoc();
+      if (!doc) {
+        doc = new Y.Doc();
+        room.initYjs(doc);
+      }
+      Y.applyUpdate(doc, update);
+      room.broadcast(JSON.stringify(parsed), [connectionId]);
+      return;
+    }
+
+    if (parsed.type === "yjs:awareness") {
+      // Relay only — no server-side awareness tracking
+      room.broadcast(JSON.stringify(parsed), [connectionId]);
       return;
     }
 

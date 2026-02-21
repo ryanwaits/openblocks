@@ -1,5 +1,6 @@
 import WebSocket from "ws";
 import type { StorageDocument } from "@waits/openblocks-storage";
+import type { Doc as YDoc } from "yjs";
 import type { Connection, PresenceUser } from "./types.js";
 import { LiveStateStore } from "./live-state.js";
 
@@ -11,6 +12,11 @@ export class Room {
   storageInitPromise: Promise<void> | null = null;
   private _presenceCache: string | null = null;
   readonly liveState: LiveStateStore = new LiveStateStore();
+
+  // Yjs state
+  private _yjsDoc: YDoc | null = null;
+  private _yjsInitialized = false;
+  yjsInitPromise: Promise<void> | null = null;
 
   constructor(id: string) {
     this.id = id;
@@ -93,6 +99,20 @@ export class Room {
       location: c.location ?? c.user.location,
       metadata: c.metadata ?? c.user.metadata,
     }));
+  }
+
+  // Yjs accessors
+  get yjsInitialized(): boolean {
+    return this._yjsInitialized;
+  }
+
+  initYjs(doc: YDoc): void {
+    this._yjsDoc = doc;
+    this._yjsInitialized = true;
+  }
+
+  getYjsDoc(): YDoc | null {
+    return this._yjsDoc;
   }
 
   get size(): number {

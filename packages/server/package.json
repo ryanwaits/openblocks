@@ -25,7 +25,8 @@
   "dependencies": {
     "@waits/openblocks-storage": "workspace:*",
     "@waits/openblocks-types": "workspace:*",
-    "ws": "^8.19.0"
+    "ws": "^8.19.0",
+    "yjs": "^13.6.29"
   },
   "devDependencies": {
     "@types/ws": "^8.5.14",

@@ -19,5 +19,7 @@ export type {
   OnLeaveHandler,
   OnStorageChangeHandler,
   InitialStorageHandler,
+  InitialYjsHandler,
+  OnYjsChangeHandler,
   Connection,
 } from "./types.js";
