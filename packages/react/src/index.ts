@@ -30,6 +30,10 @@ export { useCursors, useUpdateCursor } from "./use-cursors.js";
 export { useBroadcastEvent } from "./use-broadcast-event.js";
 export { useEventListener } from "./use-event-listener.js";
 
+// Follow mode
+export { useFollowUser } from "./use-follow-user.js";
+export type { UseFollowUserOptions, UseFollowUserReturn } from "./use-follow-user.js";
+
 // Error listener
 export { useErrorListener } from "./use-error-listener.js";
 

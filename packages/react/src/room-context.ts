@@ -36,6 +36,8 @@ export interface RoomProviderProps {
   location?: string;
   /** Arbitrary presence metadata */
   presenceMetadata?: Record<string, unknown>;
+  /** Authentication token sent as query param on WebSocket connect */
+  token?: string;
   children: ReactNode;
 }
 
@@ -62,6 +64,7 @@ export function RoomProvider({
   offlineInactivityTime,
   location,
   presenceMetadata,
+  token,
   children,
 }: RoomProviderProps): ReactNode {
   const client = useClient();
@@ -77,6 +80,7 @@ export function RoomProvider({
       cursorThrottleMs,
       inactivityTime,
       offlineInactivityTime,
+      token,
     });
     roomRef.current = { room, roomId };
   }

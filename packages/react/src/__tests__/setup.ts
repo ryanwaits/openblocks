@@ -151,6 +151,11 @@ export function createMockRoom(overrides?: {
     redo: mock(() => {}),
     getHistory: mock(() => mockHistory),
     mockHistory,
+    // Follow
+    followUser: mock((_targetUserId: string) => {}),
+    stopFollowing: mock(() => {}),
+    getFollowing: mock(() => null as string | null),
+    getFollowers: mock(() => [] as string[]),
   };
 }
 
