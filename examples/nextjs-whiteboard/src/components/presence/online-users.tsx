@@ -23,7 +23,13 @@ export function OnlineUsers({ followingUserId, onFollow }: OnlineUsersProps) {
   const others = useOthersMapped((u) => ({ userId: u.userId, displayName: u.displayName, color: u.color }));
   const self = useSelf();
   const selfMapped = self ? { userId: self.userId, displayName: self.displayName, color: self.color } : null;
-  const onlineUsers = selfMapped ? [selfMapped, ...others] : [...others];
+  const seen = new Set<string>(selfMapped ? [selfMapped.userId] : []);
+  const dedupedOthers = others.filter((u) => {
+    if (seen.has(u.userId)) return false;
+    seen.add(u.userId);
+    return true;
+  });
+  const onlineUsers = selfMapped ? [selfMapped, ...dedupedOthers] : dedupedOthers;
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
