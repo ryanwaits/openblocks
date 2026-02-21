@@ -1,0 +1,50 @@
+{
+  "name": "@waits/openblocks-react-codemirror",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "CodeMirror 6 integration for OpenBlocks collaborative editing",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "bunup src/index.ts --format esm,cjs --dts"
+  },
+  "dependencies": {
+    "@waits/openblocks-yjs": "workspace:*",
+    "@waits/openblocks-react": "workspace:*",
+    "@codemirror/language-data": "^6.5.2",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "y-codemirror.next": "^0.3.5"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "yjs": "^13",
+    "@codemirror/state": "^6",
+    "@codemirror/view": "^6",
+    "@codemirror/language": "^6",
+    "@lezer/highlight": "^1"
+  },
+  "devDependencies": {
+    "@codemirror/state": "^6.5.4",
+    "@codemirror/view": "^6.39.15",
+    "@codemirror/language": "^6.12.1",
+    "@lezer/highlight": "^1.2.3",
+    "@types/react": "^19",
+    "react": "^19",
+    "typescript": "^5",
+    "yjs": "^13.6.29"
+  }
+}

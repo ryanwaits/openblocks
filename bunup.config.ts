@@ -9,6 +9,7 @@ export default defineWorkspace(
     { name: "@waits/openblocks-react", root: "packages/react" },
     { name: "@waits/openblocks-yjs", root: "packages/yjs" },
     { name: "@waits/openblocks-react-tiptap", root: "packages/react-tiptap" },
+    { name: "@waits/openblocks-react-codemirror", root: "packages/react-codemirror" },
     { name: "@waits/openblocks-ui", root: "packages/ui" },
     { name: "@waits/openblocks-cli", root: "packages/cli" },
   ],
