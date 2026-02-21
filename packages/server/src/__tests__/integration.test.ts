@@ -1,38 +1,7 @@
 import { describe, it, expect, afterEach, mock } from "bun:test";
 import WebSocket from "ws";
 import { OpenBlocksServer } from "../server";
-
-function connectClient(
-  port: number,
-  roomId: string,
-  params: Record<string, string> = {}
-): WebSocket {
-  const qs = new URLSearchParams(params).toString();
-  const url = `ws://127.0.0.1:${port}/rooms/${roomId}${qs ? "?" + qs : ""}`;
-  return new WebSocket(url);
-}
-
-function waitForOpen(ws: WebSocket): Promise<void> {
-  return new Promise((resolve, reject) => {
-    ws.once("open", resolve);
-    ws.once("error", reject);
-  });
-}
-
-function nextMessage(ws: WebSocket): Promise<Record<string, unknown>> {
-  return new Promise((resolve) => {
-    const handler = (data: any) => {
-      const parsed = JSON.parse(data.toString());
-      // Skip storage:init messages — they're tested separately
-      if (parsed.type === "storage:init") {
-        ws.once("message", handler);
-        return;
-      }
-      resolve(parsed);
-    };
-    ws.once("message", handler);
-  });
-}
+import { connectClient, waitForOpen, createMessageStream } from "./test-helpers";
 
 describe("Integration", () => {
   let server: OpenBlocksServer | null = null;
@@ -59,9 +28,10 @@ describe("Integration", () => {
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice", displayName: "Alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
 
-    const msg = await nextMessage(ws);
+    const msg = await stream.nextOfType("presence");
     expect(msg.type).toBe("presence");
     const users = msg.users as any[];
     expect(users).toHaveLength(1);
@@ -75,24 +45,26 @@ describe("Integration", () => {
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream1 = createMessageStream(ws1);
     await waitForOpen(ws1);
-    await nextMessage(ws1); // presence with 1 user
+    await stream1.nextOfType("presence"); // presence with 1 user
 
     const ws2 = track(connectClient(server.port, "room1", { userId: "bob" }));
+    const stream2 = createMessageStream(ws2);
     await waitForOpen(ws2);
 
     // ws1 gets updated presence with 2 users
-    const msg1 = await nextMessage(ws1);
+    const msg1 = await stream1.nextOfType("presence");
     expect(msg1.type).toBe("presence");
     expect((msg1.users as any[]).length).toBe(2);
 
     // ws2 also gets presence with 2 users
-    const msg2 = await nextMessage(ws2);
+    const msg2 = await stream2.nextOfType("presence");
     expect(msg2.type).toBe("presence");
     expect((msg2.users as any[]).length).toBe(2);
 
     // Now disconnect ws2 and check ws1 gets updated presence
-    const presenceUpdate = nextMessage(ws1);
+    const presenceUpdate = stream1.nextOfType("presence");
     ws2.close();
     const msg3 = await presenceUpdate;
     expect(msg3.type).toBe("presence");
@@ -104,19 +76,21 @@ describe("Integration", () => {
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice", displayName: "Alice" }));
+    const stream1 = createMessageStream(ws1);
     await waitForOpen(ws1);
-    await nextMessage(ws1); // presence
+    await stream1.nextOfType("presence"); // presence
 
     const ws2 = track(connectClient(server.port, "room1", { userId: "bob" }));
+    const stream2 = createMessageStream(ws2);
     await waitForOpen(ws2);
-    await nextMessage(ws1); // presence update
-    await nextMessage(ws2); // presence
+    await stream1.nextOfType("presence"); // presence update
+    await stream2.nextOfType("presence"); // presence
 
     // ws1 sends cursor update
     ws1.send(JSON.stringify({ type: "cursor:update", x: 10, y: 20 }));
 
     // ws2 receives enriched cursor
-    const msg = await nextMessage(ws2);
+    const msg = await stream2.nextOfType("cursor:update");
     expect(msg.type).toBe("cursor:update");
     const cursor = msg.cursor as any;
     expect(cursor.userId).toBe("alice");
@@ -128,7 +102,7 @@ describe("Integration", () => {
     // ws1 should NOT receive its own cursor back — verify by sending another message
     // and checking that ws1 gets that next (not a stale cursor)
     ws2.send(JSON.stringify({ type: "ping", value: 1 }));
-    const nextMsg = await nextMessage(ws1);
+    const nextMsg = await stream1.nextOfType("ping");
     expect(nextMsg.type).toBe("ping");
   });
 
@@ -138,17 +112,19 @@ describe("Integration", () => {
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream1 = createMessageStream(ws1);
     await waitForOpen(ws1);
-    await nextMessage(ws1);
+    await stream1.nextOfType("presence");
 
     const ws2 = track(connectClient(server.port, "room1", { userId: "bob" }));
+    const stream2 = createMessageStream(ws2);
     await waitForOpen(ws2);
-    await nextMessage(ws1);
-    await nextMessage(ws2);
+    await stream1.nextOfType("presence");
+    await stream2.nextOfType("presence");
 
     ws1.send(JSON.stringify({ type: "custom:action", payload: "hello" }));
 
-    const msg = await nextMessage(ws2);
+    const msg = await stream2.nextOfType("custom:action");
     expect(msg.type).toBe("custom:action");
     expect(msg.payload).toBe("hello");
 
@@ -164,8 +140,9 @@ describe("Integration", () => {
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
-    await nextMessage(ws);
+    await stream.nextOfType("presence");
 
     expect(server.getRoomManager().roomCount).toBe(1);
 
@@ -200,8 +177,9 @@ describe("Integration", () => {
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
-    await nextMessage(ws);
+    await stream.nextOfType("presence");
 
     await new Promise((r) => setTimeout(r, 20));
     expect(onJoin).toHaveBeenCalledTimes(1);

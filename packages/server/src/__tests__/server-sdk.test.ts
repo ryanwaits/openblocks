@@ -1,40 +1,7 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import WebSocket from "ws";
 import { OpenBlocksServer } from "../server";
-
-function connectClient(
-  port: number,
-  roomId: string,
-  params: Record<string, string> = {}
-): WebSocket {
-  const qs = new URLSearchParams(params).toString();
-  const url = `ws://127.0.0.1:${port}/rooms/${roomId}${qs ? "?" + qs : ""}`;
-  return new WebSocket(url);
-}
-
-function waitForOpen(ws: WebSocket): Promise<void> {
-  return new Promise((resolve, reject) => {
-    ws.once("open", resolve);
-    ws.once("error", reject);
-  });
-}
-
-function nextMessageOfType(
-  ws: WebSocket,
-  type: string
-): Promise<Record<string, unknown>> {
-  return new Promise((resolve) => {
-    const handler = (data: any) => {
-      const parsed = JSON.parse(data.toString());
-      if (parsed.type === type) {
-        resolve(parsed);
-      } else {
-        ws.once("message", handler);
-      }
-    };
-    ws.once("message", handler);
-  });
-}
+import { connectClient, waitForOpen, createMessageStream } from "./test-helpers";
 
 describe("Server SDK methods", () => {
   let server: OpenBlocksServer | null = null;
@@ -66,10 +33,11 @@ describe("Server SDK methods", () => {
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
-    await nextMessageOfType(ws, "storage:init");
+    await stream.nextOfType("storage:init");
 
-    const opsP = nextMessageOfType(ws, "storage:ops");
+    const opsP = stream.nextOfType("storage:ops");
     const result = await server.mutateStorage("room1", (root) => {
       root.set("newKey", "newValue");
     });
@@ -103,8 +71,9 @@ describe("Server SDK methods", () => {
 
     // Connect to create the room, but storage:init returns null (no initialStorage callback)
     const ws = track(connectClient(server.port, "room2", { userId: "alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
-    await nextMessageOfType(ws, "storage:init"); // null root
+    await stream.nextOfType("storage:init"); // null root
 
     const result = await server.mutateStorage("room2", (root) => {
       root.set("x", 1);
@@ -148,12 +117,13 @@ describe("Server SDK methods", () => {
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
 
     // Wait for initial presence message to flush
     await new Promise((r) => setTimeout(r, 50));
 
-    const stateP = nextMessageOfType(ws, "state:update");
+    const stateP = stream.nextOfType("state:update");
     const result = server.setLiveState("room1", "theme", "dark");
     expect(result).toBe(true);
 

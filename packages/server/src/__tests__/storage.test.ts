@@ -1,48 +1,7 @@
 import { describe, it, expect, afterEach, mock } from "bun:test";
 import WebSocket from "ws";
 import { OpenBlocksServer } from "../server";
-
-function connectClient(
-  port: number,
-  roomId: string,
-  params: Record<string, string> = {}
-): WebSocket {
-  const qs = new URLSearchParams(params).toString();
-  const url = `ws://127.0.0.1:${port}/rooms/${roomId}${qs ? "?" + qs : ""}`;
-  return new WebSocket(url);
-}
-
-function waitForOpen(ws: WebSocket): Promise<void> {
-  return new Promise((resolve, reject) => {
-    ws.once("open", resolve);
-    ws.once("error", reject);
-  });
-}
-
-function nextMessage(ws: WebSocket): Promise<Record<string, unknown>> {
-  return new Promise((resolve) => {
-    ws.once("message", (data) => {
-      resolve(JSON.parse(data.toString()));
-    });
-  });
-}
-
-function nextMessageOfType(
-  ws: WebSocket,
-  type: string
-): Promise<Record<string, unknown>> {
-  return new Promise((resolve) => {
-    const handler = (data: any) => {
-      const parsed = JSON.parse(data.toString());
-      if (parsed.type === type) {
-        resolve(parsed);
-      } else {
-        ws.once("message", handler);
-      }
-    };
-    ws.once("message", handler);
-  });
-}
+import { connectClient, waitForOpen, createMessageStream } from "./test-helpers";
 
 describe("Server Storage", () => {
   let server: OpenBlocksServer | null = null;
@@ -67,9 +26,10 @@ describe("Server Storage", () => {
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
 
-    const msg = await nextMessageOfType(ws, "storage:init");
+    const msg = await stream.nextOfType("storage:init");
     expect(msg.type).toBe("storage:init");
     expect(msg.root).toBeNull();
   });
@@ -79,12 +39,14 @@ describe("Server Storage", () => {
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream1 = createMessageStream(ws1);
     await waitForOpen(ws1);
-    await nextMessageOfType(ws1, "storage:init"); // null root
+    await stream1.nextOfType("storage:init"); // null root
 
     const ws2 = track(connectClient(server.port, "room1", { userId: "bob" }));
+    const stream2 = createMessageStream(ws2);
     await waitForOpen(ws2);
-    await nextMessageOfType(ws2, "storage:init"); // null root
+    await stream2.nextOfType("storage:init"); // null root
 
     // Client 1 initializes storage
     const initData = {
@@ -92,8 +54,8 @@ describe("Server Storage", () => {
       data: { counter: 0, name: "test" },
     };
     // Set up listeners BEFORE sending to avoid dropped messages
-    const p1 = nextMessageOfType(ws1, "storage:init");
-    const p2 = nextMessageOfType(ws2, "storage:init");
+    const p1 = stream1.nextOfType("storage:init");
+    const p2 = stream2.nextOfType("storage:init");
     ws1.send(JSON.stringify({ type: "storage:init", root: initData }));
 
     const [msg1, msg2] = await Promise.all([p1, p2]);
@@ -106,8 +68,9 @@ describe("Server Storage", () => {
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream1 = createMessageStream(ws1);
     await waitForOpen(ws1);
-    await nextMessageOfType(ws1, "storage:init");
+    await stream1.nextOfType("storage:init");
 
     // Init storage
     ws1.send(
@@ -116,15 +79,16 @@ describe("Server Storage", () => {
         root: { type: "LiveObject", data: { x: 0 } },
       })
     );
-    await nextMessageOfType(ws1, "storage:init");
+    await stream1.nextOfType("storage:init");
 
     const ws2 = track(connectClient(server.port, "room1", { userId: "bob" }));
+    const stream2 = createMessageStream(ws2);
     await waitForOpen(ws2);
-    await nextMessageOfType(ws2, "storage:init"); // snapshot
+    await stream2.nextOfType("storage:init"); // snapshot
 
     // Set up listeners BEFORE sending ops
-    const opsP1 = nextMessageOfType(ws1, "storage:ops");
-    const opsP2 = nextMessageOfType(ws2, "storage:ops");
+    const opsP1 = stream1.nextOfType("storage:ops");
+    const opsP2 = stream2.nextOfType("storage:ops");
 
     const ops = [{ type: "set", path: [], key: "x", value: 42, clock: 1 }];
     ws1.send(JSON.stringify({ type: "storage:ops", ops }));
@@ -140,8 +104,9 @@ describe("Server Storage", () => {
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream1 = createMessageStream(ws1);
     await waitForOpen(ws1);
-    await nextMessageOfType(ws1, "storage:init");
+    await stream1.nextOfType("storage:init");
 
     // Init storage with data
     ws1.send(
@@ -150,13 +115,14 @@ describe("Server Storage", () => {
         root: { type: "LiveObject", data: { name: "hello", count: 5 } },
       })
     );
-    await nextMessageOfType(ws1, "storage:init");
+    await stream1.nextOfType("storage:init");
 
     // Late joiner connects
     const ws2 = track(connectClient(server.port, "room1", { userId: "bob" }));
+    const stream2 = createMessageStream(ws2);
     await waitForOpen(ws2);
 
-    const msg = await nextMessageOfType(ws2, "storage:init");
+    const msg = await stream2.nextOfType("storage:init");
     expect(msg.root).toBeTruthy();
     const root = msg.root as any;
     expect(root.type).toBe("LiveObject");
@@ -170,8 +136,9 @@ describe("Server Storage", () => {
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
-    await nextMessageOfType(ws, "storage:init");
+    await stream.nextOfType("storage:init");
 
     ws.send(
       JSON.stringify({
@@ -179,11 +146,11 @@ describe("Server Storage", () => {
         root: { type: "LiveObject", data: { x: 0 } },
       })
     );
-    await nextMessageOfType(ws, "storage:init");
+    await stream.nextOfType("storage:init");
 
     const ops = [{ type: "set", path: [], key: "x", value: 10, clock: 1 }];
     ws.send(JSON.stringify({ type: "storage:ops", ops }));
-    await nextMessageOfType(ws, "storage:ops");
+    await stream.nextOfType("storage:ops");
 
     // Wait for async callback
     await new Promise((r) => setTimeout(r, 50));
@@ -201,9 +168,10 @@ describe("Server Storage", () => {
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
 
-    const msg = await nextMessageOfType(ws, "storage:init");
+    const msg = await stream.nextOfType("storage:init");
     expect(msg.root).toBeTruthy();
     const root = msg.root as any;
     expect(root.data.seeded).toBe(true);
@@ -215,8 +183,9 @@ describe("Server Storage", () => {
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
+    const stream = createMessageStream(ws);
     await waitForOpen(ws);
-    await nextMessageOfType(ws, "storage:init"); // null root
+    await stream.nextOfType("storage:init"); // null root
 
     // Send ops without initializing storage
     const ops = [{ type: "set", path: [], key: "x", value: 42, clock: 1 }];
