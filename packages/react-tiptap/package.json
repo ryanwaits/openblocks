@@ -1,0 +1,44 @@
+{
+  "name": "@waits/openblocks-react-tiptap",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Tiptap integration for OpenBlocks collaborative editing",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "bunup src/index.ts --format esm,cjs --dts"
+  },
+  "dependencies": {
+    "@waits/openblocks-yjs": "workspace:*",
+    "@waits/openblocks-react": "workspace:*",
+    "y-prosemirror": "^1.3.7"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "@tiptap/react": "^3",
+    "@tiptap/pm": "^3",
+    "yjs": "^13"
+  },
+  "devDependencies": {
+    "@tiptap/react": "^3.20.0",
+    "@tiptap/pm": "^3.20.0",
+    "@types/react": "^19",
+    "react": "^19",
+    "typescript": "^5",
+    "yjs": "^13.6.29"
+  }
+}
