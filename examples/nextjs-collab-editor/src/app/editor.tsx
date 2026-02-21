@@ -9,16 +9,8 @@ import {
   FloatingToolbar,
 } from "@waits/openblocks-react-tiptap";
 
-export function CollaborativeEditor({
-  displayName,
-  userColor,
-}: {
-  displayName: string;
-  userColor: string;
-}) {
-  const openblocks = useOpenBlocksExtension({
-    user: { name: displayName, color: userColor },
-  });
+export function CollaborativeEditor() {
+  const openblocks = useOpenBlocksExtension();
 
   const editor = useEditor({
     immediatelyRender: false,

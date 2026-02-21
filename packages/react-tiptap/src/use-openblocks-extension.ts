@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useRoom } from "@waits/openblocks-react";
+import { useRoom, useSelf } from "@waits/openblocks-react";
 import { OpenBlocksYjsProvider } from "@waits/openblocks-yjs";
 import { Extension } from "@tiptap/react";
 import {
@@ -23,38 +23,43 @@ export function yjsRedo(editor: { view: { state: any; dispatch: any } }): boolea
 export interface UseOpenBlocksExtensionOptions {
   /** Name of the Y.XmlFragment field in the Y.Doc. Defaults to "default". */
   field?: string;
-  /** User info for cursor display. */
-  user?: { name: string; color: string };
+  /** Override cursor display info. Defaults to presence name + color from server. */
+  user?: { name?: string; color?: string };
 }
 
 export function useOpenBlocksExtension(
   options?: UseOpenBlocksExtensionOptions
 ): Extension {
   const room = useRoom();
+  const self = useSelf();
   const field = options?.field ?? "default";
-  const userName = options?.user?.name;
-  const userColor = options?.user?.color;
+  // Auto-source from presence, allow override
+  const userName = options?.user?.name ?? self?.displayName;
+  const userColor = options?.user?.color ?? self?.color;
 
   // Track mount state for strict-mode-safe cleanup (same pattern as RoomProvider)
   const mountedRef = useRef(true);
   const providerRef = useRef<OpenBlocksYjsProvider | null>(null);
 
   // Create provider once — persists through strict mode re-renders
+  // Set awareness BEFORE connect() so user info is available during sync
   if (!providerRef.current) {
     providerRef.current = new OpenBlocksYjsProvider(room);
+    providerRef.current.awareness.setLocalStateField("user", {
+      name: userName ?? "Anonymous",
+      color: userColor ?? "#999999",
+    });
     providerRef.current.connect();
   }
 
   const provider = providerRef.current;
 
-  // Set awareness user info
+  // Update awareness if user info changes after initial creation
   useEffect(() => {
-    if (userName || userColor) {
-      provider.awareness.setLocalStateField("user", {
-        name: userName ?? "Anonymous",
-        color: userColor ?? "#999999",
-      });
-    }
+    provider.awareness.setLocalStateField("user", {
+      name: userName ?? "Anonymous",
+      color: userColor ?? "#999999",
+    });
   }, [provider, userName, userColor]);
 
   // Deferred cleanup — allow strict mode remount to cancel destruction

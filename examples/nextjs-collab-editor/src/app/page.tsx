@@ -16,19 +16,9 @@ const serverUrl =
   process.env.NEXT_PUBLIC_OPENBLOCKS_HOST || "http://localhost:2002";
 const client = new OpenBlocksClient({ serverUrl, reconnect: true });
 
-const COLORS = [
-  "#ef4444", "#f97316", "#eab308", "#22c55e",
-  "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6",
-];
-
-function randomColor(): string {
-  return COLORS[Math.floor(Math.random() * COLORS.length)];
-}
-
 export default function EditorPage() {
   const [userId] = useState(() => crypto.randomUUID().slice(0, 8));
   const [displayName, setDisplayName] = useState("");
-  const [userColor] = useState(randomColor);
   const [joined, setJoined] = useState(false);
 
   if (!joined) {
@@ -79,7 +69,7 @@ export default function EditorPage() {
             </div>
           }
         >
-          {() => <EditorLayout displayName={displayName} userColor={userColor} />}
+          {() => <EditorLayout />}
         </ClientSideSuspense>
       </RoomProvider>
     </OpenBlocksProvider>
@@ -107,13 +97,7 @@ function DocumentTitle() {
   );
 }
 
-function EditorLayout({
-  displayName,
-  userColor,
-}: {
-  displayName: string;
-  userColor: string;
-}) {
+function EditorLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
@@ -129,10 +113,7 @@ function EditorLayout({
 
       {/* Editor */}
       <main className="flex-1 flex flex-col items-center pt-4">
-        <CollaborativeEditor
-          displayName={displayName}
-          userColor={userColor}
-        />
+        <CollaborativeEditor />
       </main>
     </div>
   );
