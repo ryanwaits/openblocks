@@ -90,6 +90,7 @@ export class OpenBlocksYjsProvider {
       if (status === "connected") {
         this._synced = false;
         this.sendSyncStep1();
+        this.broadcastAwareness();
       }
     });
 
@@ -117,6 +118,7 @@ export class OpenBlocksYjsProvider {
 
     // Try to initiate sync now (if already connected, it works; if not, status listener handles it)
     this.sendSyncStep1();
+    this.broadcastAwareness();
   }
 
   disconnect(): void {
@@ -160,6 +162,15 @@ export class OpenBlocksYjsProvider {
     });
   }
 
+  private broadcastAwareness(): void {
+    if (this.awareness.getLocalState() === null) return;
+    const encoded = encodeAwarenessUpdate(this.awareness, [this.doc.clientID]);
+    this.room.send({
+      type: "yjs:awareness",
+      data: encodeUpdate(encoded),
+    });
+  }
+
   private handleMessage(message: Record<string, unknown>): void {
     const type = message.type as string;
     const data = message.data as string;
@@ -198,8 +209,17 @@ export class OpenBlocksYjsProvider {
 
       case "yjs:awareness": {
         if (typeof data !== "string") return;
+        const before = new Set(this.awareness.getStates().keys());
         const update = decodeUpdate(data);
         applyAwarenessUpdate(this.awareness, update, "remote");
+        // If a new peer appeared, re-broadcast our awareness so they get our color
+        const after = this.awareness.getStates();
+        for (const clientId of after.keys()) {
+          if (!before.has(clientId)) {
+            this.broadcastAwareness();
+            break;
+          }
+        }
         this.emit("awareness-update");
         break;
       }
