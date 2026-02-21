@@ -2,7 +2,7 @@ import http from "node:http";
 import type net from "node:net";
 import { URL } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
-import { StorageDocument } from "@waits/openblocks-storage";
+import { StorageDocument, LiveObject } from "@waits/openblocks-storage";
 import type { StorageOp, SerializedCrdt } from "@waits/openblocks-types";
 import { Room } from "./room.js";
 import { RoomManager } from "./room-manager.js";
@@ -168,6 +168,67 @@ export class OpenBlocksServer {
     if (!room) return false;
     room.broadcast(data, excludeIds);
     return true;
+  }
+
+  /**
+   * Mutate storage from the server side. Runs callback against the live root,
+   * collects generated ops, and broadcasts them to all connected clients.
+   * Returns false if the room doesn't exist or storage isn't initialized.
+   */
+  async mutateStorage(roomId: string, callback: (root: LiveObject) => void): Promise<boolean> {
+    const room = this.roomManager.get(roomId);
+    if (!room || !room.storageInitialized) return false;
+
+    const doc = room.getStorageDocument()!;
+    const collected: StorageOp[] = [];
+
+    doc.setOnOpsGenerated((ops) => collected.push(...ops));
+    const history = doc.getHistory();
+    history.pause();
+
+    try {
+      callback(doc.getRoot());
+    } finally {
+      history.resume();
+      doc.setOnOpsGenerated(() => {});
+    }
+
+    if (collected.length > 0) {
+      room.broadcast(
+        JSON.stringify({ type: "storage:ops", ops: collected, clock: doc._clock.value })
+      );
+    }
+
+    return true;
+  }
+
+  /** Return all users currently connected to a room. */
+  getRoomUsers(roomId: string): PresenceUser[] {
+    const room = this.roomManager.get(roomId);
+    return room?.getUsers() ?? [];
+  }
+
+  /**
+   * Set a live-state key from the server side. Broadcasts the update to all
+   * clients with userId "__server__". Returns false if the room doesn't exist.
+   */
+  setLiveState(roomId: string, key: string, value: unknown): boolean {
+    const room = this.roomManager.get(roomId);
+    if (!room) return false;
+    const timestamp = Date.now();
+    const accepted = room.liveState.set(key, value, timestamp, "__server__");
+    if (accepted) {
+      room.broadcast(
+        JSON.stringify({
+          type: "state:update",
+          key,
+          value: room.liveState.get(key)!.value,
+          timestamp: room.liveState.get(key)!.timestamp,
+          userId: "__server__",
+        })
+      );
+    }
+    return accepted;
   }
 
   /** Expose room manager for advanced use. */
