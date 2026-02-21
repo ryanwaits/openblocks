@@ -9,6 +9,8 @@ export interface ConnectionConfig {
   baseDelay?: number;
   maxDelay?: number;
   heartbeatIntervalMs?: number;
+  /** Abort a connection attempt if it hasn't opened within this many ms (default 10 000). */
+  connectionTimeoutMs?: number;
 }
 
 type ConnectionEvents = {
@@ -32,16 +34,19 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
   private readonly baseDelay: number;
   private readonly maxDelay: number;
   private readonly heartbeatIntervalMs: number;
+  private readonly connectionTimeoutMs: number;
+  private connectionTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(config: ConnectionConfig) {
     super();
     this.url = config.url;
     this.WS = config.WebSocket ?? globalThis.WebSocket;
     this.shouldReconnect = config.reconnect ?? true;
-    this.maxRetries = config.maxRetries ?? 10;
+    this.maxRetries = config.maxRetries ?? 20;
     this.baseDelay = config.baseDelay ?? 250;
     this.maxDelay = config.maxDelay ?? 30_000;
     this.heartbeatIntervalMs = config.heartbeatIntervalMs ?? 30_000;
+    this.connectionTimeoutMs = config.connectionTimeoutMs ?? 10_000;
   }
 
   connect(): void {
@@ -54,6 +59,7 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
   disconnect(): void {
     this.intentionalClose = true;
     this.clearReconnectTimer();
+    this.clearConnectionTimeout();
     this.stopHeartbeat();
     this.attempt = 0;
     if (this.ws) {
@@ -87,7 +93,23 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
       return;
     }
 
+    // Abort if the socket doesn't open within the timeout window.
+    // This prevents hanging forever when the server is cold-starting.
+    this.clearConnectionTimeout();
+    this.connectionTimeoutTimer = setTimeout(() => {
+      if (this.ws && this.status !== "connected") {
+        this.ws.onopen = null;
+        this.ws.onmessage = null;
+        this.ws.onerror = null;
+        this.ws.onclose = null;
+        this.ws.close();
+        this.ws = null;
+        this.handleReconnect();
+      }
+    }, this.connectionTimeoutMs);
+
     this.ws.onopen = () => {
+      this.clearConnectionTimeout();
       this.attempt = 0;
       this.setStatus("connected");
       this.startHeartbeat();
@@ -102,6 +124,7 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
     };
 
     this.ws.onclose = () => {
+      this.clearConnectionTimeout();
       this.ws = null;
       this.stopHeartbeat();
       if (this.intentionalClose) return;
@@ -136,6 +159,13 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
+    }
+  }
+
+  private clearConnectionTimeout(): void {
+    if (this.connectionTimeoutTimer) {
+      clearTimeout(this.connectionTimeoutTimer);
+      this.connectionTimeoutTimer = null;
     }
   }
 

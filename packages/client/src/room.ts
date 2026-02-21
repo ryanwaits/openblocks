@@ -24,6 +24,7 @@ export interface RoomConfig {
   WebSocket?: { new (url: string): WebSocket };
   reconnect?: boolean;
   maxRetries?: number;
+  connectionTimeoutMs?: number;
   cursorThrottleMs?: number;
   initialStorage?: Record<string, unknown>;
   inactivityTime?: number;
@@ -95,6 +96,7 @@ export class Room {
       WebSocket: config.WebSocket,
       reconnect: config.reconnect,
       maxRetries: config.maxRetries,
+      connectionTimeoutMs: config.connectionTimeoutMs,
     });
 
     this.connection.on("status", (status) => {
