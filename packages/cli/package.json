@@ -1,0 +1,37 @@
+{
+  "name": "@waits/openblocks-cli",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "CLI dev server for OpenBlocks — zero-config real-time collaboration",
+  "bin": {
+    "openblocks": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bunup src/index.ts --format esm --dts --banner.js '#!/usr/bin/env node'",
+    "postbuild": "chmod +x dist/index.js"
+  },
+  "dependencies": {
+    "@waits/openblocks-server": "workspace:*",
+    "@waits/openblocks-types": "workspace:*",
+    "commander": "^14.0.3",
+    "chalk": "^5.6.2",
+    "ora": "^9.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
