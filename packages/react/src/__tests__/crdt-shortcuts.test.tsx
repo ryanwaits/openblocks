@@ -7,8 +7,7 @@ const { createElement } = await import("react");
 const { OpenBlocksProvider } = await import("../client-context.js");
 const { RoomProvider } = await import("../room-context.js");
 const { useObject, useMap, useList } = await import("../use-crdt-shortcuts.js");
-const { LiveObject, LiveMap, LiveList } = await import("@waits/openblocks-client");
-const { StorageDocument } = await import("@waits/openblocks-storage");
+const { LiveObject, LiveMap, LiveList, StorageDocument } = await import("@waits/openblocks-client");
 
 function createStorageRoom() {
   const root = new LiveObject({
