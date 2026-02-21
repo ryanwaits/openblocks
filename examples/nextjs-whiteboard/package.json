@@ -28,7 +28,8 @@
     "@waits/openblocks-client": "workspace:*",
     "@waits/openblocks-storage": "workspace:*",
     "@waits/openblocks-react": "workspace:*",
-    "@waits/openblocks-types": "workspace:*"
+    "@waits/openblocks-types": "workspace:*",
+    "@waits/openblocks-ui": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
