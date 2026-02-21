@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useOthers, useSelf } from "@waits/openblocks-react";
+import { useOthersMapped, useSelf } from "@waits/openblocks-react";
 
 function getInitials(name: string): string {
   return name
@@ -20,9 +20,10 @@ interface OnlineUsersProps {
 }
 
 export function OnlineUsers({ followingUserId, onFollow }: OnlineUsersProps) {
-  const others = useOthers();
+  const others = useOthersMapped((u) => ({ userId: u.userId, displayName: u.displayName, color: u.color }));
   const self = useSelf();
-  const onlineUsers = self ? [self, ...others] : others;
+  const selfMapped = self ? { userId: self.userId, displayName: self.displayName, color: self.color } : null;
+  const onlineUsers = selfMapped ? [selfMapped, ...others] : [...others];
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
