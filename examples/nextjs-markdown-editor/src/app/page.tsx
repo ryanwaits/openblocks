@@ -12,7 +12,7 @@ import {
   useOthers,
   useSelf,
 } from "@waits/openblocks-react";
-import { ConnectionBadge } from "@waits/openblocks-ui";
+import { ConnectionBadge, CollabPills } from "@waits/openblocks-ui";
 import { MarkdownEditor } from "./editor";
 
 const serverUrl =
@@ -179,9 +179,28 @@ function TabBar({
     return id;
   }, []);
 
+  const deleteFile = useMutation(
+    ({ storage }, fileId: string) => {
+      const map = storage.root.get("files") as LiveMap<LiveObject<{ filename: string }>>;
+      map.delete(fileId);
+    },
+    []
+  );
+
   const handleAdd = () => {
     const id = addFile();
     if (id) onSwitchTab(id);
+  };
+
+  const handleDelete = (e: React.MouseEvent, fileId: string) => {
+    e.stopPropagation();
+    if (files.length <= 1) return; // keep at least one file
+    if (fileId === activeFileId) {
+      const idx = files.findIndex(([id]) => id === fileId);
+      const next = files[idx === 0 ? 1 : idx - 1];
+      if (next) onSwitchTab(next[0]);
+    }
+    deleteFile(fileId);
   };
 
   const commitRename = (fileId: string) => {
@@ -193,7 +212,7 @@ function TabBar({
   return (
     <div className="h-10 bg-[#f7f7f7] border-b border-[#e5e5e5] flex items-center justify-between select-none shrink-0 z-10">
       {/* Left: tabs + add */}
-      <div className="flex items-center h-full overflow-x-auto">
+      <div className="flex items-center h-full overflow-x-auto scrollbar-none" style={{ scrollbarWidth: "none" }}>
         {files.map(([fileId, filename]) => {
           const isActive = fileId === activeFileId;
           const isEditing = editingId === fileId;
@@ -211,7 +230,7 @@ function TabBar({
           return (
             <button
               key={fileId}
-              className={`h-10 px-3 min-w-[100px] flex items-center gap-2 relative border-r border-[#e5e5e5] text-left transition-colors ${
+              className={`group h-10 px-3 min-w-[100px] flex items-center gap-2 relative border-r border-[#e5e5e5] text-left transition-colors ${
                 isActive
                   ? "bg-white shadow-[0_1px_0_0_#fff] top-[1px]"
                   : "bg-transparent hover:bg-[#eeeeee]"
@@ -260,13 +279,27 @@ function TabBar({
                   ))}
                 </div>
               )}
+
+              {/* Close button */}
+              {files.length > 1 && (
+                <span
+                  className="ml-auto w-4 h-4 flex items-center justify-center rounded-sm text-gray-400 hover:text-gray-700 hover:bg-[#ddd] opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => handleDelete(e, fileId)}
+                  role="button"
+                  title="Close file"
+                >
+                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M1 1l6 6M7 1l-6 6" />
+                  </svg>
+                </span>
+              )}
             </button>
           );
         })}
 
         {/* Add file button */}
         <button
-          className="h-10 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-[#eeeeee] transition-colors"
+          className="h-10 px-3 flex items-center justify-center border-r border-[#e5e5e5] text-gray-400 hover:text-gray-600 hover:bg-[#eeeeee] transition-colors"
           onClick={handleAdd}
           title="New file"
         >
@@ -287,37 +320,8 @@ function TabBar({
       {/* Right: connection + avatars */}
       <div className="flex items-center gap-2 px-3 shrink-0">
         <ConnectionBadge />
-        <CollabAvatars />
+        <CollabPills />
       </div>
-    </div>
-  );
-}
-
-/* ── Collab avatar pills (Zed-style) ── */
-function CollabAvatars() {
-  const others = useOthers();
-  const self = useSelf();
-  const users = self ? [self, ...others] : others;
-
-  return (
-    <div className="flex items-center gap-1">
-      {users.map((u) => (
-        <div
-          key={u.userId}
-          className="h-6 px-2 rounded-full text-[10px] font-medium flex items-center gap-1.5 border"
-          style={{
-            backgroundColor: u.color + "12",
-            borderColor: u.color + "30",
-            color: u.color,
-          }}
-        >
-          <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: u.color }}
-          />
-          {u.displayName}
-        </div>
-      ))}
     </div>
   );
 }
