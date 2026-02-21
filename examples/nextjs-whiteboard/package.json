@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:server": "bun run server/openblocks.ts",
+    "prebuild": "cd ../.. && bun run build:packages",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
