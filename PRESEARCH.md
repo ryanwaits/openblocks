@@ -285,28 +285,35 @@ partykit.json                 — PartyKit config (name, main entry, compat date
 
 ## AI Cost Analysis
 
-### Development & Testing Costs (Track Actuals)
+### Development & Testing Costs (Actuals)
 
-These will be filled in during and after development. Framework for tracking:
+Tracked via `ccusage` over the 8-day development period (Feb 13–20, 2026). All development was done exclusively through Claude Code.
 
-| Metric | Claude Code | Cursor | In-App AI (Claude API) | Total |
-|--------|-------------|--------|------------------------|-------|
-| Input tokens | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| Output tokens | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| API calls | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| Cost | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| Metric | Claude Code | In-App AI (Claude API) | Total |
+|--------|-------------|------------------------|-------|
+| Input tokens | 572,684 | ~5,000 (testing) | ~578,000 |
+| Output tokens | 596,794 | ~2,000 (testing) | ~599,000 |
+| Cache creation | 23,596,734 | — | 23,596,734 |
+| Cache read | 648,863,757 | — | 648,863,757 |
+| Total tokens | 673,629,969 | ~7,000 | ~673,637,000 |
+| **Cost** | **$410.36** | **~$2** | **~$412** |
 
-**How we'll track**:
-- **Claude Code**: Check Anthropic dashboard usage for the development period
-- **Cursor**: Track via Cursor's usage/billing panel
-- **In-App AI (Claude API)**: Log every API call during dev/testing — token counts are in every response's `usage` field. Add a lightweight logging middleware to the AI API route that writes to a `dev_ai_usage` table or local JSON file.
-- **Other AI costs**: None expected (no embeddings, no vector DB, no fine-tuning)
+**Daily breakdown**:
 
-**Estimated dev spend** (rough projection based on similar sprint projects):
-- Claude Code (Opus-heavy dev): ~$30-60 over the week
-- Cursor: ~$20/month subscription (already active)
-- In-app AI testing (Sonnet): ~$5-15 for prompt iteration and testing
-- **Estimated total dev AI spend**: ~$55-95
+| Date | Models Used | Cost |
+|------|-------------|------|
+| Feb 13 | Opus 4.6, Haiku 4.5 | $18.35 |
+| Feb 14 | Opus 4.6, Haiku 4.5, Sonnet 4.5 | $49.28 |
+| Feb 15 | Opus 4.6, Haiku 4.5, Sonnet 4.5 | $19.11 |
+| Feb 16 | Opus 4.6, Haiku 4.5, Sonnet 4.5 | $68.40 |
+| Feb 17 | Opus 4.6, Haiku 4.5, Sonnet 4.5/4.6 | $65.42 |
+| Feb 18 | Opus 4.6, Haiku 4.5, Sonnet 4.6 | $70.35 |
+| Feb 19 | Opus 4.6, Haiku 4.5, Sonnet 4.6 | $73.74 |
+| Feb 20 | Opus 4.6, Haiku 4.5, Sonnet 4.6 | $45.61 |
+
+**Model cost split**: Opus 4.6 (~$367, 89%) was the primary model for planning and execution. Haiku 4.5 (~$13, 3%) handled subagent tasks (plan review, code search). Sonnet 4.5/4.6 (~$30, 7%) was used for execution — Sonnet 4.6 replaced Sonnet 4.5 mid-week when it launched, offering faster execution with equivalent quality.
+
+**Other costs**: Supabase, Vercel, PartyKit — all free tier ($0). No embeddings, vector DB, or fine-tuning costs. No Cursor subscription.
 
 ### Production Cost Projections
 
