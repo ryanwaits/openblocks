@@ -17,7 +17,8 @@ import { SvgCanvas, type BoardCanvasHandle } from "@/components/canvas/svg-canva
 import { CanvasObjects } from "@/components/canvas/canvas-objects";
 import { SvgLineDrawingLayer } from "@/components/canvas/svg-line-drawing-layer";
 import { useViewportStore } from "@/lib/store/viewport-store";
-import { computeLineBounds } from "@/lib/geometry/edge-intersection";
+import { buildConnectionIndex } from "@/lib/utils/connection-index";
+import { computeLineBounds, computeEdgePoint } from "@/lib/geometry/edge-intersection";
 import { getRotatedAABB } from "@/lib/geometry/rotation";
 import { findSnapTarget } from "@/lib/geometry/snap";
 import type { BoardObject, ToolMode, Frame } from "@/types/board";
@@ -73,7 +74,8 @@ export default function BoardPage() {
 }
 
 function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userId: string; displayName: string }) {
-  const { objects, selectedIds, setSelected, setSelectedIds, connectionIndex } = useBoardStore();
+  const { objects, selectedIds, setSelected, setSelectedIds } = useBoardStore();
+  const connectionIndex = useMemo(() => buildConnectionIndex(objects), [objects]);
   const self = useSelf();
   const others = useOthers();
   const viewportScale = useViewportStore((s) => s.scale);
@@ -91,7 +93,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   const canvasRef = useRef<BoardCanvasHandle>(null);
   const lastCursorPosRef = useRef<{ x: number; y: number } | null>(null);
   const resizeOriginRef = useRef<{ x: number; y: number } | null>(null);
-  const multiDragStartRef = useRef<Map<string, { x: number; y: number }> | null>(null);
+  const multiDragStartRef = useRef<Map<string, BoardObject> | null>(null);
   const clipboardRef = useRef<BoardObject[]>([]);
   const lineDrawing = useLineDrawing();
 
@@ -104,12 +106,16 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   useOpenBlocksSync();
   const mutations = useBoardMutations();
   const { undo, redo } = useHistory();
+  const isFollowingRef = useRef(false);
   const { followingUserId, followUser: setFollowingUserId, stopFollowing } = useFollowUser({
+    exitOnInteraction: false,
     onViewportChange: useCallback(
       (pos: { x: number; y: number }, scale: number) => canvasRef.current?.setViewport(pos, scale),
       []
     ),
   });
+  // Keep ref in sync for the viewport subscription to read without re-renders
+  isFollowingRef.current = !!followingUserId;
 
   const handleStageMouseMove = useCallback(
     (relativePointerPos: { x: number; y: number } | null) => {
@@ -126,9 +132,10 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     setStageMousePos(null);
   }, []);
 
-  // Broadcast viewport on pan/zoom — always, even without prior cursor move
+  // Broadcast viewport on pan/zoom — skip when driven by follow mode to avoid feedback loop
   useEffect(() => {
     return useViewportStore.subscribe(() => {
+      if (isFollowingRef.current) return;
       const { pos: vpPos, scale } = useViewportStore.getState();
       const cursorPos = lastCursorPosRef.current ?? {
         x: (window.innerWidth / 2 - vpPos.x) / scale,
@@ -204,7 +211,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   }, [lineDrawing, roomId, userId, displayName, objects.size, mutations]);
 
   const handleCanvasClick = useCallback(
-    (canvasX: number, canvasY: number) => {
+    (canvasX: number, canvasY: number, metaKey?: boolean) => {
       (document.activeElement as HTMLElement)?.blur?.();
       if (activeTool === "line") {
         let pos = { x: canvasX, y: canvasY };
@@ -214,6 +221,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
           lineDrawing.startPoint(pos, snap?.objectId);
         } else {
           lineDrawing.addPoint(pos, snap?.objectId);
+          if (metaKey) finalizeLineDrawing();
         }
         return;
       }
@@ -225,16 +233,21 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         setSelected(null);
       }
     },
-    [activeTool, createObjectAt, setSelected, lineDrawing],
+    [activeTool, createObjectAt, setSelected, lineDrawing, finalizeLineDrawing],
   );
 
   const handleCanvasDoubleClick = useCallback(
-    (_canvasX: number, _canvasY: number) => {
+    (canvasX: number, canvasY: number) => {
       if (activeTool === "line" && lineDrawing.drawingState.isDrawing) {
+        lineDrawing.removeLastPoint();
+        let pos = { x: canvasX, y: canvasY };
+        const snap = findSnapTarget(pos, objects);
+        if (snap) pos = { x: snap.x, y: snap.y };
+        lineDrawing.addPoint(pos, snap?.objectId);
         finalizeLineDrawing();
       }
     },
-    [activeTool, lineDrawing.drawingState.isDrawing, finalizeLineDrawing],
+    [activeTool, lineDrawing, finalizeLineDrawing, objects],
   );
 
   const handleObjectClick = useCallback(
@@ -255,23 +268,22 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
 
       if (selectedIds.has(objectId) && selectedIds.size > 1) {
         if (!multiDragStartRef.current) {
-          const starts = new Map<string, { x: number; y: number }>();
+          const starts = new Map<string, BoardObject>();
           for (const id of selectedIds) {
             const o = objects.get(id);
-            if (o) { starts.set(id, { x: o.x, y: o.y }); }
+            if (o) starts.set(id, o);
           }
           multiDragStartRef.current = starts;
         }
-        const startPos = multiDragStartRef.current.get(objectId);
-        if (!startPos) return;
-        const dx = x - startPos.x;
-        const dy = y - startPos.y;
+        const snap = multiDragStartRef.current.get(objectId);
+        if (!snap) return;
+        const dx = x - snap.x;
+        const dy = y - snap.y;
         const now = new Date().toISOString();
         for (const id of selectedIds) {
-          const o = objects.get(id);
-          const sp = multiDragStartRef.current.get(id);
-          if (!o || !sp) continue;
-          mutations.updateObject({ ...o, x: sp.x + dx, y: sp.y + dy, updated_at: now });
+          const s = multiDragStartRef.current.get(id);
+          if (!s) continue;
+          mutations.updateObject({ ...s, x: s.x + dx, y: s.y + dy, updated_at: now });
         }
         return;
       }
@@ -287,16 +299,15 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       if (!obj) return;
 
       if (selectedIds.has(objectId) && selectedIds.size > 1 && multiDragStartRef.current) {
-        const startPos = multiDragStartRef.current.get(objectId);
-        if (startPos) {
-          const dx = x - startPos.x;
-          const dy = y - startPos.y;
+        const snap = multiDragStartRef.current.get(objectId);
+        if (snap) {
+          const dx = x - snap.x;
+          const dy = y - snap.y;
           const now = new Date().toISOString();
           for (const id of selectedIds) {
-            const o = objects.get(id);
-            const sp = multiDragStartRef.current.get(id);
-            if (!o || !sp) continue;
-            mutations.updateObject({ ...o, x: sp.x + dx, y: sp.y + dy, updated_at: now });
+            const s = multiDragStartRef.current.get(id);
+            if (!s) continue;
+            mutations.updateObject({ ...s, x: s.x + dx, y: s.y + dy, updated_at: now });
           }
         }
         multiDragStartRef.current = null;
@@ -570,8 +581,16 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
 
   const lineSnapTarget = useMemo(() => {
     if (activeTool !== "line" || !stageMousePos) return null;
-    return findSnapTarget(stageMousePos, objects);
-  }, [activeTool, stageMousePos, objects]);
+    const snap = findSnapTarget(stageMousePos, objects);
+    if (!snap) return null;
+    const shape = objects.get(snap.objectId);
+    if (!shape) return snap;
+    const otherEnd = lineDrawing.drawingState.isDrawing
+      ? lineDrawing.drawingState.points[0]
+      : stageMousePos;
+    const edge = computeEdgePoint(shape, otherEnd);
+    return { ...snap, x: edge.x, y: edge.y };
+  }, [activeTool, stageMousePos, objects, lineDrawing.drawingState]);
 
   const currentUserColor = self?.color || "#3b82f6";
   const isCreationTool = CREATION_TOOLS.includes(activeTool);
@@ -638,7 +657,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
               const next = new Set(selectedIds);
               next.has(id) ? next.delete(id) : next.add(id);
               setSelectedIds(next);
-            } else {
+            } else if (!selectedIds.has(id)) {
               setSelected(id);
             }
           }}
