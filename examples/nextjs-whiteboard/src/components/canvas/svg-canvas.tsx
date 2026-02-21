@@ -21,7 +21,7 @@ interface SvgCanvasProps {
   onStageMouseMove: (pos: { x: number; y: number } | null) => void;
   onStageMouseLeave?: () => void;
   onClickEmpty?: () => void;
-  onCanvasClick?: (canvasX: number, canvasY: number) => void;
+  onCanvasClick?: (canvasX: number, canvasY: number, metaKey?: boolean) => void;
   onCanvasDoubleClick?: (canvasX: number, canvasY: number) => void;
   onSelectionRect?: (rect: { x: number; y: number; width: number; height: number } | null) => void;
   onSelectionComplete?: (rect: { x: number; y: number; width: number; height: number }) => void;
@@ -370,14 +370,14 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
       // In creation mode, allow placing items anywhere (even on top of existing shapes)
       if (isCreationMode && onCanvasClick) {
         const pos = getCanvasPos(e.clientX, e.clientY);
-        onCanvasClick(pos.x, pos.y);
+        onCanvasClick(pos.x, pos.y, e.metaKey || e.ctrlKey);
         return;
       }
 
       if (isEmptyArea) {
         if (onCanvasClick) {
           const pos = getCanvasPos(e.clientX, e.clientY);
-          onCanvasClick(pos.x, pos.y);
+          onCanvasClick(pos.x, pos.y, e.metaKey || e.ctrlKey);
           return;
         }
         onClickEmpty?.();
@@ -388,15 +388,16 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
 
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
+      if (!onCanvasDoubleClick) return;
       const target = e.target as SVGElement;
-      if (target === svgRef.current || target.dataset.canvasBg === "true") {
-        if (onCanvasDoubleClick) {
-          const pos = getCanvasPos(e.clientX, e.clientY);
-          onCanvasDoubleClick(pos.x, pos.y);
-        }
+      const isEmptyArea = target === svgRef.current || target.dataset.canvasBg === "true";
+
+      if (isCreationMode || isEmptyArea) {
+        const pos = getCanvasPos(e.clientX, e.clientY);
+        onCanvasDoubleClick(pos.x, pos.y);
       }
     },
-    [onCanvasDoubleClick, getCanvasPos],
+    [onCanvasDoubleClick, getCanvasPos, isCreationMode],
   );
 
   const isHand = mode === "hand";
