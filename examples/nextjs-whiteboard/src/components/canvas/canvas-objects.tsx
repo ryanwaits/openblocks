@@ -128,14 +128,10 @@ export const CanvasObjects = memo(function CanvasObjects({
             return (
               <SvgLineShape
                 key={obj.id}
-                id={obj.id}
-                object={obj}
+                {...shared}
                 objects={objects}
-                isSelected={selectedIds.has(obj.id)}
-                onSelect={interactive ? onSelect : undefined}
                 onLineUpdate={interactive ? onLineUpdate : undefined}
                 onLineUpdateEnd={interactive ? onLineUpdateEnd : undefined}
-                interactive={interactive}
               />
             );
           default:

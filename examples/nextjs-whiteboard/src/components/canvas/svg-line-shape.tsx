@@ -12,6 +12,8 @@ interface LineShapeProps {
   objects: Map<string, BoardObject>;
   isSelected: boolean;
   onSelect?: (id: string, shiftKey?: boolean) => void;
+  onDragMove?: (id: string, x: number, y: number) => void;
+  onDragEnd?: (id: string, x: number, y: number) => void;
   onLineUpdate?: (id: string, updates: Partial<BoardObject>) => void;
   onLineUpdateEnd?: (id: string, updates: Partial<BoardObject>) => void;
   interactive?: boolean;
@@ -36,6 +38,7 @@ function arrowheadPoints(tx: number, ty: number, fx: number, fy: number, length 
 
 export const SvgLineShape = memo(function SvgLineShape({
   id, object, objects, isSelected, onSelect,
+  onDragMove, onDragEnd,
   onLineUpdate, onLineUpdateEnd, interactive = true,
 }: LineShapeProps) {
   const bodyDragRef = useRef<{ startPoints: Array<{ x: number; y: number }>; startClientX: number; startClientY: number; scale: number } | null>(null);
@@ -75,13 +78,14 @@ export const SvgLineShape = memo(function SvgLineShape({
   }, [resolvedPoints]);
 
   // --- Body drag (only when not connected) ---
-  const canDragBody = interactive && !!onLineUpdateEnd && !object.start_object_id && !object.end_object_id;
+  const canDragBody = interactive && (!!onDragEnd || !!onLineUpdateEnd) && !object.start_object_id && !object.end_object_id;
 
   const handleBodyPointerDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
     onSelect?.(id, e.shiftKey);
     if (!canDragBody || !object.points) return;
     const scale = useViewportStore.getState().scale;
+    const startBounds = computeLineBounds(object.points);
     bodyDragRef.current = {
       startPoints: [...object.points],
       startClientX: e.clientX,
@@ -93,26 +97,34 @@ export const SvgLineShape = memo(function SvgLineShape({
       if (!d) return;
       const dx = (ev.clientX - d.startClientX) / d.scale;
       const dy = (ev.clientY - d.startClientY) / d.scale;
-      const newPoints = d.startPoints.map((p) => ({ x: p.x + dx, y: p.y + dy }));
-      const bounds = computeLineBounds(newPoints);
-      (onLineUpdate ?? onLineUpdateEnd!)(id, {
-        points: newPoints,
-        x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
-        start_object_id: null, end_object_id: null,
-      });
+      if (onDragMove) {
+        onDragMove(id, startBounds.x + dx, startBounds.y + dy);
+      } else {
+        const newPoints = d.startPoints.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+        const bounds = computeLineBounds(newPoints);
+        (onLineUpdate ?? onLineUpdateEnd!)(id, {
+          points: newPoints,
+          x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
+          start_object_id: null, end_object_id: null,
+        });
+      }
     };
     const handleUp = (ev: PointerEvent) => {
       const d = bodyDragRef.current;
       if (!d) { cleanup(); return; }
       const dx = (ev.clientX - d.startClientX) / d.scale;
       const dy = (ev.clientY - d.startClientY) / d.scale;
-      const newPoints = d.startPoints.map((p) => ({ x: p.x + dx, y: p.y + dy }));
-      const bounds = computeLineBounds(newPoints);
-      onLineUpdateEnd!(id, {
-        points: newPoints,
-        x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
-        start_object_id: null, end_object_id: null,
-      });
+      if (onDragEnd) {
+        onDragEnd(id, startBounds.x + dx, startBounds.y + dy);
+      } else {
+        const newPoints = d.startPoints.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+        const bounds = computeLineBounds(newPoints);
+        onLineUpdateEnd!(id, {
+          points: newPoints,
+          x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
+          start_object_id: null, end_object_id: null,
+        });
+      }
       bodyDragRef.current = null;
       cleanup();
     };
@@ -122,7 +134,7 @@ export const SvgLineShape = memo(function SvgLineShape({
     };
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerup", handleUp);
-  }, [id, onSelect, canDragBody, object.points, onLineUpdate, onLineUpdateEnd]);
+  }, [id, onSelect, canDragBody, object.points, onDragMove, onDragEnd, onLineUpdate, onLineUpdateEnd]);
 
   // --- Endpoint drag ---
   const handleEndpointPointerDown = useCallback((pointIndex: number, e: React.PointerEvent) => {

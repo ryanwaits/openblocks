@@ -283,12 +283,26 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         for (const id of selectedIds) {
           const s = multiDragStartRef.current.get(id);
           if (!s) continue;
-          mutations.updateObject({ ...s, x: s.x + dx, y: s.y + dy, updated_at: now });
+          if (s.type === "line" && s.points && s.points.length > 0 && !s.start_object_id && !s.end_object_id) {
+            const newPoints = s.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+            const bounds = computeLineBounds(newPoints);
+            mutations.updateObject({ ...s, points: newPoints, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, updated_at: now });
+          } else {
+            mutations.updateObject({ ...s, x: s.x + dx, y: s.y + dy, updated_at: now });
+          }
         }
         return;
       }
 
-      mutations.updateObject({ ...obj, x, y, updated_at: new Date().toISOString() });
+      if (obj.type === "line" && obj.points && obj.points.length > 0 && !obj.start_object_id && !obj.end_object_id) {
+        const dx = x - obj.x;
+        const dy = y - obj.y;
+        const newPoints = obj.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+        const bounds = computeLineBounds(newPoints);
+        mutations.updateObject({ ...obj, points: newPoints, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, updated_at: new Date().toISOString() });
+      } else {
+        mutations.updateObject({ ...obj, x, y, updated_at: new Date().toISOString() });
+      }
     },
     [objects, selectedIds, mutations],
   );
@@ -307,14 +321,28 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
           for (const id of selectedIds) {
             const s = multiDragStartRef.current.get(id);
             if (!s) continue;
-            mutations.updateObject({ ...s, x: s.x + dx, y: s.y + dy, updated_at: now });
+            if (s.type === "line" && s.points && s.points.length > 0 && !s.start_object_id && !s.end_object_id) {
+              const newPoints = s.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+              const bounds = computeLineBounds(newPoints);
+              mutations.updateObject({ ...s, points: newPoints, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, updated_at: now });
+            } else {
+              mutations.updateObject({ ...s, x: s.x + dx, y: s.y + dy, updated_at: now });
+            }
           }
         }
         multiDragStartRef.current = null;
         return;
       }
 
-      mutations.updateObject({ ...obj, x, y, updated_at: new Date().toISOString() });
+      if (obj.type === "line" && obj.points && obj.points.length > 0 && !obj.start_object_id && !obj.end_object_id) {
+        const dx = x - obj.x;
+        const dy = y - obj.y;
+        const newPoints = obj.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+        const bounds = computeLineBounds(newPoints);
+        mutations.updateObject({ ...obj, points: newPoints, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, updated_at: new Date().toISOString() });
+      } else {
+        mutations.updateObject({ ...obj, x, y, updated_at: new Date().toISOString() });
+      }
       multiDragStartRef.current = null;
     },
     [objects, selectedIds, mutations],
