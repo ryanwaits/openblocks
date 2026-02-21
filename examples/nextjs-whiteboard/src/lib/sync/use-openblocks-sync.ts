@@ -1,21 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import type { LiveObject, LiveMap } from "@waits/openblocks-client";
 import { useRoom, useStorageRoot } from "@waits/openblocks-react";
 import { useBoardStore } from "@/lib/store/board-store";
 import { useFrameStore } from "@/lib/store/frame-store";
 import type { BoardObject, Frame } from "@/types/board";
-
-function shallowEqual(a: BoardObject, b: BoardObject): boolean {
-  const keysA = Object.keys(a) as (keyof BoardObject)[];
-  const keysB = Object.keys(b) as (keyof BoardObject)[];
-  if (keysA.length !== keysB.length) return false;
-  for (const key of keysA) {
-    if (a[key] !== b[key]) return false;
-  }
-  return true;
-}
 
 function liveObjectToBoardObject(lo: LiveObject): BoardObject | null {
   if (typeof lo.toObject !== "function") return null;
@@ -41,12 +31,8 @@ export function useOpenBlocksSync(): void {
   const storage = useStorageRoot();
   const root = storage?.root ?? null;
 
-  const { addObject, updateObject, deleteObject, syncAll } = useBoardStore();
+  const syncAll = useBoardStore((s) => s.syncAll);
 
-  const prevObjectsRef = useRef<Map<string, BoardObject>>(new Map());
-  const initialSyncDone = useRef(false);
-
-  // Subscribe to CRDT storage changes → Zustand
   useEffect(() => {
     if (!root) return;
 
@@ -55,35 +41,12 @@ export function useOpenBlocksSync(): void {
 
     function syncObjects() {
       if (!objectsMap) return;
-
-      const prev = prevObjectsRef.current;
-      const next = new Map<string, BoardObject>();
-      objectsMap.forEach((lo: LiveObject, key: string) => {
+      const arr: BoardObject[] = [];
+      objectsMap.forEach((lo: LiveObject) => {
         const obj = liveObjectToBoardObject(lo);
-        if (obj) next.set(key, obj);
+        if (obj) arr.push(obj);
       });
-
-      if (!initialSyncDone.current) {
-        initialSyncDone.current = true;
-        syncAll(Array.from(next.values()));
-        prevObjectsRef.current = next;
-        return;
-      }
-
-      for (const [id, obj] of next) {
-        const prevObj = prev.get(id);
-        if (!prevObj) {
-          addObject(obj);
-        } else if (!shallowEqual(prevObj, obj)) {
-          updateObject(obj);
-        }
-      }
-      for (const id of prev.keys()) {
-        if (!next.has(id)) {
-          deleteObject(id);
-        }
-      }
-      prevObjectsRef.current = next;
+      syncAll(arr);
     }
 
     function syncFrames() {
@@ -110,5 +73,5 @@ export function useOpenBlocksSync(): void {
       unsubObjects?.();
       unsubFrames?.();
     };
-  }, [root, room, syncAll, addObject, updateObject, deleteObject]);
+  }, [root, room, syncAll]);
 }
