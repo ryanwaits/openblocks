@@ -6,7 +6,7 @@ export interface Position {
 }
 
 export type PortDirection = "input" | "output";
-export type PortDataType = "event" | "filtered" | "transformed" | "action";
+export type PortDataType = "event" | "filtered" | "action";
 
 export interface Port {
   id: string;
@@ -20,9 +20,9 @@ export type WorkflowNodeType =
   | "stx-filter"
   | "ft-filter"
   | "nft-filter"
-  | "contract-filter"
+  | "contract-call-filter"
+  | "contract-deploy-filter"
   | "print-event-filter"
-  | "transform"
   | "webhook-action";
 
 export interface WorkflowNode<T extends WorkflowNodeType = WorkflowNodeType> {

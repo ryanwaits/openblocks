@@ -5,7 +5,6 @@ import type { Port, PortDataType } from "@/types/workflow";
 const PORT_COLORS: Record<PortDataType, string> = {
   event: "#f59e0b",
   filtered: "#3b82f6",
-  transformed: "#8b5cf6",
   action: "#10b981",
 };
 

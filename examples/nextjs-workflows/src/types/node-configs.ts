@@ -1,5 +1,4 @@
 export interface EventTriggerConfig {
-  network: "mainnet" | "testnet";
   startBlock?: number;
 }
 
@@ -14,26 +13,30 @@ export interface StxFilterConfig {
 }
 
 export interface FtFilterConfig {
-  contractId?: string;
+  assetIdentifier?: string;
   eventType: "transfer" | "mint" | "burn";
   sender?: string;
   recipient?: string;
   minAmount?: number;
-  maxAmount?: number;
 }
 
 export interface NftFilterConfig {
-  contractId?: string;
+  assetIdentifier?: string;
   eventType: "transfer" | "mint" | "burn";
   sender?: string;
   recipient?: string;
   tokenId?: string;
 }
 
-export interface ContractFilterConfig {
+export interface ContractCallFilterConfig {
   contractId?: string;
   functionName?: string;
-  sender?: string;
+  caller?: string;
+}
+
+export interface ContractDeployFilterConfig {
+  deployer?: string;
+  contractName?: string;
 }
 
 export interface PrintEventFilterConfig {
@@ -42,16 +45,12 @@ export interface PrintEventFilterConfig {
   contains?: string;
 }
 
-export interface TransformConfig {
-  expression: string;
-  language: "jsonata" | "javascript";
-}
-
 export interface WebhookActionConfig {
   url: string;
-  method: "POST" | "PUT";
-  headers: Record<string, string>;
   retryCount: number;
+  includeRawTx: boolean;
+  decodeClarityValues: boolean;
+  includeBlockMetadata: boolean;
 }
 
 export interface NodeConfigMap {
@@ -59,8 +58,8 @@ export interface NodeConfigMap {
   "stx-filter": StxFilterConfig;
   "ft-filter": FtFilterConfig;
   "nft-filter": NftFilterConfig;
-  "contract-filter": ContractFilterConfig;
+  "contract-call-filter": ContractCallFilterConfig;
+  "contract-deploy-filter": ContractDeployFilterConfig;
   "print-event-filter": PrintEventFilterConfig;
-  "transform": TransformConfig;
   "webhook-action": WebhookActionConfig;
 }

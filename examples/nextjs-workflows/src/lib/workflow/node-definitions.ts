@@ -1,7 +1,7 @@
 import type { WorkflowNodeType, Port } from "@/types/workflow";
 import type { NodeConfigMap } from "@/types/node-configs";
 
-export type NodeCategory = "triggers" | "filters" | "transforms" | "actions";
+export type NodeCategory = "triggers" | "filters" | "actions";
 
 export interface NodeDefinition<T extends WorkflowNodeType = WorkflowNodeType> {
   type: T;
@@ -25,7 +25,7 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     ports: [
       { id: "event-out", direction: "output", dataType: "event", label: "Events" },
     ],
-    defaultConfig: { network: "mainnet" },
+    defaultConfig: {},
   },
   "stx-filter": {
     type: "stx-filter",
@@ -66,12 +66,25 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     ],
     defaultConfig: { eventType: "transfer" },
   },
-  "contract-filter": {
-    type: "contract-filter",
-    label: "Contract Filter",
+  "contract-call-filter": {
+    type: "contract-call-filter",
+    label: "Contract Call",
     description: "Filter contract call events",
     category: "filters",
     icon: "FileCode",
+    color: "#3b82f6",
+    ports: [
+      { id: "in", direction: "input", dataType: "event", label: "Events" },
+      { id: "out", direction: "output", dataType: "filtered", label: "Matched" },
+    ],
+    defaultConfig: {},
+  },
+  "contract-deploy-filter": {
+    type: "contract-deploy-filter",
+    label: "Contract Deploy",
+    description: "Filter contract deployment events",
+    category: "filters",
+    icon: "Upload",
     color: "#3b82f6",
     ports: [
       { id: "in", direction: "input", dataType: "event", label: "Events" },
@@ -92,19 +105,6 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     ],
     defaultConfig: {},
   },
-  "transform": {
-    type: "transform",
-    label: "Transform",
-    description: "Transform event data with JSONata or JavaScript",
-    category: "transforms",
-    icon: "Sparkles",
-    color: "#8b5cf6",
-    ports: [
-      { id: "in", direction: "input", dataType: "filtered", label: "Data" },
-      { id: "out", direction: "output", dataType: "transformed", label: "Result" },
-    ],
-    defaultConfig: { expression: "$", language: "jsonata" },
-  },
   "webhook-action": {
     type: "webhook-action",
     label: "Webhook",
@@ -113,15 +113,14 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     icon: "Send",
     color: "#10b981",
     ports: [
-      { id: "in", direction: "input", dataType: "transformed", label: "Payload" },
+      { id: "in", direction: "input", dataType: "filtered", label: "Payload" },
     ],
-    defaultConfig: { url: "", method: "POST", headers: {}, retryCount: 3 },
+    defaultConfig: { url: "", retryCount: 3, includeRawTx: false, decodeClarityValues: true, includeBlockMetadata: true },
   },
 };
 
 export const CATEGORIES: { key: NodeCategory; label: string }[] = [
   { key: "triggers", label: "Triggers" },
   { key: "filters", label: "Filters" },
-  { key: "transforms", label: "Transforms" },
   { key: "actions", label: "Actions" },
 ];

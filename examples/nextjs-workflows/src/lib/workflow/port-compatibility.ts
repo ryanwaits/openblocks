@@ -1,11 +1,10 @@
 import type { Port, PortDataType } from "@/types/workflow";
 import { NODE_DEFINITIONS } from "./node-definitions";
 
-/** Valid flow: event→filtered→transformed→action, plus shortcuts */
+/** Valid flow: event→filtered→action */
 const FLOW_RULES: Record<PortDataType, PortDataType[]> = {
   event: ["event", "filtered"],
-  filtered: ["filtered", "transformed", "action"],
-  transformed: ["transformed", "action"],
+  filtered: ["filtered", "action"],
   action: [],
 };
 
