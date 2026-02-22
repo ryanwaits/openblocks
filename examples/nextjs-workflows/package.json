@@ -1,0 +1,33 @@
+{
+  "name": "@examples/nextjs-workflows",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "dev:server": "bun run server/lively.ts",
+    "prebuild": "cd ../.. && bun run build:packages",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "lucide-react": "0.575.0",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zustand": "5.0.11",
+    "@waits/lively-server": "workspace:*",
+    "@waits/lively-client": "workspace:*",
+    "@waits/lively-storage": "workspace:*",
+    "@waits/lively-react": "workspace:*",
+    "@waits/lively-types": "workspace:*",
+    "@waits/lively-ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
