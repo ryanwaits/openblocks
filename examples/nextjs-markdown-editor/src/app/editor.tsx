@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import {
-  useOpenBlocksCodeMirror,
+  useLivelyCodeMirror,
   typoraTheme,
   typoraHighlightStyle,
   codeblockPlugin,
   FloatingToolbar,
   StatusBar,
-} from "@waits/openblocks-react-codemirror";
+} from "@waits/lively-react-codemirror";
 import { syntaxHighlighting, indentOnInput, bracketMatching } from "@codemirror/language";
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
 import { indentWithTab, defaultKeymap, history, historyKeymap } from "@codemirror/commands";
@@ -32,7 +32,7 @@ export function MarkdownEditor({
   field?: string;
   onLanguageChange?: (name: string) => void;
 }) {
-  const { containerRef, viewRef, languageName } = useOpenBlocksCodeMirror({
+  const { containerRef, viewRef, languageName } = useLivelyCodeMirror({
     field,
     user: { name: displayName },
     filename,

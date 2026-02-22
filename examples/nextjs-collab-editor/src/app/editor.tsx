@@ -4,13 +4,13 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import {
-  useOpenBlocksExtension,
+  useLivelyExtension,
   Toolbar,
   FloatingToolbar,
-} from "@waits/openblocks-react-tiptap";
+} from "@waits/lively-react-tiptap";
 
 export function CollaborativeEditor() {
-  const openblocks = useOpenBlocksExtension();
+  const lively = useLivelyExtension();
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -18,7 +18,7 @@ export function CollaborativeEditor() {
       StarterKit.configure({
         undoRedo: false, // Yjs owns undo/redo
       }),
-      openblocks,
+      lively,
       Placeholder.configure({
         placeholder: "Start writing...",
       }),

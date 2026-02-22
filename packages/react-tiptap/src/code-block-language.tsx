@@ -165,7 +165,7 @@ function CodeBlockView({
  *
  * @example
  * ```ts
- * import { createCodeBlockExtension } from "@waits/openblocks-react-tiptap";
+ * import { createCodeBlockExtension } from "@waits/lively-react-tiptap";
  * import { common, createLowlight } from "lowlight";
  * const lowlight = createLowlight(common);
  * const codeBlock = createCodeBlockExtension(lowlight);

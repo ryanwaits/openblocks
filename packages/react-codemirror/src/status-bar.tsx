@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, type RefObject } from "react";
-import { useOthers } from "@waits/openblocks-react";
+import { useOthers } from "@waits/lively-react";
 import type { EditorView } from "@codemirror/view";
 
 export interface StatusBarProps {

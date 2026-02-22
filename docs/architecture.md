@@ -21,7 +21,7 @@ react-codemirror (react, yjs, codemirror, y-codemirror.next)
 
 ## Packages
 
-### @waits/openblocks-types
+### @waits/lively-types
 
 Zero-dependency wire protocol and shared data structures.
 
@@ -35,7 +35,7 @@ Zero-dependency wire protocol and shared data structures.
 
 ---
 
-### @waits/openblocks-storage
+### @waits/lively-storage
 
 Client-side CRDT data structures with conflict-free mutation semantics.
 
@@ -54,13 +54,13 @@ Client-side CRDT data structures with conflict-free mutation semantics.
 
 ---
 
-### @waits/openblocks-client
+### @waits/lively-client
 
 WebSocket connection management, room lifecycle, storage sync, presence & cursor relay.
 
 **Key exports:**
-- `OpenBlocksClient` — entry point managing multiple rooms
-  - `new OpenBlocksClient({ serverUrl, reconnect?, maxRetries? })`
+- `LivelyClient` — entry point managing multiple rooms
+  - `new LivelyClient({ serverUrl, reconnect?, maxRetries? })`
   - `joinRoom(roomId, { userId, displayName, cursorThrottleMs?, initialStorage? })`
   - `leaveRoom(roomId)`, `getRoom(roomId)`
 - `Room` — a joined room with bidirectional sync
@@ -76,12 +76,12 @@ WebSocket connection management, room lifecycle, storage sync, presence & cursor
 
 ---
 
-### @waits/openblocks-server
+### @waits/lively-server
 
 WebSocket server — room management, storage authority, presence/cursor relay.
 
 **Key exports:**
-- `OpenBlocksServer` — HTTP + WebSocket server
+- `LivelyServer` — HTTP + WebSocket server
   - Constructor config: `{ path?, auth?, roomConfig?, onMessage?, onJoin?, onLeave?, onStorageChange?, initialStorage? }`
   - `start(port?)`, `stop()`, `broadcastToRoom(roomId, data, excludeIds?)`
 - `Room` (server-side) — tracks connections, manages shared `StorageDocument`
@@ -97,17 +97,17 @@ WebSocket server — room management, storage authority, presence/cursor relay.
 
 ---
 
-### @waits/openblocks-react
+### @waits/lively-react
 
 React 18+ hooks for seamless integration.
 
 **Providers:**
-- `OpenBlocksProvider` — top-level, wraps `client` instance
+- `LivelyProvider` — top-level, wraps `client` instance
 - `RoomProvider` — room-scoped, joins on mount, leaves on unmount (strict-mode safe)
 
 **Storage hooks:**
 - `useStorage(selector)` — reactive selector over storage root, re-renders on shallow-equal changes. Returns `null` until loaded.
-- `useStorageSuspense(selector)` — same but suspends (from `@waits/openblocks-react/suspense`)
+- `useStorageSuspense(selector)` — same but suspends (from `@waits/lively-react/suspense`)
 - `useMutation(callback, deps)` — stable callback wrapping mutations in `room.batch()`
 - `useStorageRoot()` — raw `{ root: LiveObject } | null`
 
@@ -131,7 +131,7 @@ All hooks use `useSyncExternalStore` with shallow-equality memoization.
 
 ---
 
-### @waits/openblocks-ui
+### @waits/lively-ui
 
 Pre-built styled components for presence and cursors.
 
@@ -145,33 +145,33 @@ Pre-built styled components for presence and cursors.
 
 ---
 
-### @waits/openblocks-cli
+### @waits/lively-cli
 
 Local development server with room persistence and inspection tools.
 
-- `openblocks dev` — starts WebSocket server (default port 1999) with auto-persistence to `.openblocks/rooms/`
-- `openblocks rooms list|clear|inspect` — manage persisted room data
+- `lively dev` — starts WebSocket server (default port 1999) with auto-persistence to `.lively/rooms/`
+- `lively rooms list|clear|inspect` — manage persisted room data
 - Keyboard shortcuts: `q` to quit, `c` to clear terminal
 
 ---
 
-### @waits/openblocks-yjs
+### @waits/lively-yjs
 
-Yjs provider that bridges an OpenBlocks `Room` to a `Y.Doc` for collaborative text editing.
+Yjs provider that bridges an Lively `Room` to a `Y.Doc` for collaborative text editing.
 
 **Key exports:**
-- `OpenBlocksYjsProvider` — constructor takes `(Room, { doc?: Y.Doc })`. Methods: `connect()`, `disconnect()`, `destroy()`. Getters: `synced`, `connected`. Properties: `doc`, `awareness`.
+- `LivelyYjsProvider` — constructor takes `(Room, { doc?: Y.Doc })`. Methods: `connect()`, `disconnect()`, `destroy()`. Getters: `synced`, `connected`. Properties: `doc`, `awareness`.
 - Events: `sync`, `awareness-update`, `status`
 - Wire protocol: `yjs:sync-step1`, `yjs:sync-step2`, `yjs:update`, `yjs:awareness` — all base64-encoded over the room message channel
 
 ---
 
-### @waits/openblocks-react-tiptap
+### @waits/lively-react-tiptap
 
 TipTap editor integration with collaborative editing, toolbar, slash commands, and block extensions.
 
 **Key exports:**
-- `useOpenBlocksExtension(options?)` — returns a TipTap `Extension` wiring Yjs sync, cursors, and undo
+- `useLivelyExtension(options?)` — returns a TipTap `Extension` wiring Yjs sync, cursors, and undo
 - `yjsUndo(editor)`, `yjsRedo(editor)` — call Yjs undo/redo directly
 - `Toolbar` — fixed toolbar with heading, formatting, list, and history buttons
 - `FloatingToolbar` — selection-triggered inline toolbar (bold, italic, underline, strike, code, highlight, link)
@@ -183,12 +183,12 @@ TipTap editor integration with collaborative editing, toolbar, slash commands, a
 
 ---
 
-### @waits/openblocks-react-codemirror
+### @waits/lively-react-codemirror
 
 CodeMirror 6 integration with collaborative editing, markdown-aware toolbar, and status bar.
 
 **Key exports:**
-- `useOpenBlocksCodeMirror(options?)` — creates a collaborative CodeMirror editor. Returns `{ containerRef, viewRef, languageName }`
+- `useLivelyCodeMirror(options?)` — creates a collaborative CodeMirror editor. Returns `{ containerRef, viewRef, languageName }`
 - `typoraTheme` — Zed-inspired editor theme
 - `typoraHighlightStyle` — syntax highlighting for markdown and code
 - `FloatingToolbar` — markdown-aware selection toolbar (bold, italic, strikethrough, code)
@@ -279,10 +279,10 @@ Simple collaborative todo list. `LiveObject` root with `items: LiveList<LiveObje
 Full collaborative canvas — shapes, connectors, sticky notes, text, frames, AI command bar. Extends the core with Zustand for local viewport state, Supabase for persistence (via `onStorageChange`/`initialStorage` callbacks), and app-layer features like cursor follow mode.
 
 ### nextjs-collab-editor
-Notion-style collaborative rich text editor using `@waits/openblocks-react-tiptap`. Demonstrates `useOpenBlocksExtension`, `Toolbar`, `FloatingToolbar`, slash commands, block handle, callouts, and image placeholders.
+Notion-style collaborative rich text editor using `@waits/lively-react-tiptap`. Demonstrates `useLivelyExtension`, `Toolbar`, `FloatingToolbar`, slash commands, block handle, callouts, and image placeholders.
 
 ### nextjs-notion-editor
-Full Notion-clone editor with `@waits/openblocks-react-tiptap`. Slash commands, callouts, code blocks with syntax highlighting, and collaborative cursors.
+Full Notion-clone editor with `@waits/lively-react-tiptap`. Slash commands, callouts, code blocks with syntax highlighting, and collaborative cursors.
 
 ### nextjs-markdown-editor
-Collaborative markdown editor using `@waits/openblocks-react-codemirror`. Tabbed file interface, Typora-inspired theme, floating toolbar, status bar, and `codeblockPlugin` for fenced code styling.
+Collaborative markdown editor using `@waits/lively-react-codemirror`. Tabbed file interface, Typora-inspired theme, floating toolbar, status bar, and `codeblockPlugin` for fenced code styling.

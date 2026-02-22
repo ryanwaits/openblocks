@@ -1,4 +1,4 @@
-import type { OnlineStatus } from "@waits/openblocks-types";
+import type { OnlineStatus } from "@waits/lively-types";
 
 export interface ActivityTrackerConfig {
   /** Time in ms before marking user as away (default 60000 = 1 min) */

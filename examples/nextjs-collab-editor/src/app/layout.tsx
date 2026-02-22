@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Collaborative Text Editor — OpenBlocks Example",
+  title: "Collaborative Text Editor — Lively Example",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

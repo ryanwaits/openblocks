@@ -1,4 +1,4 @@
-import type { LiveObject, LiveMap, LiveList } from "@waits/openblocks-client";
+import type { LiveObject, LiveMap, LiveList } from "@waits/lively-client";
 import { useStorage } from "./use-storage.js";
 
 /**

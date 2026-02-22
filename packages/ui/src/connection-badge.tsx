@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useStatus } from "@waits/openblocks-react";
+import { useStatus } from "@waits/lively-react";
 
 export interface ConnectionBadgeProps {
   className?: string;

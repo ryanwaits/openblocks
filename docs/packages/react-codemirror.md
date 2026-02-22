@@ -1,9 +1,9 @@
-# @waits/openblocks-react-codemirror
+# @waits/lively-react-codemirror
 
-Collaborative CodeMirror 6 editor integration for OpenBlocks. Provides a hook that wires Yjs sync, collaborative cursors, and language detection into a CodeMirror instance — plus a theme, floating toolbar, status bar, and code block styling.
+Collaborative CodeMirror 6 editor integration for Lively. Provides a hook that wires Yjs sync, collaborative cursors, and language detection into a CodeMirror instance — plus a theme, floating toolbar, status bar, and code block styling.
 
 ```bash
-npm install @waits/openblocks-react-codemirror @waits/openblocks-yjs @codemirror/state @codemirror/view @codemirror/language @codemirror/lang-markdown @codemirror/language-data
+npm install @waits/lively-react-codemirror @waits/lively-yjs @codemirror/state @codemirror/view @codemirror/language @codemirror/lang-markdown @codemirror/language-data
 ```
 
 ---
@@ -12,18 +12,18 @@ npm install @waits/openblocks-react-codemirror @waits/openblocks-yjs @codemirror
 
 ```tsx
 import {
-  useOpenBlocksCodeMirror,
+  useLivelyCodeMirror,
   typoraTheme,
   typoraHighlightStyle,
   FloatingToolbar,
   StatusBar,
   codeblockPlugin,
-} from "@waits/openblocks-react-codemirror";
+} from "@waits/lively-react-codemirror";
 import { syntaxHighlighting } from "@codemirror/language";
 import { lineNumbers } from "@codemirror/view";
 
 function MarkdownEditor() {
-  const { containerRef, viewRef, languageName } = useOpenBlocksCodeMirror({
+  const { containerRef, viewRef, languageName } = useLivelyCodeMirror({
     field: "source",
     extensions: [
       typoraTheme,
@@ -47,11 +47,11 @@ function MarkdownEditor() {
 
 ## API Reference
 
-### `useOpenBlocksCodeMirror`
+### `useLivelyCodeMirror`
 
 ```ts
-function useOpenBlocksCodeMirror(
-  options?: UseOpenBlocksCodeMirrorOptions
+function useLivelyCodeMirror(
+  options?: UseLivelyCodeMirrorOptions
 ): {
   containerRef: RefObject<HTMLDivElement | null>;
   viewRef: RefObject<EditorView | null>;
@@ -59,7 +59,7 @@ function useOpenBlocksCodeMirror(
 };
 ```
 
-Creates a collaborative CodeMirror editor backed by Yjs. Manages the `OpenBlocksYjsProvider` lifecycle internally (connect on mount, destroy on unmount). Strict-mode safe.
+Creates a collaborative CodeMirror editor backed by Yjs. Manages the `LivelyYjsProvider` lifecycle internally (connect on mount, destroy on unmount). Strict-mode safe.
 
 #### Options
 
@@ -120,7 +120,7 @@ Markdown-aware selection toolbar. Appears above selected text and wraps/unwraps 
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `viewRef` | `RefObject<EditorView>` | The CodeMirror view ref from `useOpenBlocksCodeMirror`. |
+| `viewRef` | `RefObject<EditorView>` | The CodeMirror view ref from `useLivelyCodeMirror`. |
 
 #### Actions
 
@@ -146,7 +146,7 @@ Bottom status bar showing cursor position, language, and online user count.
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `viewRef` | `RefObject<EditorView>` | -- | The CodeMirror view ref. |
-| `languageName` | `string` | `"Markdown"` | Language label. Pass `languageName` from `useOpenBlocksCodeMirror`. |
+| `languageName` | `string` | `"Markdown"` | Language label. Pass `languageName` from `useLivelyCodeMirror`. |
 
 #### Displays
 

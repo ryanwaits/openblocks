@@ -32,10 +32,10 @@ Delete (Delete/Backspace) with cascade removal of connected lines. Duplicate (Cm
 ## Real-Time Collaboration
 
 ### Multiplayer Cursors
-Cursor positions broadcast at 60Hz (16ms throttle) via OpenBlocks server `cursor:update` messages. Remote cursors rendered with smooth lerp interpolation (factor 0.3), colored arrows, and display name labels. Colors deterministically assigned per userId via hash.
+Cursor positions broadcast at 60Hz (16ms throttle) via Lively server `cursor:update` messages. Remote cursors rendered with smooth lerp interpolation (factor 0.3), colored arrows, and display name labels. Colors deterministically assigned per userId via hash.
 
 ### Sync
-All object mutations (create/update/delete) broadcast to connected clients via OpenBlocks server before persisting to Supabase. Clients apply changes to Zustand stores on message receipt for instant visual feedback. Ephemeral flag on updates skips persistence for intermediate states (e.g., mid-drag).
+All object mutations (create/update/delete) broadcast to connected clients via Lively server before persisting to Supabase. Clients apply changes to Zustand stores on message receipt for instant visual feedback. Ephemeral flag on updates skips persistence for intermediate states (e.g., mid-drag).
 
 ### Presence
 Server tracks connected users with userId, displayName, color, and connectedAt. Presence list broadcast on every connect/disconnect. UI renders up to 4 user avatars with initials in top-right corner, with "+N" overflow indicator. Stale cursors auto-removed on disconnect.
@@ -47,4 +47,4 @@ All board state persisted to Supabase — objects via individual row inserts/upd
 Last-write-wins (LWW) strategy using `updated_at` ISO timestamps. Server compares incoming `updated_at` against stored value and accepts if newer or equal. Acceptable tradeoff for a visual whiteboard where objects have few fields and simultaneous edits to the same object are rare. No operational transform or CRDT — overwrites are atomic at the object level.
 
 ### Resilience
-OpenBlocks client provides automatic reconnection with exponential backoff (1s–10s, 1.3x growth, infinite retries) and message buffering during disconnect. On reconnect, server re-sends full object and frame state via `onConnect`. UI shows "Reconnecting..." badge when connection drops, clearing automatically when restored. No manual page reload required.
+Lively client provides automatic reconnection with exponential backoff (1s–10s, 1.3x growth, infinite retries) and message buffering during disconnect. On reconnect, server re-sends full object and frame state via `onConnect`. UI shows "Reconnecting..." badge when connection drops, clearing automatically when restored. No manual page reload required.

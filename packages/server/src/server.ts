@@ -2,8 +2,8 @@ import http from "node:http";
 import type net from "node:net";
 import { URL } from "node:url";
 import { WebSocketServer, WebSocket } from "ws";
-import { StorageDocument, LiveObject } from "@waits/openblocks-storage";
-import type { StorageOp, SerializedCrdt } from "@waits/openblocks-types";
+import { StorageDocument, LiveObject } from "@waits/lively-storage";
+import type { StorageOp, SerializedCrdt } from "@waits/lively-types";
 import * as Y from "yjs";
 import { Room } from "./room.js";
 import { RoomManager } from "./room-manager.js";
@@ -51,7 +51,7 @@ function toBase64(data: Uint8Array): string {
 const DEFAULT_PATH = "/rooms";
 const DEFAULT_CLEANUP_MS = 30_000;
 
-export class OpenBlocksServer {
+export class LivelyServer {
   private httpServer: http.Server;
   private wss: WebSocketServer;
   private roomManager = new RoomManager();

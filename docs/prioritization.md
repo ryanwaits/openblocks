@@ -1,12 +1,12 @@
 # Feature Prioritization & Gap Analysis
 
-Audit of openblocks SDK against Velt's realtime collaboration surface. Goal: identify matches, gaps, and enhancements to build a best-in-class DX for collaborative apps.
+Audit of lively SDK against Velt's realtime collaboration surface. Goal: identify matches, gaps, and enhancements to build a best-in-class DX for collaborative apps.
 
 ---
 
 ## Feature Matrix
 
-| Feature | Velt | OpenBlocks | Status |
+| Feature | Velt | Lively | Status |
 |---------|------|------------|--------|
 | Presence (online users) | Full | Partial | Enhance |
 | Cursors | Full | Full | Enhance |
@@ -14,7 +14,7 @@ Audit of openblocks SDK against Velt's realtime collaboration surface. Goal: ide
 | Live Selection | Full | None | Build |
 | Live State Sync | Full | None | Build |
 | Single Editor Mode | Full | None | Build |
-| Multiplayer Editing (CRDT) | Yjs-based | Custom CRDT + Yjs integration | Shipped — [`@waits/openblocks-yjs`](./packages/yjs.md), [`react-tiptap`](./packages/react-tiptap.md), [`react-codemirror`](./packages/react-codemirror.md) |
+| Multiplayer Editing (CRDT) | Yjs-based | Custom CRDT + Yjs integration | Shipped — [`@waits/lively-yjs`](./packages/yjs.md), [`react-tiptap`](./packages/react-tiptap.md), [`react-codemirror`](./packages/react-codemirror.md) |
 | Video Player Sync | Full | None | Build |
 | Huddle (Audio/Video) | Full | None | Defer |
 | Undo/Redo | App-layer | Full | Shipped — CRDT undo/redo + Yjs undo/redo via [`yjsUndo`/`yjsRedo`](./packages/react-tiptap.md) |
@@ -94,7 +94,7 @@ Cursors render globally. No way to restrict to specific containers.
 
 - `allowedElementIds` prop on `CursorOverlay` — only show cursors within specified elements
 - `useCursorTracking(containerRef, { elementId })` — scope tracking to specific DOM elements
-- Data attribute approach: `data-openblocks-cursor="true"` on elements that should track
+- Data attribute approach: `data-lively-cursor="true"` on elements that should track
 
 **2c. Cursor Inactivity**
 Stale cursors persist until user disconnects.
@@ -128,7 +128,7 @@ Cursors use absolute coordinates. No adaptation for different viewport sizes.
 
 ### Current State
 - Wire protocol carries `viewportPos` + `viewportScale` on cursor messages
-- SDK-level `useFollowUser()` hook in `@waits/openblocks-react` — see [docs](./hooks/use-follow-user.md)
+- SDK-level `useFollowUser()` hook in `@waits/lively-react` — see [docs](./hooks/use-follow-user.md)
 - Smooth 60fps viewport interpolation with configurable `lerpFactor`
 - Auto-exit on target disconnect or user interaction
 - Follower tracking via presence metadata
@@ -205,12 +205,12 @@ const {
 ```
 - Renders colored border + user badge around focused elements
 - Auto-detects `input`, `textarea`, `contenteditable` focus events
-- Opt-in via `data-openblocks-selection="true"` for custom elements
+- Opt-in via `data-lively-selection="true"` for custom elements
 
 **4c. Automatic Form Tracking**
 - `enableDefaultTracking()` — auto-track focus on standard form elements
 - `disableDefaultTracking()` — manual only
-- Per-element: `data-openblocks-selection-enabled="true"` / `"false"`
+- Per-element: `data-lively-selection-enabled="true"` / `"false"`
 
 **4d. Wire Protocol**
 - Selection state rides on presence metadata (not a separate channel)
@@ -265,7 +265,7 @@ room.fetchLiveState(key); // one-shot
 
 **5c. Zustand Middleware**
 ```ts
-import { liveStateMiddleware } from '@waits/openblocks-react/zustand';
+import { liveStateMiddleware } from '@waits/lively-react/zustand';
 
 const useStore = create(
   liveStateMiddleware(
@@ -302,7 +302,7 @@ server.broadcastLiveState(roomId, key, value);
 - **react**: `useLiveState()`, Zustand middleware
 - **react/zustand**: separate entrypoint for middleware
 
-### Priority: **P0** — the single most impactful DX improvement. `useLiveState` makes openblocks accessible to any React app, not just CRDT-heavy ones.
+### Priority: **P0** — the single most impactful DX improvement. `useLiveState` makes lively accessible to any React app, not just CRDT-heavy ones.
 
 ---
 
@@ -348,7 +348,7 @@ const {
 - Tab-level locking: only the active tab holds the lock
 
 **6d. Auto-Sync Form Values**
-- `data-openblocks-sync="true"` on form elements
+- `data-lively-sync="true"` on form elements
 - Editor's input values broadcast to viewers in real-time
 - Viewers see read-only synchronized state
 
@@ -376,7 +376,7 @@ const {
 - `StorageDocument` with serialize/deserialize
 - Batch operations, deep subscriptions
 - CRDT undo/redo via `useUndo()`/`useRedo()`/`useHistory()`
-- Yjs integration via `@waits/openblocks-yjs` for text CRDT — used by `react-tiptap` and `react-codemirror`
+- Yjs integration via `@waits/lively-yjs` for text CRDT — used by `react-tiptap` and `react-codemirror`
 
 ### Gaps
 
@@ -418,7 +418,7 @@ const store = useCrdtStore<{ count: number }>({
 
 **7e. Encryption Provider**
 ```ts
-const client = new OpenBlocksClient({
+const client = new LivelyClient({
   serverUrl: '...',
   encryption: {
     encrypt: async (data) => encrypted,
@@ -464,7 +464,7 @@ const { ref, state } = useVideoSync<HTMLVideoElement>({
 
 **8b. Data Attribute Approach**
 ```html
-<video data-openblocks-sync="true" src="..." />
+<video data-lively-sync="true" src="..." />
 ```
 - Zero-config: attribute triggers auto-sync
 - Broadcasts: play, pause, seek, playback rate
@@ -596,7 +596,7 @@ react('👍');
 2. **Progressive disclosure** — basic usage requires zero config, advanced usage unlocks full control
 3. **Composable primitives** — higher-level features (follow, single editor) built on lower-level ones (presence, live state)
 4. **Framework-agnostic core** — hooks are React sugar; client/storage work anywhere
-5. **Data attribute escape hatch** — `data-openblocks-*` attributes for zero-code opt-in on DOM elements
+5. **Data attribute escape hatch** — `data-lively-*` attributes for zero-code opt-in on DOM elements
 6. **Type safety everywhere** — generic hooks, typed events, typed storage selectors
 
 ---

@@ -1,8 +1,8 @@
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 
-const PORT = parseInt(process.env.OPENBLOCKS_PORT || "2001", 10);
+const PORT = parseInt(process.env.LIVELY_PORT || "2001", 10);
 
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   path: "/rooms",
   initialStorage: async (_roomId: string) => ({
     type: "LiveObject" as const,

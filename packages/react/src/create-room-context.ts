@@ -1,5 +1,5 @@
-import type { LiveObject } from "@waits/openblocks-client";
-import type { ConnectionStatus, PresenceUser, CursorData } from "@waits/openblocks-types";
+import type { LiveObject } from "@waits/lively-client";
+import type { ConnectionStatus, PresenceUser, CursorData } from "@waits/lively-types";
 import type { ReactNode } from "react";
 import { RoomProvider, useRoom, useIsInsideRoom, useStorageRoot, type RoomProviderProps } from "./room-context.js";
 import { useStorage } from "./use-storage.js";
@@ -28,7 +28,7 @@ export interface RoomContextBundle<
 > {
   // Providers
   RoomProvider: (props: RoomProviderProps) => ReactNode;
-  useRoom: () => import("@waits/openblocks-client").Room;
+  useRoom: () => import("@waits/lively-client").Room;
   useIsInsideRoom: () => boolean;
   useStorageRoot: () => { root: LiveObject } | null;
 

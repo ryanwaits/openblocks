@@ -1,12 +1,12 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import WebSocket from "ws";
-import { OpenBlocksServer } from "@waits/openblocks-server";
-import { OpenBlocksClient } from "../client";
-import type { CursorData, PresenceUser } from "@waits/openblocks-types";
+import { LivelyServer } from "@waits/lively-server";
+import { LivelyClient } from "../client";
+import type { CursorData, PresenceUser } from "@waits/lively-types";
 
-describe("Integration: OpenBlocksClient + Server", () => {
-  let server: OpenBlocksServer | null = null;
-  const clients: OpenBlocksClient[] = [];
+describe("Integration: LivelyClient + Server", () => {
+  let server: LivelyServer | null = null;
+  const clients: LivelyClient[] = [];
 
   afterEach(async () => {
     for (const client of clients) {
@@ -21,8 +21,8 @@ describe("Integration: OpenBlocksClient + Server", () => {
     }
   });
 
-  function createClient(port: number): OpenBlocksClient {
-    const client = new OpenBlocksClient({
+  function createClient(port: number): LivelyClient {
+    const client = new LivelyClient({
       serverUrl: `ws://127.0.0.1:${port}`,
       WebSocket: WebSocket as any,
       reconnect: false,
@@ -32,7 +32,7 @@ describe("Integration: OpenBlocksClient + Server", () => {
   }
 
   function waitForPresence(
-    client: OpenBlocksClient,
+    client: LivelyClient,
     roomId: string,
     count: number
   ): Promise<PresenceUser[]> {
@@ -49,7 +49,7 @@ describe("Integration: OpenBlocksClient + Server", () => {
   }
 
   function waitForStatus(
-    client: OpenBlocksClient,
+    client: LivelyClient,
     roomId: string,
     target: string
   ): Promise<void> {
@@ -66,7 +66,7 @@ describe("Integration: OpenBlocksClient + Server", () => {
   }
 
   it("client connects → getPresence returns self", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const client = createClient(server.port);
@@ -79,7 +79,7 @@ describe("Integration: OpenBlocksClient + Server", () => {
   });
 
   it("2 clients see each other, subscribe('presence') fires", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const c1 = createClient(server.port);
@@ -100,7 +100,7 @@ describe("Integration: OpenBlocksClient + Server", () => {
   });
 
   it("updateCursor → other client receives via subscribe('cursors')", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const c1 = createClient(server.port);
@@ -128,7 +128,7 @@ describe("Integration: OpenBlocksClient + Server", () => {
   });
 
   it("custom message → subscribe('message') fires on other client", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const c1 = createClient(server.port);
@@ -152,7 +152,7 @@ describe("Integration: OpenBlocksClient + Server", () => {
   });
 
   it("leaveRoom → clean disconnect, other client sees updated presence", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const c1 = createClient(server.port);
@@ -174,10 +174,10 @@ describe("Integration: OpenBlocksClient + Server", () => {
   });
 
   it("disconnect → reconnect → presence restored", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
-    const client = new OpenBlocksClient({
+    const client = new LivelyClient({
       serverUrl: `ws://127.0.0.1:${server.port}`,
       WebSocket: WebSocket as any,
       reconnect: true,

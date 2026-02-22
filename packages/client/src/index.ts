@@ -1,4 +1,4 @@
-export { OpenBlocksClient } from "./client.js";
+export { LivelyClient } from "./client.js";
 export type { ClientConfig, JoinRoomOptions } from "./client.js";
 
 export { Room } from "./room.js";
@@ -22,7 +22,7 @@ export type {
   PresenceMessage,
   CursorUpdateMessage,
   ClientCursorMessage,
-} from "@waits/openblocks-types";
+} from "@waits/lively-types";
 
 // Re-export storage types
 export {
@@ -31,4 +31,4 @@ export {
   LiveList,
   StorageDocument,
   AbstractCrdt,
-} from "@waits/openblocks-storage";
+} from "@waits/lively-storage";

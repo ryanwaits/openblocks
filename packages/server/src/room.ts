@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import type { StorageDocument } from "@waits/openblocks-storage";
+import type { StorageDocument } from "@waits/lively-storage";
 import type { Doc as YDoc } from "yjs";
 import type { Connection, PresenceUser } from "./types.js";
 import { LiveStateStore } from "./live-state.js";

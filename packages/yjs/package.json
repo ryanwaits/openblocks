@@ -1,8 +1,8 @@
 {
-  "name": "@waits/openblocks-yjs",
+  "name": "@waits/lively-yjs",
   "version": "0.0.1",
   "type": "module",
-  "description": "Yjs provider for OpenBlocks — Y.Doc ↔ Room bridge",
+  "description": "Yjs provider for Lively — Y.Doc ↔ Room bridge",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,11 +27,11 @@
   },
   "peerDependencies": {
     "yjs": "^13",
-    "@waits/openblocks-client": "workspace:*"
+    "@waits/lively-client": "workspace:*"
   },
   "devDependencies": {
-    "@waits/openblocks-client": "workspace:*",
-    "@waits/openblocks-server": "workspace:*",
+    "@waits/lively-client": "workspace:*",
+    "@waits/lively-server": "workspace:*",
     "typescript": "^5",
     "yjs": "^13.6.29"
   }

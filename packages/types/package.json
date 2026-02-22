@@ -1,8 +1,8 @@
 {
-  "name": "@waits/openblocks-types",
+  "name": "@waits/lively-types",
   "version": "0.0.1",
   "type": "module",
-  "description": "Shared types for OpenBlocks real-time collaboration",
+  "description": "Shared types for Lively real-time collaboration",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

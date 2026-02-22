@@ -2,19 +2,19 @@
 
 ## Overview
 
-`@waits/openblocks-server` is a standalone WebSocket server for OpenBlocks. It handles room management, presence broadcasting, cursor relay, CRDT storage sync, heartbeat monitoring, live state, and connection lifecycle -- all out of the box.
+`@waits/lively-server` is a standalone WebSocket server for Lively. It handles room management, presence broadcasting, cursor relay, CRDT storage sync, heartbeat monitoring, live state, and connection lifecycle -- all out of the box.
 
 Zero configuration required for basic usage. One server instance manages many rooms.
 
 ## Quick Start
 
 ```typescript
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 
-const server = new OpenBlocksServer();
+const server = new LivelyServer();
 await server.start(1234);
 
-console.log(`OpenBlocks server listening on port ${server.port}`);
+console.log(`Lively server listening on port ${server.port}`);
 
 // Later...
 await server.stop();
@@ -24,14 +24,14 @@ That's it. Clients can connect to `ws://localhost:1234/rooms/{roomId}` and rooms
 
 ---
 
-## `OpenBlocksServer`
+## `LivelyServer`
 
 The main class. Creates an HTTP server, upgrades WebSocket connections, and manages the full room lifecycle.
 
 ### Constructor
 
 ```typescript
-const server = new OpenBlocksServer(config?: ServerConfig);
+const server = new LivelyServer(config?: ServerConfig);
 ```
 
 All configuration is optional. With no arguments, the server uses sensible defaults.
@@ -59,9 +59,9 @@ All configuration is optional. With no arguments, the server uses sensible defau
 ### Full Example
 
 ```typescript
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   path: "/rooms",
   auth: {
     async authenticate(req) {
@@ -145,7 +145,7 @@ type OnJoinHandler = (
 ```
 
 ```typescript
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   onJoin(roomId, user) {
     console.log(`${user.displayName} (${user.userId}) joined room ${roomId}`);
     console.log(`Color: ${user.color}, Status: ${user.onlineStatus}`);
@@ -165,7 +165,7 @@ type OnLeaveHandler = (
 ```
 
 ```typescript
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   onLeave(roomId, user) {
     analytics.track("room_leave", {
       roomId,
@@ -189,7 +189,7 @@ type OnMessageHandler = (
 ```
 
 ```typescript
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   onMessage(roomId, senderId, message) {
     if (message.type === "ai:request") {
       handleAIRequest(roomId, senderId, message);
@@ -210,7 +210,7 @@ type OnStorageChangeHandler = (
 ```
 
 ```typescript
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   onStorageChange(roomId, ops) {
     // Persist ops or snapshot to your database
     saveToDatabase(roomId, ops);
@@ -229,7 +229,7 @@ type InitialStorageHandler = (
 ```
 
 ```typescript
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   async initialStorage(roomId) {
     const snapshot = await db.query(
       "SELECT data FROM room_storage WHERE room_id = $1",
@@ -255,7 +255,7 @@ interface AuthHandler {
 Return `{ userId, displayName }` to allow the connection. Return `null` or throw to reject with a `401`.
 
 ```typescript
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   auth: {
     async authenticate(req) {
       const token = req.headers["authorization"]?.replace("Bearer ", "");
@@ -395,9 +395,9 @@ Colors are deterministically assigned from a fixed palette based on a hash of `u
 Minimal setup -- no auth, auto rooms, all built-in features enabled.
 
 ```typescript
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 
-const server = new OpenBlocksServer();
+const server = new LivelyServer();
 await server.start(1234);
 ```
 
@@ -412,10 +412,10 @@ ws://localhost:1234/rooms/my-doc?userId=alice&displayName=Alice
 Validate JWT tokens before allowing connections.
 
 ```typescript
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 import jwt from "jsonwebtoken";
 
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   auth: {
     async authenticate(req) {
       const url = new URL(req.url!, `http://${req.headers.host}`);
@@ -446,7 +446,7 @@ await server.start(1234);
 Use `onStorageChange` and `initialStorage` to persist room state across server restarts.
 
 ```typescript
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -470,7 +470,7 @@ const saveSnapshot = debounce(async (roomId: string) => {
     .upsert({ room_id: roomId, data: doc.serialize(), updated_at: new Date() });
 }, 1000);
 
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   onStorageChange(roomId, _ops) {
     saveSnapshot(roomId, roomId);
   },
@@ -493,9 +493,9 @@ await server.start(1234);
 Use `onMessage` to intercept app-specific messages (e.g., AI commands, admin actions).
 
 ```typescript
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   onMessage(roomId, senderId, message) {
     switch (message.type) {
       case "ai:generate":
@@ -523,7 +523,7 @@ Note: custom messages are automatically relayed to all other clients in the room
 
 ### 5. Multi-Server Deployment (Conceptual)
 
-OpenBlocks runs as a single-process server by default. For horizontal scaling, you can use the available hooks to synchronize state across instances:
+Lively runs as a single-process server by default. For horizontal scaling, you can use the available hooks to synchronize state across instances:
 
 - **`onStorageChange`** -- write ops to a shared store (Redis Streams, Kafka)
 - **`initialStorage`** -- load the latest snapshot from the shared store
@@ -537,7 +537,7 @@ A typical pattern: each server instance subscribes to a Redis pub/sub channel pe
 ## Architecture
 
 ```
-Client A ──ws──> OpenBlocksServer ──ws──> Client B
+Client A ──ws──> LivelyServer ──ws──> Client B
                        |
                        |── HTTP Server (upgrade only)
                        |
@@ -617,7 +617,7 @@ Room state lives in memory and is lost on restart. Use `initialStorage` + `onSto
 
 ### One Server, Many Rooms
 
-A single `OpenBlocksServer` instance manages all rooms. No need for room-per-process or room-per-port architectures.
+A single `LivelyServer` instance manages all rooms. No need for room-per-process or room-per-port architectures.
 
 ### Custom Messages Pass Through
 

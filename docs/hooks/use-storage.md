@@ -1,8 +1,8 @@
 # Storage & Mutations
 
-OpenBlocks uses **CRDTs** (Conflict-free Replicated Data Types) for persistent, collaborative storage. Every mutation is automatically synced across all connected clients using **last-writer-wins (LWW)** conflict resolution with Lamport clocks. Changes survive disconnects, page refreshes, and empty rooms -- they are persisted in the room's storage document, not ephemeral like presence or live state.
+Lively uses **CRDTs** (Conflict-free Replicated Data Types) for persistent, collaborative storage. Every mutation is automatically synced across all connected clients using **last-writer-wins (LWW)** conflict resolution with Lamport clocks. Changes survive disconnects, page refreshes, and empty rooms -- they are persisted in the room's storage document, not ephemeral like presence or live state.
 
-This is the core value prop: define your data schema with `LiveObject`, `LiveMap`, and `LiveList`, read it with `useStorage`, mutate it with `useMutation`, and OpenBlocks handles sync, conflict resolution, and undo/redo automatically.
+This is the core value prop: define your data schema with `LiveObject`, `LiveMap`, and `LiveList`, read it with `useStorage`, mutate it with `useMutation`, and Lively handles sync, conflict resolution, and undo/redo automatically.
 
 ---
 
@@ -28,7 +28,7 @@ function useStorage<T>(selector: (root: LiveObject) => T): T | null
 #### Simple value
 
 ```tsx
-import { useStorage } from "@waits/openblocks-react";
+import { useStorage } from "@waits/lively-react";
 
 function Counter() {
   const count = useStorage((root) => root.get("count"));
@@ -104,10 +104,10 @@ function TodoList() {
 
 ### Suspense variant
 
-If you prefer Suspense over `null` checks, use `useStorageSuspense` from `@waits/openblocks-react/suspense`:
+If you prefer Suspense over `null` checks, use `useStorageSuspense` from `@waits/lively-react/suspense`:
 
 ```tsx
-import { useStorageSuspense } from "@waits/openblocks-react/suspense";
+import { useStorageSuspense } from "@waits/lively-react/suspense";
 
 function Counter() {
   // Never null -- suspends until storage is ready
@@ -149,7 +149,7 @@ function useMutation<Args extends unknown[], R>(
 #### Basic mutation
 
 ```tsx
-import { useMutation } from "@waits/openblocks-react";
+import { useMutation } from "@waits/lively-react";
 
 function Counter() {
   const count = useStorage((root) => root.get("count"));
@@ -210,7 +210,7 @@ For larger apps, extract mutations into reusable hooks rather than defining them
 
 ```tsx
 // hooks/use-todo-mutations.ts
-import { useMutation, LiveObject, LiveMap } from "@waits/openblocks-react";
+import { useMutation, LiveObject, LiveMap } from "@waits/lively-react";
 
 export function useAddTodo() {
   return useMutation(({ storage }, text: string) => {
@@ -271,7 +271,7 @@ new LiveObject<T>(initial?: Partial<T>)
 ```
 
 ```tsx
-import { LiveObject } from "@waits/openblocks-react";
+import { LiveObject } from "@waits/lively-react";
 
 const shape = new LiveObject({
   x: 0,
@@ -336,7 +336,7 @@ new LiveMap<V>(entries?: Iterable<[string, V]>)
 ```
 
 ```tsx
-import { LiveMap, LiveObject } from "@waits/openblocks-react";
+import { LiveMap, LiveObject } from "@waits/lively-react";
 
 const todos = new LiveMap<LiveObject>([
   ["todo-1", new LiveObject({ text: "Buy milk", completed: false })],
@@ -366,7 +366,7 @@ Collections where items have IDs: todo items, board objects, chat messages, user
 #### Example: todo list with LiveMap of LiveObjects
 
 ```tsx
-import { useStorage, useMutation, LiveObject, LiveMap } from "@waits/openblocks-react";
+import { useStorage, useMutation, LiveObject, LiveMap } from "@waits/lively-react";
 
 function TodoApp() {
   const todos = useStorage((root) => {
@@ -435,7 +435,7 @@ new LiveList<T>(initial?: T[])
 ```
 
 ```tsx
-import { LiveList, LiveObject } from "@waits/openblocks-react";
+import { LiveList, LiveObject } from "@waits/lively-react";
 
 const layers = new LiveList([
   new LiveObject({ id: "bg", type: "rect", zIndex: 0 }),
@@ -465,7 +465,7 @@ Ordered collections where position matters: kanban columns, z-ordered layers, pl
 #### Example: reorderable list
 
 ```tsx
-import { useStorage, useMutation, LiveObject, LiveList } from "@waits/openblocks-react";
+import { useStorage, useMutation, LiveObject, LiveList } from "@waits/lively-react";
 
 function LayerPanel() {
   const layers = useStorage((root) => {
@@ -533,7 +533,7 @@ function LayerPanel() {
 The `initialStorage` prop on `<RoomProvider>` defines the CRDT schema for a room. It is written to storage on first connection if the room's storage is empty. Subsequent connections ignore it.
 
 ```tsx
-import { RoomProvider, LiveObject, LiveMap, LiveList } from "@waits/openblocks-react";
+import { RoomProvider, LiveObject, LiveMap, LiveList } from "@waits/lively-react";
 
 function App() {
   return (
@@ -756,7 +756,7 @@ updateShape("shape-1", { x: 200, y: 300, fill: "#ef4444" });
 Every CRDT mutation automatically captures inverse operations. Pair with `useHistory` for full undo/redo support:
 
 ```tsx
-import { useHistory, useMutation } from "@waits/openblocks-react";
+import { useHistory, useMutation } from "@waits/lively-react";
 
 function Canvas() {
   const { undo, redo, canUndo, canRedo } = useHistory();

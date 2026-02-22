@@ -1,13 +1,13 @@
-# @waits/openblocks-server
+# @waits/lively-server
 
 Real-time collaboration server — WebSocket rooms, presence, and cursor relay.
 
 ## Quick Start
 
 ```ts
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 
-const server = new OpenBlocksServer({ port: 1999 });
+const server = new LivelyServer({ port: 1999 });
 await server.start();
 // Clients connect to ws://localhost:1999/rooms/{roomId}
 ```
@@ -17,7 +17,7 @@ await server.start();
 Provide a custom `AuthHandler` to authenticate WebSocket upgrades. If auth is configured, query-param `userId`/`displayName` are ignored.
 
 ```ts
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   auth: {
     async authenticate(req) {
       const url = new URL(req.url!, `http://${req.headers.host}`);
@@ -41,7 +41,7 @@ ws://localhost:1999/rooms/my-room?userId=alice&displayName=Alice
 All messages must follow a `{ type: string, ...payload }` envelope. The server handles `cursor:update` automatically — everything else is relayed to peers and passed to `onMessage`.
 
 ```ts
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   onMessage: async (roomId, senderId, message) => {
     console.log(`[${roomId}] ${senderId}:`, message);
     // Persist to database, trigger side effects, etc.
@@ -52,7 +52,7 @@ const server = new OpenBlocksServer({
 ## Room Events
 
 ```ts
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   onJoin: (roomId, user) => {
     console.log(`${user.displayName} joined ${roomId}`);
   },
@@ -112,10 +112,10 @@ Returns an empty array if the room doesn't exist.
 
 | Export | Description |
 |--------|-------------|
-| `OpenBlocksServer` | Main server class — manages rooms, connections, message routing |
+| `LivelyServer` | Main server class — manages rooms, connections, message routing |
 | `Room` | Single room — tracks connections, provides `broadcast`/`send` |
 | `RoomManager` | Room lifecycle — create, get, cleanup on disconnect |
-| `ServerConfig` | Config for `OpenBlocksServer` — port, path, auth, callbacks |
+| `ServerConfig` | Config for `LivelyServer` — port, path, auth, callbacks |
 | `AuthHandler` | Interface for custom auth — `authenticate(req)` |
 | `PresenceUser` | User in a room — `userId`, `displayName`, `color`, `connectedAt` |
 | `CursorData` | Cursor position — `userId`, `displayName`, `color`, `x`, `y`, `lastUpdate` |

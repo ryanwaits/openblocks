@@ -1,9 +1,9 @@
-# @waits/openblocks-react-tiptap
+# @waits/lively-react-tiptap
 
-Collaborative TipTap editor integration for OpenBlocks. Provides a hook that wires Yjs sync, collaborative cursors, and undo/redo into TipTap — plus toolbar components, slash commands, and block-level extensions.
+Collaborative TipTap editor integration for Lively. Provides a hook that wires Yjs sync, collaborative cursors, and undo/redo into TipTap — plus toolbar components, slash commands, and block-level extensions.
 
 ```bash
-npm install @waits/openblocks-react-tiptap @waits/openblocks-yjs @tiptap/react @tiptap/starter-kit y-prosemirror
+npm install @waits/lively-react-tiptap @waits/lively-yjs @tiptap/react @tiptap/starter-kit y-prosemirror
 ```
 
 ---
@@ -14,18 +14,18 @@ npm install @waits/openblocks-react-tiptap @waits/openblocks-yjs @tiptap/react @
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
-  useOpenBlocksExtension,
+  useLivelyExtension,
   Toolbar,
   FloatingToolbar,
-} from "@waits/openblocks-react-tiptap";
+} from "@waits/lively-react-tiptap";
 
 function CollabEditor() {
-  const openblocks = useOpenBlocksExtension();
+  const lively = useLivelyExtension();
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ history: false }), // disable built-in history — yjs handles it
-      openblocks,
+      lively,
     ],
     editorProps: {
       attributes: { class: "prose max-w-none focus:outline-none" },
@@ -42,7 +42,7 @@ function CollabEditor() {
 }
 ```
 
-> **Important:** Disable TipTap's built-in `history` extension. The OpenBlocks extension uses Yjs undo/redo instead.
+> **Important:** Disable TipTap's built-in `history` extension. The Lively extension uses Yjs undo/redo instead.
 
 ### Cursor CSS
 
@@ -78,15 +78,15 @@ Add these styles to your `globals.css` for collaborative cursor carets:
 
 ## Core API
 
-### `useOpenBlocksExtension`
+### `useLivelyExtension`
 
 ```ts
-function useOpenBlocksExtension(
-  options?: UseOpenBlocksExtensionOptions
+function useLivelyExtension(
+  options?: UseLivelyExtensionOptions
 ): Extension;
 ```
 
-Returns a TipTap `Extension` that bundles Yjs document sync (`ySyncPlugin`), collaborative cursors (`yCursorPlugin`), and Yjs undo/redo (`yUndoPlugin`). Manages the `OpenBlocksYjsProvider` lifecycle internally. Strict-mode safe.
+Returns a TipTap `Extension` that bundles Yjs document sync (`ySyncPlugin`), collaborative cursors (`yCursorPlugin`), and Yjs undo/redo (`yUndoPlugin`). Manages the `LivelyYjsProvider` lifecycle internally. Strict-mode safe.
 
 #### Options
 
@@ -266,7 +266,7 @@ The handle resolves block positions correctly for both top-level blocks and list
 ### `Callout`
 
 ```ts
-import { Callout } from "@waits/openblocks-react-tiptap";
+import { Callout } from "@waits/lively-react-tiptap";
 ```
 
 Block-level callout node with type and emoji attributes.
@@ -306,7 +306,7 @@ Style these in your CSS to differentiate callout types:
 ### `ImagePlaceholder`
 
 ```ts
-import { ImagePlaceholder } from "@waits/openblocks-react-tiptap";
+import { ImagePlaceholder } from "@waits/lively-react-tiptap";
 ```
 
 Image node extension that renders a URL input placeholder when `src` is empty. Once a URL is entered, renders the image inline.
@@ -342,7 +342,7 @@ Creates a syntax-highlighted code block extension with a language picker dropdow
 #### Setup
 
 ```ts
-import { createCodeBlockExtension } from "@waits/openblocks-react-tiptap";
+import { createCodeBlockExtension } from "@waits/lively-react-tiptap";
 import { common, createLowlight } from "lowlight";
 
 const lowlight = createLowlight(common);
@@ -372,7 +372,7 @@ Plain text, JavaScript, TypeScript, JSX, TSX, HTML, CSS, JSON, Python, Ruby, Go,
 
 | Export | Type | Description |
 |--------|------|-------------|
-| `useOpenBlocksExtension` | Hook | Yjs-backed TipTap extension |
+| `useLivelyExtension` | Hook | Yjs-backed TipTap extension |
 | `yjsUndo` | Function | Direct Yjs undo |
 | `yjsRedo` | Function | Direct Yjs redo |
 | `Toolbar` | Component | Fixed formatting toolbar |

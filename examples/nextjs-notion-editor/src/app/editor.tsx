@@ -11,14 +11,14 @@ import Highlight from "@tiptap/extension-highlight";
 import Link from "@tiptap/extension-link";
 import { common, createLowlight } from "lowlight";
 import {
-  useOpenBlocksExtension,
+  useLivelyExtension,
   FloatingToolbar,
   createSlashCommandExtension,
   createCodeBlockExtension,
   BlockHandle,
   Callout,
   ImagePlaceholder,
-} from "@waits/openblocks-react-tiptap";
+} from "@waits/lively-react-tiptap";
 
 const lowlight = createLowlight(common);
 const codeBlock = createCodeBlockExtension(lowlight);
@@ -26,7 +26,7 @@ const codeBlock = createCodeBlockExtension(lowlight);
 const slashCommand = createSlashCommandExtension();
 
 export function NotionEditor() {
-  const openblocks = useOpenBlocksExtension();
+  const lively = useLivelyExtension();
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -59,7 +59,7 @@ export function NotionEditor() {
           return "Type '/' for commands...";
         },
       }),
-      openblocks,
+      lively,
       slashCommand,
     ],
   });

@@ -1,6 +1,6 @@
 import { useRef, useCallback } from "react";
 import type { RefObject } from "react";
-import { useUpdateCursor } from "@waits/openblocks-react";
+import { useUpdateCursor } from "@waits/lively-react";
 
 /**
  * Returns a `ref` to attach to your container element and an `onMouseMove`

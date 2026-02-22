@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 
-const PORT = parseInt(process.env.OPENBLOCKS_PORT || "2004", 10);
-const DATA_DIR = join(import.meta.dir, "../.openblocks");
+const PORT = parseInt(process.env.LIVELY_PORT || "2004", 10);
+const DATA_DIR = join(import.meta.dir, "../.lively");
 
 if (!existsSync(DATA_DIR)) {
   mkdirSync(DATA_DIR, { recursive: true });
@@ -13,7 +13,7 @@ function yjsPath(roomId: string): string {
   return join(DATA_DIR, `${roomId}.yjs`);
 }
 
-const server = new OpenBlocksServer({
+const server = new LivelyServer({
   path: "/rooms",
   initialYjs: async (roomId: string) => {
     const path = yjsPath(roomId);

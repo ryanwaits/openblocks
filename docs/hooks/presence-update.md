@@ -41,7 +41,7 @@ All hooks must be used inside a `RoomProvider`. `useMyPresence` combines `useSel
 Returns a `[self, updatePresence]` tuple -- a convenience wrapper that combines `useSelf()` and `useUpdateMyPresence()` into one call.
 
 ```ts
-import { useMyPresence } from "@waits/openblocks-react";
+import { useMyPresence } from "@waits/lively-react";
 
 const [me, updatePresence] = useMyPresence();
 if (me) updatePresence({ location: "settings" });
@@ -59,7 +59,7 @@ function useMyPresence(): [
 The first element is `null` before the WebSocket connection is established and the first presence broadcast is received. The second element is a stable function reference that won't change across renders.
 
 ```tsx
-import { useMyPresence } from "@waits/openblocks-react";
+import { useMyPresence } from "@waits/lively-react";
 
 function LocationSwitcher() {
   const [me, updatePresence] = useMyPresence();
@@ -97,7 +97,7 @@ function LocationSwitcher() {
 Returns a stable function to update the current user's presence data. The function reference never changes, so it's safe to pass as a prop or use in dependency arrays without causing re-renders.
 
 ```ts
-import { useUpdateMyPresence } from "@waits/openblocks-react";
+import { useUpdateMyPresence } from "@waits/lively-react";
 
 const updatePresence = useUpdateMyPresence();
 updatePresence({ location: "page-1" });
@@ -112,7 +112,7 @@ function useUpdateMyPresence(): (data: Partial<PresenceUpdatePayload>) => void;
 The update is partial -- you only send the fields you want to change. Unchanged fields are preserved on the server.
 
 ```tsx
-import { useUpdateMyPresence } from "@waits/openblocks-react";
+import { useUpdateMyPresence } from "@waits/lively-react";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
@@ -137,7 +137,7 @@ function LocationTracker() {
 Returns a sorted `string[]` of user IDs for all other users in the room. Only re-renders when users join or leave -- NOT when their presence data (location, status, metadata) changes.
 
 ```ts
-import { useOthersUserIds } from "@waits/openblocks-react";
+import { useOthersUserIds } from "@waits/lively-react";
 
 const ids = useOthersUserIds();
 // ["user-abc", "user-def", "user-xyz"]
@@ -152,7 +152,7 @@ function useOthersUserIds(): string[];
 Internally, this hook maps each user to their `userId`, sorts the array, and compares it element-by-element against the previous value. If the sorted ID list hasn't changed, the cached array is returned, preventing re-renders.
 
 ```tsx
-import { useOthersUserIds, useOther } from "@waits/openblocks-react";
+import { useOthersUserIds, useOther } from "@waits/lively-react";
 
 function CursorLayer() {
   const ids = useOthersUserIds();
@@ -195,7 +195,7 @@ function RemoteCursor({ userId }: { userId: string }) {
 Fires a callback whenever another user enters, leaves, or updates their presence. The callback receives a discriminated `OthersEvent`. This hook never causes re-renders -- it's purely imperative.
 
 ```ts
-import { useOthersListener } from "@waits/openblocks-react";
+import { useOthersListener } from "@waits/lively-react";
 
 useOthersListener((event) => {
   if (event.type === "enter") console.log(`${event.user.displayName} joined`);
@@ -220,7 +220,7 @@ function useOthersListener(callback: (event: OthersEvent) => void): void;
 The hook uses a `callbackRef` pattern internally -- your callback always runs with the latest closure values, so there are no stale capture issues even if you reference local state.
 
 ```tsx
-import { useOthersListener } from "@waits/openblocks-react";
+import { useOthersListener } from "@waits/lively-react";
 import { toast } from "sonner";
 
 function PresenceNotifications() {
@@ -250,7 +250,7 @@ function PresenceNotifications() {
 Show where each user is in the app: "Alice is on Settings, Bob is on Dashboard."
 
 ```tsx
-import { useSelf, useOthers, useUpdateMyPresence } from "@waits/openblocks-react";
+import { useSelf, useOthers, useUpdateMyPresence } from "@waits/lively-react";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
@@ -313,8 +313,8 @@ function App() {
 Fire toasts when users enter or leave without re-rendering any component.
 
 ```tsx
-import { useOthersListener } from "@waits/openblocks-react";
-import type { OthersEvent } from "@waits/openblocks-react";
+import { useOthersListener } from "@waits/lively-react";
+import type { OthersEvent } from "@waits/lively-react";
 import { toast } from "sonner";
 
 function JoinLeaveToasts() {
@@ -348,7 +348,7 @@ Drop `<JoinLeaveToasts />` anywhere inside `RoomProvider`. It renders nothing an
 The standard `useOthers()` re-renders every cursor when any user's data changes. The `useOthersUserIds` + `useOther` pattern gives each cursor its own subscription, so updating user A's position doesn't re-render user B's cursor component.
 
 ```tsx
-import { useOthersUserIds, useOther } from "@waits/openblocks-react";
+import { useOthersUserIds, useOther } from "@waits/lively-react";
 
 function CursorOverlay() {
   const ids = useOthersUserIds();
@@ -401,7 +401,7 @@ function UserCursor({ userId }: { userId: string }) {
 Tag users with roles via `metadata` and render role-specific UI. Editors see a full toolbar, viewers see a read-only banner.
 
 ```tsx
-import { useMyPresence, useOthers } from "@waits/openblocks-react";
+import { useMyPresence, useOthers } from "@waits/lively-react";
 
 function RoleAwareEditor() {
   const [me, updatePresence] = useMyPresence();
@@ -468,8 +468,8 @@ function RoleAwareEditor() {
 Maintain a running count of room activity (joins and leaves) and display it as a live feed.
 
 ```tsx
-import { useOthersListener, useOthersUserIds } from "@waits/openblocks-react";
-import type { OthersEvent } from "@waits/openblocks-react";
+import { useOthersListener, useOthersUserIds } from "@waits/lively-react";
+import type { OthersEvent } from "@waits/lively-react";
 import { useState, useCallback } from "react";
 
 type ActivityEntry = {

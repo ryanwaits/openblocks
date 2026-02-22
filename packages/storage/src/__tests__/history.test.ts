@@ -1,6 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import { HistoryManager } from "../history";
-import type { StorageOp } from "@waits/openblocks-types";
+import type { StorageOp } from "@waits/lively-types";
 
 function makeOp(key: string, clock = 0): StorageOp {
   return { type: "set", path: [], key, value: key, clock };

@@ -1,5 +1,5 @@
 {
-  "name": "@waits/openblocks-server",
+  "name": "@waits/lively-server",
   "version": "0.0.1",
   "type": "module",
   "description": "Real-time collaboration server — WebSocket rooms, presence, and cursor relay",
@@ -23,8 +23,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/openblocks-storage": "workspace:*",
-    "@waits/openblocks-types": "workspace:*",
+    "@waits/lively-storage": "workspace:*",
+    "@waits/lively-types": "workspace:*",
     "ws": "^8.19.0",
     "yjs": "^13.6.29"
   },

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { PresenceUser, OnlineStatus } from "@waits/openblocks-types";
+import type { PresenceUser, OnlineStatus } from "@waits/lively-types";
 import { useRoom } from "./room-context.js";
 import { useSelf } from "./use-self.js";
 

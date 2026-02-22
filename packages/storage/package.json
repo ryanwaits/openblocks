@@ -1,8 +1,8 @@
 {
-  "name": "@waits/openblocks-storage",
+  "name": "@waits/lively-storage",
   "version": "0.0.1",
   "type": "module",
-  "description": "CRDT storage types for OpenBlocks real-time collaboration",
+  "description": "CRDT storage types for Lively real-time collaboration",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,7 +23,7 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/openblocks-types": "workspace:*"
+    "@waits/lively-types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5"

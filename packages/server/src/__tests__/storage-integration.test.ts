@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, mock } from "bun:test";
 import WebSocket from "ws";
-import { OpenBlocksServer } from "../server";
+import { LivelyServer } from "../server";
 import { connectClient, waitForOpen, createMessageStream } from "./test-helpers";
 
 describe("Server Storage Integration (raw WS)", () => {
-  let server: OpenBlocksServer | null = null;
+  let server: LivelyServer | null = null;
   const clients: WebSocket[] = [];
 
   afterEach(async () => {
@@ -22,7 +22,7 @@ describe("Server Storage Integration (raw WS)", () => {
   }
 
   it("full init/ops/snapshot flow with 2 clients", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     // Client A connects
@@ -69,7 +69,7 @@ describe("Server Storage Integration (raw WS)", () => {
   });
 
   it("second storage:init is ignored (race condition guard)", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -109,7 +109,7 @@ describe("Server Storage Integration (raw WS)", () => {
 
   it("onStorageChange callback receives ops", async () => {
     const onStorageChange = mock(() => {});
-    server = new OpenBlocksServer({ onStorageChange });
+    server = new LivelyServer({ onStorageChange });
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -145,7 +145,7 @@ describe("Server Storage Integration (raw WS)", () => {
       type: "LiveObject" as const,
       data: { fromDB: true },
     }));
-    server = new OpenBlocksServer({ initialStorage });
+    server = new LivelyServer({ initialStorage });
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -171,7 +171,7 @@ describe("Server Storage Integration (raw WS)", () => {
         data: { seeded: true },
       };
     };
-    server = new OpenBlocksServer({ initialStorage });
+    server = new LivelyServer({ initialStorage });
     await server.start(0);
 
     // Connect 2 clients simultaneously
@@ -197,7 +197,7 @@ describe("Server Storage Integration (raw WS)", () => {
   // --- Task #10: validation tests ---
 
   it("rejects cursor with NaN", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const wsA = track(connectClient(server.port, "val-room", { userId: "alice" }));
@@ -220,7 +220,7 @@ describe("Server Storage Integration (raw WS)", () => {
   });
 
   it("rejects ops with non-array", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws = track(connectClient(server.port, "val-ops", { userId: "alice" }));

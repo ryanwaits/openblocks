@@ -4,7 +4,7 @@ import type {
   SerializedLiveMap,
   SerializedLiveList,
   StorageOp,
-} from "@waits/openblocks-types";
+} from "@waits/lively-types";
 import { AbstractCrdt, type StorageDocumentHost } from "./abstract-crdt.js";
 import { LamportClock } from "./clock.js";
 import { LiveObject } from "./live-object.js";

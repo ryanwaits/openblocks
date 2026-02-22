@@ -1,12 +1,12 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import WebSocket from "ws";
-import { OpenBlocksServer } from "@waits/openblocks-server";
-import { OpenBlocksClient } from "../client";
-import { LiveObject, LiveMap, LiveList } from "@waits/openblocks-storage";
+import { LivelyServer } from "@waits/lively-server";
+import { LivelyClient } from "../client";
+import { LiveObject, LiveMap, LiveList } from "@waits/lively-storage";
 
 describe("Storage Integration: E2E", () => {
-  let server: OpenBlocksServer | null = null;
-  const clients: OpenBlocksClient[] = [];
+  let server: LivelyServer | null = null;
+  const clients: LivelyClient[] = [];
 
   afterEach(async () => {
     for (const client of clients) {
@@ -21,8 +21,8 @@ describe("Storage Integration: E2E", () => {
     }
   });
 
-  function createClient(port: number): OpenBlocksClient {
-    const client = new OpenBlocksClient({
+  function createClient(port: number): LivelyClient {
+    const client = new LivelyClient({
       serverUrl: `ws://127.0.0.1:${port}`,
       WebSocket: WebSocket as any,
       reconnect: false,
@@ -32,7 +32,7 @@ describe("Storage Integration: E2E", () => {
   }
 
   function waitForStatus(
-    client: OpenBlocksClient,
+    client: LivelyClient,
     roomId: string,
     target: string
   ): Promise<void> {
@@ -52,7 +52,7 @@ describe("Storage Integration: E2E", () => {
   }
 
   it("Client A inits storage, Client B joins → receives snapshot", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     // Client A connects and initializes storage
@@ -83,7 +83,7 @@ describe("Storage Integration: E2E", () => {
   });
 
   it("Client A sets LiveObject field → Client B sees change via subscribe", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const clientA = createClient(server.port);
@@ -118,7 +118,7 @@ describe("Storage Integration: E2E", () => {
   });
 
   it("Client A adds to LiveMap → Client B has entry", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const clientA = createClient(server.port);
@@ -153,7 +153,7 @@ describe("Storage Integration: E2E", () => {
   });
 
   it("Client A pushes to LiveList → Client B has item", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const clientA = createClient(server.port);
@@ -188,7 +188,7 @@ describe("Storage Integration: E2E", () => {
   });
 
   it("concurrent mutations resolve deterministically via LWW", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const clientA = createClient(server.port);
@@ -224,7 +224,7 @@ describe("Storage Integration: E2E", () => {
   });
 
   it("batch groups ops, other client receives atomically", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const clientA = createClient(server.port);
@@ -262,7 +262,7 @@ describe("Storage Integration: E2E", () => {
   });
 
   it("disconnect → reconnect → storage restored", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const clientA = createClient(server.port);

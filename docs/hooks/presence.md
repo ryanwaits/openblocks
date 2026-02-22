@@ -53,7 +53,7 @@ interface PresenceUser {
 ## `useOthersOnLocation`
 
 ```ts
-import { useOthersOnLocation } from "@waits/openblocks-react";
+import { useOthersOnLocation } from "@waits/lively-react";
 
 const usersHere = useOthersOnLocation("/dashboard");
 ```
@@ -69,7 +69,7 @@ Filters the room's presence list to only users whose `location` field matches th
 ```tsx
 // Layout.tsx
 import { usePathname } from "next/navigation";
-import { RoomProvider } from "@waits/openblocks-react";
+import { RoomProvider } from "@waits/lively-react";
 
 function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -88,7 +88,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 // Sidebar.tsx
-import { useOthersOnLocation } from "@waits/openblocks-react";
+import { useOthersOnLocation } from "@waits/lively-react";
 
 function PagePresence({ path, label }: { path: string; label: string }) {
   const users = useOthersOnLocation(path);
@@ -240,7 +240,7 @@ function Cell({ cellRef }: { cellRef: string }) {
 ## `usePresenceEvent`
 
 ```ts
-import { usePresenceEvent } from "@waits/openblocks-react";
+import { usePresenceEvent } from "@waits/lively-react";
 
 usePresenceEvent("stateChange", (user, prevStatus, newStatus) => {
   console.log(`${user.displayName}: ${prevStatus} -> ${newStatus}`);
@@ -260,7 +260,7 @@ The callback fires whenever any other user's `onlineStatus` field changes. It co
 #### 1. Toast notifications -- "Alice went away"
 
 ```tsx
-import { usePresenceEvent } from "@waits/openblocks-react";
+import { usePresenceEvent } from "@waits/lively-react";
 import { toast } from "sonner";
 
 function PresenceToasts() {
@@ -403,8 +403,8 @@ Client                              Server
 | Parameter | Value | Side |
 |---|---|---|
 | Client ping interval | 30s | `ConnectionManager` (`heartbeatIntervalMs`) |
-| Server check interval | 15s | `OpenBlocksServer` (`heartbeatCheckIntervalMs`) |
-| Server timeout | 45s | `OpenBlocksServer` (`heartbeatTimeoutMs`) |
+| Server check interval | 15s | `LivelyServer` (`heartbeatCheckIntervalMs`) |
+| Server timeout | 45s | `LivelyServer` (`heartbeatTimeoutMs`) |
 
 The heartbeat is independent from the `ActivityTracker`. Activity tracking determines status based on user interaction (mouse, keyboard, tab visibility). Heartbeats determine whether the WebSocket connection is still alive. If the connection drops entirely, the server marks the user offline after 45 seconds of silence, even if the `ActivityTracker` never fired.
 

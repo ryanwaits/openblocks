@@ -10,12 +10,12 @@ The returned values are live CRDT objects -- use `.get()`, `.set()`, `.toArray()
 
 | Hook | Signature | Returns | Re-renders when... | Import |
 |------|-----------|---------|---------------------|--------|
-| `useObject<T>(key)` | `(key: string) => LiveObject<T> \| null` | `LiveObject<T> \| null` | Any field on the object changes | `@waits/openblocks-react` |
-| `useMap<V>(key)` | `(key: string) => LiveMap<string, V> \| null` | `LiveMap<string, V> \| null` | Any entry is set or deleted | `@waits/openblocks-react` |
-| `useList<T>(key)` | `(key: string) => LiveList<T> \| null` | `LiveList<T> \| null` | Any item is pushed, inserted, deleted, or moved | `@waits/openblocks-react` |
-| `useObjectSuspense<T>(key)` | `(key: string) => LiveObject<T>` | `LiveObject<T>` | Same as `useObject` | `@waits/openblocks-react/suspense` |
-| `useMapSuspense<V>(key)` | `(key: string) => LiveMap<string, V>` | `LiveMap<string, V>` | Same as `useMap` | `@waits/openblocks-react/suspense` |
-| `useListSuspense<T>(key)` | `(key: string) => LiveList<T>` | `LiveList<T>` | Same as `useList` | `@waits/openblocks-react/suspense` |
+| `useObject<T>(key)` | `(key: string) => LiveObject<T> \| null` | `LiveObject<T> \| null` | Any field on the object changes | `@waits/lively-react` |
+| `useMap<V>(key)` | `(key: string) => LiveMap<string, V> \| null` | `LiveMap<string, V> \| null` | Any entry is set or deleted | `@waits/lively-react` |
+| `useList<T>(key)` | `(key: string) => LiveList<T> \| null` | `LiveList<T> \| null` | Any item is pushed, inserted, deleted, or moved | `@waits/lively-react` |
+| `useObjectSuspense<T>(key)` | `(key: string) => LiveObject<T>` | `LiveObject<T>` | Same as `useObject` | `@waits/lively-react/suspense` |
+| `useMapSuspense<V>(key)` | `(key: string) => LiveMap<string, V>` | `LiveMap<string, V>` | Same as `useMap` | `@waits/lively-react/suspense` |
+| `useListSuspense<T>(key)` | `(key: string) => LiveList<T>` | `LiveList<T>` | Same as `useList` | `@waits/lively-react/suspense` |
 
 All hooks must be called inside a `<RoomProvider>`.
 
@@ -41,7 +41,7 @@ function useObject<T extends Record<string, unknown>>(key: string): LiveObject<T
 ### Example
 
 ```tsx
-import { useObject, useMutation } from "@waits/openblocks-react";
+import { useObject, useMutation } from "@waits/lively-react";
 
 function ThemeDisplay() {
   const settings = useObject<{ theme: string; fontSize: number }>("settings");
@@ -84,7 +84,7 @@ function useMap<V>(key: string): LiveMap<string, V> | null
 ### Example
 
 ```tsx
-import { useMap } from "@waits/openblocks-react";
+import { useMap } from "@waits/lively-react";
 
 function UserCount() {
   const users = useMap<{ name: string; role: string }>("users");
@@ -122,8 +122,8 @@ function useList<T>(key: string): LiveList<T> | null
 ### Example
 
 ```tsx
-import { useList } from "@waits/openblocks-react";
-import type { LiveObject } from "@waits/openblocks-react";
+import { useList } from "@waits/lively-react";
+import type { LiveObject } from "@waits/lively-react";
 
 function ItemCount() {
   const items = useList<LiveObject>("items");
@@ -152,7 +152,7 @@ import {
   useObjectSuspense,
   useMapSuspense,
   useListSuspense,
-} from "@waits/openblocks-react/suspense";
+} from "@waits/lively-react/suspense";
 ```
 
 | Standard Hook | Suspense Hook | Return Type Difference |
@@ -169,7 +169,7 @@ import {
 
 ```tsx
 import { Suspense } from "react";
-import { useObjectSuspense } from "@waits/openblocks-react/suspense";
+import { useObjectSuspense } from "@waits/lively-react/suspense";
 
 function SettingsPanel() {
   // Never null -- suspends until storage is ready
@@ -195,7 +195,7 @@ function App() {
 A `LiveObject` for app-wide settings. Every connected user sees the same config and can update individual fields without clobbering others.
 
 ```tsx
-import { useObject, useMutation } from "@waits/openblocks-react";
+import { useObject, useMutation } from "@waits/lively-react";
 
 interface AppSettings {
   theme: "light" | "dark";
@@ -275,7 +275,7 @@ function SettingsPanel() {
 A `LiveMap` keyed by user ID, storing profile data. Users can join, update their info, and leave. The map grows and shrinks dynamically.
 
 ```tsx
-import { useMap, useMutation, LiveObject } from "@waits/openblocks-react";
+import { useMap, useMutation, LiveObject } from "@waits/lively-react";
 
 interface UserProfile {
   name: string;
@@ -357,7 +357,7 @@ function UserRegistry({ currentUserId }: { currentUserId: string }) {
 A `LiveList` of `LiveObjects` for ordered tasks. Supports add, toggle, delete, and drag-to-reorder.
 
 ```tsx
-import { useList, useMutation, LiveObject } from "@waits/openblocks-react";
+import { useList, useMutation, LiveObject } from "@waits/lively-react";
 import { useState } from "react";
 
 interface TodoItem {
@@ -471,8 +471,8 @@ function TodoApp() {
 A `LiveObject` for board metadata, a `LiveMap` for columns, and a `LiveList` inside each column for ordered cards. Demonstrates how the shorthand hooks compose with `useStorage` for nested reads.
 
 ```tsx
-import { useObject, useMap, useMutation, LiveObject, LiveList } from "@waits/openblocks-react";
-import { useStorage } from "@waits/openblocks-react";
+import { useObject, useMap, useMutation, LiveObject, LiveList } from "@waits/lively-react";
+import { useStorage } from "@waits/lively-react";
 
 interface BoardMeta {
   title: string;
@@ -591,7 +591,7 @@ import {
   useMapSuspense,
   useListSuspense,
   useMutation,
-} from "@waits/openblocks-react/suspense";
+} from "@waits/lively-react/suspense";
 
 function PanelSkeleton() {
   return (

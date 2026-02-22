@@ -6,7 +6,7 @@ Figma-style "follow user" — mirror another user's viewport so you see exactly 
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  @waits/openblocks-types                            │
+│  @waits/lively-types                            │
 │  CursorData { x, y, viewportPos?, viewportScale? }  │
 │  ClientCursorMessage (client→server, no user meta)   │
 └──────────────────────┬──────────────────────────────┘
@@ -58,7 +58,7 @@ Server is a relay + enrichment hub. Clients never send user metadata themselves.
 
 ## packages/react
 
-Two hooks (exported from `@waits/openblocks-react`):
+Two hooks (exported from `@waits/lively-react`):
 
 - **`useCursors()`** — subscribes to the cursors map via `useSyncExternalStore`. Equality check includes `viewportPos` and `viewportScale` fields, so viewport changes trigger re-renders.
 - **`useUpdateCursor()`** — stable callback wrapping `room.updateCursor()`. Accepts optional viewport args: `(x, y, viewportPos?, viewportScale?)`.
@@ -67,7 +67,7 @@ Two hooks (exported from `@waits/openblocks-react`):
 
 ## packages/react — `useFollowUser`
 
-The SDK provides `useFollowUser()` as a first-class hook in `@waits/openblocks-react`. It handles all follow logic:
+The SDK provides `useFollowUser()` as a first-class hook in `@waits/lively-react`. It handles all follow logic:
 
 1. **Follow state** — `followUser(userId)` / `stopFollowing()`, broadcasts via presence metadata
 2. **Viewport sync** — subscribes to the target's cursor data, reads `viewportPos` + `viewportScale`
@@ -125,7 +125,7 @@ User B moves mouse / pans / zooms
 
 ## Consumer Guide
 
-A consumer building on openblocks would:
+A consumer building on lively would:
 
 1. **Send viewport data** — pass `viewportPos` and `viewportScale` when calling `useUpdateCursor()` (or wrap it like `useBoardMutations` does)
 2. **Use `useFollowUser()`** — the SDK hook handles viewport sync, lerp interpolation, auto-exit, and follower tracking. Provide an `onViewportChange` callback to apply the followed user's viewport to your camera.

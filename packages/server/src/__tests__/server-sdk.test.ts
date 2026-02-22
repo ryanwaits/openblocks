@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import WebSocket from "ws";
-import { OpenBlocksServer } from "../server";
+import { LivelyServer } from "../server";
 import { connectClient, waitForOpen, createMessageStream } from "./test-helpers";
 
 describe("Server SDK methods", () => {
-  let server: OpenBlocksServer | null = null;
+  let server: LivelyServer | null = null;
   const clients: WebSocket[] = [];
 
   afterEach(async () => {
@@ -24,7 +24,7 @@ describe("Server SDK methods", () => {
   // ── mutateStorage ──
 
   it("mutateStorage broadcasts ops to connected client", async () => {
-    server = new OpenBlocksServer({
+    server = new LivelyServer({
       initialStorage: async () => ({
         type: "LiveObject" as const,
         data: { count: 0 },
@@ -56,7 +56,7 @@ describe("Server SDK methods", () => {
   });
 
   it("mutateStorage returns false for non-existent room", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const result = await server.mutateStorage("no-such-room", (root) => {
@@ -66,7 +66,7 @@ describe("Server SDK methods", () => {
   });
 
   it("mutateStorage returns false if storage not initialized", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     // Connect to create the room, but storage:init returns null (no initialStorage callback)
@@ -84,7 +84,7 @@ describe("Server SDK methods", () => {
   // ── getRoomUsers ──
 
   it("getRoomUsers returns connected users", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const wsA = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -103,7 +103,7 @@ describe("Server SDK methods", () => {
   });
 
   it("getRoomUsers returns empty array for non-existent room", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const users = server.getRoomUsers("no-such-room");
@@ -113,7 +113,7 @@ describe("Server SDK methods", () => {
   // ── setLiveState ──
 
   it("setLiveState broadcasts state:update to client", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -136,7 +136,7 @@ describe("Server SDK methods", () => {
   });
 
   it("setLiveState returns false for non-existent room", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const result = server.setLiveState("no-such-room", "key", "value");

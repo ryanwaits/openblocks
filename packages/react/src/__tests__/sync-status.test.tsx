@@ -4,7 +4,7 @@ import { createMockRoom, createMockClient, createDeferredPromise, type MockRoom 
 
 const { act, renderHook } = await import("@testing-library/react");
 const { createElement } = await import("react");
-const { OpenBlocksProvider } = await import("../client-context.js");
+const { LivelyProvider } = await import("../client-context.js");
 const { RoomProvider } = await import("../room-context.js");
 const { useSyncStatus } = await import("../use-status.js");
 
@@ -18,7 +18,7 @@ function setup(storageOverride?: () => Promise<{ root: any }>) {
 
 function wrapper({ children }: { children: any }) {
   return createElement(
-    OpenBlocksProvider,
+    LivelyProvider,
     { client },
     createElement(
       RoomProvider,

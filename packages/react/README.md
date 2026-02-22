@@ -1,11 +1,11 @@
-# @waits/openblocks-react
+# @waits/lively-react
 
-React hooks and providers for OpenBlocks real-time collaboration.
+React hooks and providers for Lively real-time collaboration.
 
 ## Install
 
 ```sh
-bun add @waits/openblocks-react
+bun add @waits/lively-react
 ```
 
 Requires `react >= 18` as a peer dependency.
@@ -15,15 +15,15 @@ Requires `react >= 18` as a peer dependency.
 ## Setup
 
 ```tsx
-import { OpenBlocksClient } from "@waits/openblocks-client";
-import { OpenBlocksProvider, RoomProvider } from "@waits/openblocks-react";
+import { LivelyClient } from "@waits/lively-client";
+import { LivelyProvider, RoomProvider } from "@waits/lively-react";
 
 // Create once at module level — not inside a component
-const client = new OpenBlocksClient({ serverUrl: "ws://localhost:2001" });
+const client = new LivelyClient({ serverUrl: "ws://localhost:2001" });
 
 function App() {
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <RoomProvider
         roomId="my-room"
         userId={currentUser.id}
@@ -32,7 +32,7 @@ function App() {
       >
         <Canvas />
       </RoomProvider>
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 ```
@@ -41,13 +41,13 @@ function App() {
 
 ## Providers
 
-### `<OpenBlocksProvider>`
+### `<LivelyProvider>`
 
-Makes a shared `OpenBlocksClient` available to all nested hooks. Must wrap `<RoomProvider>`.
+Makes a shared `LivelyClient` available to all nested hooks. Must wrap `<RoomProvider>`.
 
 ```ts
-interface OpenBlocksProviderProps {
-  client: OpenBlocksClient;
+interface LivelyProviderProps {
+  client: LivelyClient;
   children: ReactNode;
 }
 ```
@@ -712,10 +712,10 @@ Returns the raw `Room` instance from the nearest `<RoomProvider>`. Throws if use
 ### `useClient`
 
 ```ts
-function useClient(): OpenBlocksClient
+function useClient(): LivelyClient
 ```
 
-Returns the `OpenBlocksClient` from the nearest `<OpenBlocksProvider>`. Useful for managing multiple rooms outside of React lifecycle.
+Returns the `LivelyClient` from the nearest `<LivelyProvider>`. Useful for managing multiple rooms outside of React lifecycle.
 
 ---
 
@@ -741,10 +741,10 @@ Returns the raw storage root object, or `null` while storage is loading. Lower-l
 
 ## Suspense entry point
 
-Import from `@waits/openblocks-react/suspense` to use `useStorageSuspense` — a variant of `useStorage` that throws a promise instead of returning `null` while loading. Wrap the consuming component in `<Suspense>`.
+Import from `@waits/lively-react/suspense` to use `useStorageSuspense` — a variant of `useStorage` that throws a promise instead of returning `null` while loading. Wrap the consuming component in `<Suspense>`.
 
 ```tsx
-import { useStorageSuspense } from "@waits/openblocks-react/suspense";
+import { useStorageSuspense } from "@waits/lively-react/suspense";
 
 // Inside a <Suspense fallback={<p>Loading…</p>}> boundary:
 function Canvas() {
@@ -762,7 +762,7 @@ import {
   useObjectSuspense,
   useMapSuspense,
   useListSuspense,
-} from "@waits/openblocks-react/suspense";
+} from "@waits/lively-react/suspense";
 
 const settings = useObjectSuspense<{ theme: string }>("settings");
 const users = useMapSuspense<UserData>("users");
@@ -780,5 +780,5 @@ The suspense entry re-exports all other hooks for single-import convenience — 
 `LiveObject`, `LiveMap`, and `LiveList` are re-exported from this package for convenience:
 
 ```ts
-import { LiveObject, LiveMap, LiveList } from "@waits/openblocks-react";
+import { LiveObject, LiveMap, LiveList } from "@waits/lively-react";
 ```

@@ -13,10 +13,10 @@ If a client is disconnected when an event fires, they miss it. No replay, no cat
 | `useBroadcastEvent` | `useBroadcastEvent<T>()` | Returns a stable `broadcast` function that sends an event to all **other** clients |
 | `useEventListener` | `useEventListener<T>(callback)` | Subscribes to incoming events; cleans up on unmount |
 
-Both hooks are available from `@waits/openblocks-react` (and from `@waits/openblocks-react/suspense`).
+Both hooks are available from `@waits/lively-react` (and from `@waits/lively-react/suspense`).
 
 ```ts
-import { useBroadcastEvent, useEventListener } from "@waits/openblocks-react";
+import { useBroadcastEvent, useEventListener } from "@waits/lively-react";
 ```
 
 ---
@@ -43,7 +43,7 @@ function useBroadcastEvent<
 ### Example
 
 ```tsx
-import { useBroadcastEvent } from "@waits/openblocks-react";
+import { useBroadcastEvent } from "@waits/lively-react";
 
 type AppEvent =
   | { type: "emoji"; emoji: string }
@@ -85,7 +85,7 @@ function useEventListener<
 ### Example
 
 ```tsx
-import { useEventListener } from "@waits/openblocks-react";
+import { useEventListener } from "@waits/lively-react";
 
 type AppEvent =
   | { type: "emoji"; emoji: string }
@@ -147,7 +147,7 @@ User clicks a reaction button; all clients show a brief animation. Ephemeral by 
 type ReactionEvent = { type: "reaction"; emoji: string; x: number; y: number };
 
 // ReactionButton.tsx
-import { useBroadcastEvent } from "@waits/openblocks-react";
+import { useBroadcastEvent } from "@waits/lively-react";
 
 function ReactionButton({ emoji }: { emoji: string }) {
   const broadcast = useBroadcastEvent<ReactionEvent>();
@@ -169,7 +169,7 @@ function ReactionButton({ emoji }: { emoji: string }) {
 }
 
 // ReactionOverlay.tsx
-import { useEventListener } from "@waits/openblocks-react";
+import { useEventListener } from "@waits/lively-react";
 import { useState } from "react";
 
 function ReactionOverlay() {
@@ -222,7 +222,7 @@ function ReactionOverlay() {
 "Alice added a new item." Broadcast the event, each client shows a toast.
 
 ```tsx
-import { useBroadcastEvent, useEventListener, useSelf } from "@waits/openblocks-react";
+import { useBroadcastEvent, useEventListener, useSelf } from "@waits/lively-react";
 import { toast } from "sonner"; // or any toast library
 
 type NotifyEvent = { type: "notify"; message: string; sender: string };

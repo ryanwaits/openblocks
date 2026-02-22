@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from "bun:test";
-import { OpenBlocksServer } from "../server";
+import { LivelyServer } from "../server";
 
 describe("Health check", () => {
-  let server: OpenBlocksServer | null = null;
+  let server: LivelyServer | null = null;
 
   afterEach(async () => {
     if (server) {
@@ -12,7 +12,7 @@ describe("Health check", () => {
   });
 
   it("GET /health returns 200 with status ok", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const res = await fetch(`http://127.0.0.1:${server.port}/health`);
@@ -21,7 +21,7 @@ describe("Health check", () => {
   });
 
   it("GET /other returns 426", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const res = await fetch(`http://127.0.0.1:${server.port}/other`);
@@ -29,7 +29,7 @@ describe("Health check", () => {
   });
 
   it("respects custom healthPath", async () => {
-    server = new OpenBlocksServer({ healthPath: "/ping" });
+    server = new LivelyServer({ healthPath: "/ping" });
     await server.start(0);
 
     const res = await fetch(`http://127.0.0.1:${server.port}/ping`);

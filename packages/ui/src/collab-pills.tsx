@@ -1,5 +1,5 @@
-import { useOthers, useSelf } from "@waits/openblocks-react";
-import type { PresenceUser } from "@waits/openblocks-types";
+import { useOthers, useSelf } from "@waits/lively-react";
+import type { PresenceUser } from "@waits/lively-types";
 
 export interface CollabPillsProps {
   /** Include the current user's own pill. Default: true */

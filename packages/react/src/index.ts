@@ -1,6 +1,6 @@
 // Providers
-export { OpenBlocksProvider, useClient } from "./client-context.js";
-export type { OpenBlocksProviderProps } from "./client-context.js";
+export { LivelyProvider, useClient } from "./client-context.js";
+export type { LivelyProviderProps } from "./client-context.js";
 export { RoomProvider, useRoom, useIsInsideRoom, useStorageRoot } from "./room-context.js";
 export type { RoomProviderProps } from "./room-context.js";
 
@@ -65,7 +65,7 @@ export {
   LiveObject,
   LiveMap,
   LiveList,
-} from "@waits/openblocks-client";
+} from "@waits/lively-client";
 
 // Re-export client types
 export type {
@@ -73,4 +73,4 @@ export type {
   ConnectionStatus,
   PresenceUser,
   CursorData,
-} from "@waits/openblocks-types";
+} from "@waits/lively-types";

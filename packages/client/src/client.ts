@@ -18,7 +18,7 @@ export interface JoinRoomOptions {
   token?: string;
 }
 
-export class OpenBlocksClient {
+export class LivelyClient {
   private readonly config: ClientConfig;
   private readonly rooms = new Map<string, Room>();
 

@@ -1,4 +1,4 @@
-import type { SerializedCrdt, StorageOp } from "@waits/openblocks-types";
+import type { SerializedCrdt, StorageOp } from "@waits/lively-types";
 import type { LamportClock } from "./clock.js";
 
 export interface StorageDocumentHost {

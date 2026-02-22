@@ -1,5 +1,5 @@
 import { useSyncExternalStore, useCallback, useRef } from "react";
-import type { CursorData } from "@waits/openblocks-types";
+import type { CursorData } from "@waits/lively-types";
 import { useRoom } from "./room-context.js";
 
 /**

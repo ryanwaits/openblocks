@@ -1,4 +1,4 @@
-import type { PresenceUser, OnlineStatus } from "@waits/openblocks-types";
+import type { PresenceUser, OnlineStatus } from "@waits/lively-types";
 
 export interface AvatarProps {
   user: PresenceUser;

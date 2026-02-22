@@ -53,7 +53,7 @@ into reusable packages. Start with shared types, then storage (CRDT), then serve
 then client SDK, then React hooks. Each package must have its own tests, build,
 and exports. Workspace deps use workspace:*."
 ```
-Result: Clean extraction of a full Liveblocks alternative (`@waits/openblocks-*`) across 5 packages with 317 tests. The phased approach meant each layer was stable before the next was built on top.
+Result: Clean extraction of a full Liveblocks alternative (`@waits/lively-*`) across 5 packages with 317 tests. The phased approach meant each layer was stable before the next was built on top.
 
 ## Code Analysis
 

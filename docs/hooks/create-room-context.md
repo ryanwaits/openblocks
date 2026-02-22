@@ -1,13 +1,13 @@
 # `createRoomContext` -- Typed Hook Factory
 
-A factory function that returns a fully typed set of all OpenBlocks React hooks. You define your app's `Presence` and `Storage` types once, call `createRoomContext<TPresence, TStorage>()`, and get back hooks where `useStorage`, `useSelf`, `useMyPresence`, and `useUpdateMyPresence` are narrowed to your types. All other hooks are re-exported as-is. Zero runtime overhead -- the factory just wraps hooks with type casts.
+A factory function that returns a fully typed set of all Lively React hooks. You define your app's `Presence` and `Storage` types once, call `createRoomContext<TPresence, TStorage>()`, and get back hooks where `useStorage`, `useSelf`, `useMyPresence`, and `useUpdateMyPresence` are narrowed to your types. All other hooks are re-exported as-is. Zero runtime overhead -- the factory just wraps hooks with type casts.
 
 ---
 
 ## API Signature
 
 ```ts
-import { createRoomContext } from "@waits/openblocks-react";
+import { createRoomContext } from "@waits/lively-react";
 
 function createRoomContext<
   TPresence extends Record<string, unknown> = Record<string, unknown>,
@@ -19,7 +19,7 @@ function createRoomContext<
 |-------|------|-------------|
 | `TPresence` | `Record<string, unknown>` | Shape of your app's presence data (cursor position, selected tool, etc.) |
 | `TStorage` | `Record<string, unknown>` | Shape of your app's CRDT storage root |
-| **Returns** | `TypedRoomContext` | Object containing all OpenBlocks hooks, with typed variants where applicable |
+| **Returns** | `TypedRoomContext` | Object containing all Lively hooks, with typed variants where applicable |
 
 Both generic params default to `Record<string, unknown>`, so calling `createRoomContext()` with no type args gives you the same untyped hooks as direct imports.
 
@@ -27,7 +27,7 @@ Both generic params default to `Record<string, unknown>`, so calling `createRoom
 
 ## Return Type
 
-The returned object contains every hook in the OpenBlocks React package:
+The returned object contains every hook in the Lively React package:
 
 ### Providers
 
@@ -114,8 +114,8 @@ The returned object contains every hook in the OpenBlocks React package:
 ### 1. Define your types
 
 ```ts
-// lib/openblocks.ts
-import { createRoomContext, LiveMap, LiveObject, LiveList } from "@waits/openblocks-react";
+// lib/lively.ts
+import { createRoomContext, LiveMap, LiveObject, LiveList } from "@waits/lively-react";
 
 // What each user's presence looks like
 type Presence = {
@@ -156,7 +156,7 @@ export const {
 
 ```tsx
 // components/Canvas.tsx
-import { useStorage, useMutation, useSelf } from "../lib/openblocks";
+import { useStorage, useMutation, useSelf } from "../lib/lively";
 
 function Canvas() {
   // selector root is LiveObject<Storage> -- root.get("shapes") is type-aware
@@ -183,8 +183,8 @@ function Canvas() {
 Full file structure showing the typed context pattern end-to-end.
 
 ```ts
-// lib/openblocks.ts
-import { createRoomContext, LiveMap, LiveObject, LiveList } from "@waits/openblocks-react";
+// lib/lively.ts
+import { createRoomContext, LiveMap, LiveObject, LiveList } from "@waits/lively-react";
 
 type Presence = {
   cursor: { x: number; y: number } | null;
@@ -219,8 +219,8 @@ export const {
 
 ```tsx
 // app/board/[id]/page.tsx
-import { RoomProvider } from "@/lib/openblocks";
-import { LiveMap, LiveList } from "@waits/openblocks-react";
+import { RoomProvider } from "@/lib/lively";
+import { LiveMap, LiveList } from "@waits/lively-react";
 import { Canvas } from "./Canvas";
 import { Toolbar } from "./Toolbar";
 import { CursorOverlay } from "./CursorOverlay";
@@ -247,7 +247,7 @@ export default function BoardPage({ params }: { params: { id: string } }) {
 
 ```tsx
 // app/board/[id]/Toolbar.tsx
-import { useUpdateMyPresence, useHistory, useSelf } from "@/lib/openblocks";
+import { useUpdateMyPresence, useHistory, useSelf } from "@/lib/lively";
 
 function Toolbar() {
   const updatePresence = useUpdateMyPresence();
@@ -277,7 +277,7 @@ function Toolbar() {
 
 ```tsx
 // app/board/[id]/CursorOverlay.tsx
-import { useCursors, useOthers } from "@/lib/openblocks";
+import { useCursors, useOthers } from "@/lib/lively";
 
 function CursorOverlay() {
   const cursors = useCursors();
@@ -317,8 +317,8 @@ function CursorOverlay() {
 Different room types need different storage schemas. Create separate typed contexts for each.
 
 ```ts
-// lib/openblocks-canvas.ts
-import { createRoomContext, LiveMap, LiveObject } from "@waits/openblocks-react";
+// lib/lively-canvas.ts
+import { createRoomContext, LiveMap, LiveObject } from "@waits/lively-react";
 
 type CanvasPresence = {
   cursor: { x: number; y: number } | null;
@@ -333,8 +333,8 @@ export const canvas = createRoomContext<CanvasPresence, CanvasStorage>();
 ```
 
 ```ts
-// lib/openblocks-doc.ts
-import { createRoomContext, LiveList, LiveObject } from "@waits/openblocks-react";
+// lib/lively-doc.ts
+import { createRoomContext, LiveList, LiveObject } from "@waits/lively-react";
 
 type DocPresence = {
   cursor: { line: number; col: number } | null;
@@ -351,7 +351,7 @@ export const doc = createRoomContext<DocPresence, DocStorage>();
 
 ```tsx
 // pages/canvas/[id].tsx
-import { canvas } from "@/lib/openblocks-canvas";
+import { canvas } from "@/lib/lively-canvas";
 
 function CanvasPage({ id }: { id: string }) {
   return (
@@ -380,7 +380,7 @@ function CanvasEditor() {
 
 ```tsx
 // pages/doc/[id].tsx
-import { doc } from "@/lib/openblocks-doc";
+import { doc } from "@/lib/lively-doc";
 
 function DocPage({ id }: { id: string }) {
   return (
@@ -413,8 +413,8 @@ function DocEditor() {
 For larger apps, re-export the typed context as named hooks so consumers don't need to know about the factory.
 
 ```ts
-// lib/openblocks.ts
-import { createRoomContext, LiveMap, LiveObject } from "@waits/openblocks-react";
+// lib/lively.ts
+import { createRoomContext, LiveMap, LiveObject } from "@waits/lively-react";
 
 type Presence = {
   cursor: { x: number; y: number } | null;
@@ -462,11 +462,11 @@ export const useOthersOnLocation = ctx.useOthersOnLocation;
 export const usePresenceEvent = ctx.usePresenceEvent;
 ```
 
-Now every file in the app imports from `@/lib/openblocks` instead of `@waits/openblocks-react`, and all hooks are pre-typed:
+Now every file in the app imports from `@/lib/lively` instead of `@waits/lively-react`, and all hooks are pre-typed:
 
 ```tsx
 // components/TodoList.tsx
-import { useStorage, useMutation, useUpdateMyPresence } from "@/lib/openblocks";
+import { useStorage, useMutation, useUpdateMyPresence } from "@/lib/lively";
 
 function TodoList() {
   const todos = useStorage((root) => {
@@ -539,7 +539,7 @@ The typed wrappers (`useStorageTyped`, `useSelfTyped`, etc.) delegate directly t
 
 | | Direct import | `createRoomContext` |
 |---|---|---|
-| **Import path** | `@waits/openblocks-react` | Your app's `lib/openblocks.ts` |
+| **Import path** | `@waits/lively-react` | Your app's `lib/lively.ts` |
 | **`useStorage` selector** | `(root: LiveObject) => T` -- untyped root | `(root: LiveObject<TStorage>) => T` -- typed root |
 | **`useSelf` return** | `PresenceUser \| null` | `(PresenceUser & { presence: TPresence }) \| null` |
 | **`useUpdateMyPresence`** | `(data: Partial<Record<string, unknown>>) => void` | `(data: Partial<TPresence>) => void` |
@@ -548,4 +548,4 @@ The typed wrappers (`useStorageTyped`, `useSelfTyped`, etc.) delegate directly t
 | **Setup effort** | None | One-time: define types + call factory |
 | **Type safety** | Manual casts in every selector | Automatic from the factory |
 
-**Rule of thumb:** If your app has more than a couple components using OpenBlocks hooks, use `createRoomContext`. The upfront cost is one file; the payoff is type safety across every hook call site without manual casts.
+**Rule of thumb:** If your app has more than a couple components using Lively hooks, use `createRoomContext`. The upfront cost is one file; the payoff is type safety across every hook call site without manual casts.

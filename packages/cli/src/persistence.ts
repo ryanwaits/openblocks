@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { SerializedCrdt } from "@waits/openblocks-types";
+import type { SerializedCrdt } from "@waits/lively-types";
 
 interface RoomFileData {
   root: SerializedCrdt;

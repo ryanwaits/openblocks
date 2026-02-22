@@ -216,7 +216,7 @@ const addTodo = useMutation((storage, text: string) => {
 
 ### **High-frequency positional updates (60fps)**
 
-Mouse position, drag coordinates, pointer trails. These need throttled binary-friendly channels, not debounced JSON messages. OpenBlocks has dedicated cursor tracking for this.
+Mouse position, drag coordinates, pointer trails. These need throttled binary-friendly channels, not debounced JSON messages. Lively has dedicated cursor tracking for this.
 
 ```tsx
 // BAD -- 50ms debounce drops frames, JSON overhead

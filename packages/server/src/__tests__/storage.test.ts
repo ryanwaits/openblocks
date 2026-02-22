@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, mock } from "bun:test";
 import WebSocket from "ws";
-import { OpenBlocksServer } from "../server";
+import { LivelyServer } from "../server";
 import { connectClient, waitForOpen, createMessageStream } from "./test-helpers";
 
 describe("Server Storage", () => {
-  let server: OpenBlocksServer | null = null;
+  let server: LivelyServer | null = null;
   const clients: WebSocket[] = [];
 
   afterEach(async () => {
@@ -22,7 +22,7 @@ describe("Server Storage", () => {
   }
 
   it("new connection receives storage:init with null root", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -35,7 +35,7 @@ describe("Server Storage", () => {
   });
 
   it("first client sends storage:init → server stores and broadcasts", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -64,7 +64,7 @@ describe("Server Storage", () => {
   });
 
   it("storage:ops applied and broadcast to all clients", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -100,7 +100,7 @@ describe("Server Storage", () => {
   });
 
   it("late joiner receives snapshot on connect", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -132,7 +132,7 @@ describe("Server Storage", () => {
 
   it("onStorageChange fires on ops", async () => {
     const onStorageChange = mock(() => {});
-    server = new OpenBlocksServer({ onStorageChange });
+    server = new LivelyServer({ onStorageChange });
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -164,7 +164,7 @@ describe("Server Storage", () => {
       type: "LiveObject" as const,
       data: { seeded: true, value: 42 },
     }));
-    server = new OpenBlocksServer({ initialStorage });
+    server = new LivelyServer({ initialStorage });
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -179,7 +179,7 @@ describe("Server Storage", () => {
   });
 
   it("storage:ops dropped if storage not initialized", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));

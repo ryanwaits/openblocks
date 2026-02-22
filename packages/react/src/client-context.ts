@@ -1,37 +1,37 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { createElement } from "react";
-import type { OpenBlocksClient } from "@waits/openblocks-client";
+import type { LivelyClient } from "@waits/lively-client";
 
-const ClientContext = createContext<OpenBlocksClient | null>(null);
+const ClientContext = createContext<LivelyClient | null>(null);
 
-export interface OpenBlocksProviderProps {
-  /** Shared `OpenBlocksClient` instance — create once at module level */
-  client: OpenBlocksClient;
+export interface LivelyProviderProps {
+  /** Shared `LivelyClient` instance — create once at module level */
+  client: LivelyClient;
   children: ReactNode;
 }
 
 /**
- * Top-level provider that makes an `OpenBlocksClient` available to all
+ * Top-level provider that makes an `LivelyClient` available to all
  * nested hooks. Create the client once at module level and pass it here.
  *
  * @example
- * const client = new OpenBlocksClient({ serverUrl: "ws://localhost:2001" });
- * <OpenBlocksProvider client={client}>
+ * const client = new LivelyClient({ serverUrl: "ws://localhost:2001" });
+ * <LivelyProvider client={client}>
  *   <App />
- * </OpenBlocksProvider>
+ * </LivelyProvider>
  */
-export function OpenBlocksProvider({ client, children }: OpenBlocksProviderProps): ReactNode {
+export function LivelyProvider({ client, children }: LivelyProviderProps): ReactNode {
   return createElement(ClientContext.Provider, { value: client }, children);
 }
 
 /**
- * Returns the `OpenBlocksClient` from context. Must be inside `<OpenBlocksProvider>`.
+ * Returns the `LivelyClient` from context. Must be inside `<LivelyProvider>`.
  * Throws if called outside a provider.
  */
-export function useClient(): OpenBlocksClient {
+export function useClient(): LivelyClient {
   const client = useContext(ClientContext);
   if (!client) {
-    throw new Error("useClient must be used within an <OpenBlocksProvider>");
+    throw new Error("useClient must be used within an <LivelyProvider>");
   }
   return client;
 }

@@ -1,6 +1,6 @@
 # Live Cursors
 
-Real-time cursor tracking -- see where other users are pointing. Two layers: low-level hooks (`useCursors`, `useUpdateCursor` from `@waits/openblocks-react`) for data access, and pre-built UI components (`CursorOverlay`, `Cursor`, `useCursorTracking` from `@waits/openblocks-ui`) for drop-in rendering. Throttled at 50ms by default for performance.
+Real-time cursor tracking -- see where other users are pointing. Two layers: low-level hooks (`useCursors`, `useUpdateCursor` from `@waits/lively-react`) for data access, and pre-built UI components (`CursorOverlay`, `Cursor`, `useCursorTracking` from `@waits/lively-ui`) for drop-in rendering. Throttled at 50ms by default for performance.
 
 ---
 
@@ -9,8 +9,8 @@ Real-time cursor tracking -- see where other users are pointing. Two layers: low
 Ten lines to get live cursors working:
 
 ```tsx
-import { RoomProvider } from "@waits/openblocks-react";
-import { CursorOverlay, useCursorTracking } from "@waits/openblocks-ui";
+import { RoomProvider } from "@waits/lively-react";
+import { CursorOverlay, useCursorTracking } from "@waits/lively-ui";
 
 function Canvas() {
   const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();
@@ -40,17 +40,17 @@ That's it. `useCursorTracking` computes container-relative coordinates and broad
 
 | Export | Package | Signature | Returns | Description |
 |---|---|---|---|---|
-| `useCursors` | `@waits/openblocks-react` | `()` | `Map<string, CursorData>` | All cursor positions in the room, keyed by userId. |
-| `useUpdateCursor` | `@waits/openblocks-react` | `()` | `(x, y, viewportPos?, viewportScale?) => void` | Stable function to broadcast cursor position. |
-| `useCursorTracking` | `@waits/openblocks-ui` | `<T extends HTMLElement>()` | `{ ref: RefObject<T>, onMouseMove: (e) => void }` | Attach to a container; auto-broadcasts relative coordinates. |
-| `CursorOverlay` | `@waits/openblocks-ui` | `({ className? })` | `JSX.Element` | Renders a `<Cursor>` for every other user. Excludes self. |
-| `Cursor` | `@waits/openblocks-ui` | `({ x, y, color, displayName, className? })` | `JSX.Element` | Single cursor arrow + name label, positioned absolutely. |
+| `useCursors` | `@waits/lively-react` | `()` | `Map<string, CursorData>` | All cursor positions in the room, keyed by userId. |
+| `useUpdateCursor` | `@waits/lively-react` | `()` | `(x, y, viewportPos?, viewportScale?) => void` | Stable function to broadcast cursor position. |
+| `useCursorTracking` | `@waits/lively-ui` | `<T extends HTMLElement>()` | `{ ref: RefObject<T>, onMouseMove: (e) => void }` | Attach to a container; auto-broadcasts relative coordinates. |
+| `CursorOverlay` | `@waits/lively-ui` | `({ className? })` | `JSX.Element` | Renders a `<Cursor>` for every other user. Excludes self. |
+| `Cursor` | `@waits/lively-ui` | `({ x, y, color, displayName, className? })` | `JSX.Element` | Single cursor arrow + name label, positioned absolutely. |
 
 ---
 
 ## `CursorData` Type
 
-Defined in `@waits/openblocks-types`:
+Defined in `@waits/lively-types`:
 
 ```ts
 interface CursorData {
@@ -81,7 +81,7 @@ These components handle coordinate math, rendering, and self-filtering. Use thes
 Returns a `ref` and `onMouseMove` handler. Attach both to the same container element. The hook calls `useUpdateCursor` internally, computes coordinates relative to the container's bounding rect, and broadcasts them.
 
 ```tsx
-import { useCursorTracking } from "@waits/openblocks-ui";
+import { useCursorTracking } from "@waits/lively-ui";
 
 function Workspace() {
   const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();
@@ -119,7 +119,7 @@ function Workspace() {
 Renders a `<Cursor>` for every other user in the room. Automatically excludes the current user via `useSelf()`. Must be placed inside a `position: relative` container so absolute positioning works correctly.
 
 ```tsx
-import { CursorOverlay } from "@waits/openblocks-ui";
+import { CursorOverlay } from "@waits/lively-ui";
 
 // Minimal
 <CursorOverlay />
@@ -139,7 +139,7 @@ import { CursorOverlay } from "@waits/openblocks-ui";
 A single cursor indicator: an SVG arrow with a drop shadow and a colored name label. Positioned absolutely via `transform: translate(x, y)` with `will-change: transform` for GPU compositing.
 
 ```tsx
-import { Cursor } from "@waits/openblocks-ui";
+import { Cursor } from "@waits/lively-ui";
 
 <Cursor
   x={150}
@@ -179,7 +179,7 @@ Use these when you need custom cursor rendering, non-standard coordinate systems
 Returns a `Map<string, CursorData>` of all cursor positions in the room, including the current user. Re-renders only when positions actually change -- uses a position-aware equality check (compares `x`, `y`, `viewportScale`, `viewportPos.x`, `viewportPos.y`).
 
 ```tsx
-import { useCursors, useSelf } from "@waits/openblocks-react";
+import { useCursors, useSelf } from "@waits/lively-react";
 
 function CustomCursors() {
   const cursors = useCursors();
@@ -212,7 +212,7 @@ function CustomCursors() {
 Returns a stable callback that sends cursor position to all other users. The underlying `room.updateCursor()` is throttled at 50ms (configurable via `cursorThrottleMs` in Room config). Uses trailing-edge throttle: if you call it during the throttle window, the last position is sent when the window expires.
 
 ```tsx
-import { useUpdateCursor } from "@waits/openblocks-react";
+import { useUpdateCursor } from "@waits/lively-react";
 
 function ManualTracking() {
   const updateCursor = useUpdateCursor();
@@ -265,8 +265,8 @@ Cursors follow the mouse over an infinite canvas with zoom and pan. Screen coord
 ```
 
 ```tsx
-import { useUpdateCursor, useCursors, useSelf } from "@waits/openblocks-react";
-import { Cursor } from "@waits/openblocks-ui";
+import { useUpdateCursor, useCursors, useSelf } from "@waits/lively-react";
+import { Cursor } from "@waits/lively-ui";
 
 function InfiniteCanvas() {
   const updateCursor = useUpdateCursor();
@@ -334,7 +334,7 @@ function InfiniteCanvas() {
 Show cursor position as a colored caret in text. Instead of rendering pointer arrows, map cursor coordinates to a paragraph/character position and render an inline marker.
 
 ```tsx
-import { useCursors, useUpdateCursor, useSelf } from "@waits/openblocks-react";
+import { useCursors, useUpdateCursor, useSelf } from "@waits/lively-react";
 
 function TextEditor() {
   const updateCursor = useUpdateCursor();
@@ -390,7 +390,7 @@ function TextEditor() {
 Highlight which cell each user is focused on. Use cursor position to communicate cell reference and render a colored border.
 
 ```tsx
-import { useCursors, useUpdateCursor, useSelf } from "@waits/openblocks-react";
+import { useCursors, useUpdateCursor, useSelf } from "@waits/lively-react";
 
 function Spreadsheet() {
   const updateCursor = useUpdateCursor();
@@ -462,8 +462,8 @@ function Spreadsheet() {
 Presenter's cursor is visible to all viewers. One user broadcasts, everyone else watches. Read-only pattern.
 
 ```tsx
-import { useCursors, useUpdateCursor, useSelf } from "@waits/openblocks-react";
-import { Cursor } from "@waits/openblocks-ui";
+import { useCursors, useUpdateCursor, useSelf } from "@waits/lively-react";
+import { Cursor } from "@waits/lively-ui";
 
 function PresentationViewer({ presenterId }: { presenterId: string }) {
   const updateCursor = useUpdateCursor();
@@ -609,7 +609,7 @@ The `viewportPos` and `viewportScale` fields on `CursorData` power the [follow u
 Cursors and presence are complementary. Use `useCursors()` for real-time pointer position and `useOthers()` for user metadata. The `CursorData` includes `displayName` and `color` from the user's presence, so you don't need to join the two manually in most cases.
 
 ```tsx
-import { useCursors, useOthers } from "@waits/openblocks-react";
+import { useCursors, useOthers } from "@waits/lively-react";
 
 function CollaborationPanel() {
   const cursors = useCursors();

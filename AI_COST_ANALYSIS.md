@@ -40,7 +40,7 @@ All development done via Claude Code over 8 days (Feb 13–20, 2026). Tracked wi
 ### What $412 Bought
 
 - 164 commits, ~95% AI-generated code
-- 5-package SDK (`@waits/openblocks-*`) with 317 tests
+- 5-package SDK (`@waits/lively-*`) with 317 tests
 - Full collaborative whiteboard with AI agent (9 tools, 10 templates)
 - Complete real-time infrastructure (cursors, presence, sync, persistence)
 - Deployed production application

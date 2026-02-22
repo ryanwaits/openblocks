@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { RoomPersistence, sanitize } from "../persistence.js";
-import type { SerializedCrdt } from "@waits/openblocks-types";
+import type { SerializedCrdt } from "@waits/lively-types";
 
 const makeRoot = (overrides?: Partial<SerializedCrdt>): SerializedCrdt => ({
   type: "LiveObject",
@@ -16,7 +16,7 @@ describe("RoomPersistence", () => {
   let persistence: RoomPersistence;
 
   beforeEach(async () => {
-    dataDir = path.join(os.tmpdir(), `openblocks-test-${crypto.randomUUID()}`);
+    dataDir = path.join(os.tmpdir(), `lively-test-${crypto.randomUUID()}`);
     persistence = new RoomPersistence(dataDir);
     await persistence.ensureDir();
   });

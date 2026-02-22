@@ -8,7 +8,7 @@ export function printBanner(port: number, dataDir: string): void {
   const url = `ws://localhost:${port}`;
   const lines = [
     "",
-    chalk.bold("  OpenBlocks Dev Server"),
+    chalk.bold("  Lively Dev Server"),
     "",
     `  ${chalk.dim("WebSocket")}    ${chalk.cyan(url)}`,
     `  ${chalk.dim("Rooms")}        ${chalk.cyan(`${url}/rooms/{roomId}`)}`,

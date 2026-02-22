@@ -1,13 +1,13 @@
-# @waits/openblocks-client
+# @waits/lively-client
 
-Client SDK for OpenBlocks real-time collaboration. Framework-agnostic, works in browser and Node/Bun.
+Client SDK for Lively real-time collaboration. Framework-agnostic, works in browser and Node/Bun.
 
 ## Quick Start
 
 ```ts
-import { OpenBlocksClient } from "@waits/openblocks-client";
+import { LivelyClient } from "@waits/lively-client";
 
-const client = new OpenBlocksClient({
+const client = new LivelyClient({
   serverUrl: "ws://localhost:3000",
 });
 
@@ -35,9 +35,9 @@ Pass `ws` as the WebSocket constructor:
 
 ```ts
 import WebSocket from "ws";
-import { OpenBlocksClient } from "@waits/openblocks-client";
+import { LivelyClient } from "@waits/lively-client";
 
-const client = new OpenBlocksClient({
+const client = new LivelyClient({
   serverUrl: "ws://localhost:3000",
   WebSocket: WebSocket as any,
 });
@@ -242,7 +242,7 @@ room.subscribe("error", (err) => {
 
 | Class / Function | Description |
 |------------------|-------------|
-| `OpenBlocksClient(config)` | Entry point. Manages room connections. |
+| `LivelyClient(config)` | Entry point. Manages room connections. |
 | `client.joinRoom(roomId, opts)` | Join a room, auto-connects. Returns `Room`. |
 | `client.leaveRoom(roomId)` | Disconnect and remove room. |
 | `client.getRoom(roomId)` | Get room by ID or `undefined`. |

@@ -1,4 +1,4 @@
-import type { StorageOp } from "@waits/openblocks-types";
+import type { StorageOp } from "@waits/lively-types";
 
 export interface HistoryEntry {
   forward: StorageOp[];

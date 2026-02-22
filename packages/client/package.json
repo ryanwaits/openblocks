@@ -1,8 +1,8 @@
 {
-  "name": "@waits/openblocks-client",
+  "name": "@waits/lively-client",
   "version": "0.0.1",
   "type": "module",
-  "description": "Client SDK for OpenBlocks real-time collaboration",
+  "description": "Client SDK for Lively real-time collaboration",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,8 +23,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/openblocks-storage": "workspace:*",
-    "@waits/openblocks-types": "workspace:*"
+    "@waits/lively-storage": "workspace:*",
+    "@waits/lively-types": "workspace:*"
   },
   "peerDependencies": {
     "ws": "^8"
@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@types/ws": "^8.5.14",
-    "@waits/openblocks-server": "workspace:*",
+    "@waits/lively-server": "workspace:*",
     "typescript": "^5",
     "ws": "^8.19.0"
   }

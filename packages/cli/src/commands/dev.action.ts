@@ -1,4 +1,4 @@
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 import ora from "ora";
 import { RoomPersistence } from "../persistence.js";
 import {
@@ -26,7 +26,7 @@ export async function startDevServer(opts: DevServerOpts): Promise<void> {
   const seenRooms = new Set<string>();
   const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  const server = new OpenBlocksServer({
+  const server = new LivelyServer({
     initialStorage: async (roomId) => {
       return persistence.load(roomId);
     },

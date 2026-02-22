@@ -4,7 +4,7 @@ import type {
   StorageOp,
   SetOp,
   DeleteOp,
-} from "@waits/openblocks-types";
+} from "@waits/lively-types";
 import { AbstractCrdt } from "./abstract-crdt.js";
 
 interface MapEntry<V> {

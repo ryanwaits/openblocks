@@ -1,5 +1,5 @@
 import { useSyncExternalStore, useCallback, useRef } from "react";
-import type { LiveObject } from "@waits/openblocks-client";
+import type { LiveObject } from "@waits/lively-client";
 import { useRoom, useStorageRoot } from "./room-context.js";
 import { shallowEqual } from "./shallow-equal.js";
 

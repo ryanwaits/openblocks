@@ -6,7 +6,7 @@ Access information about who's in the room. `useSelf` for the current user, `use
 
 ## `PresenceUser` type
 
-Every presence hook returns one or more `PresenceUser` objects. The full shape (from `@waits/openblocks-types`):
+Every presence hook returns one or more `PresenceUser` objects. The full shape (from `@waits/lively-types`):
 
 ```typescript
 type OnlineStatus = "online" | "away" | "offline";
@@ -50,7 +50,7 @@ All five subscribe to the room's `"presence"` event internally. The shallow equa
 Returns the current user's own `PresenceUser`, or `null` before the first presence broadcast arrives from the server.
 
 ```tsx
-import { useSelf } from "@waits/openblocks-react";
+import { useSelf } from "@waits/lively-react";
 
 function MyAvatar() {
   const self = useSelf();
@@ -103,7 +103,7 @@ function MyStatus() {
 Returns an array of all other users currently in the room. The array is empty when you're alone -- safe to `.map()` and `.filter()` without null checks.
 
 ```tsx
-import { useOthers } from "@waits/openblocks-react";
+import { useOthers } from "@waits/lively-react";
 
 function OnlineBadge() {
   const others = useOthers();
@@ -164,7 +164,7 @@ function useOther<T = PresenceUser>(
 Without a selector, returns the full `PresenceUser`:
 
 ```tsx
-import { useOther } from "@waits/openblocks-react";
+import { useOther } from "@waits/lively-react";
 
 function FollowingBanner({ targetUserId }: { targetUserId: string }) {
   const user = useOther(targetUserId);
@@ -212,7 +212,7 @@ Internally, this hook compares the previous and next user arrays with shallow eq
 Extract just names:
 
 ```tsx
-import { useOthersMapped } from "@waits/openblocks-react";
+import { useOthersMapped } from "@waits/lively-react";
 
 function CollaboratorNames() {
   const names = useOthersMapped((u) => u.displayName);
@@ -281,8 +281,8 @@ function OnlineUsers() {
 A vertical list of all connected users with names, avatars, and status indicators.
 
 ```tsx
-import { useSelf, useOthers } from "@waits/openblocks-react";
-import type { PresenceUser } from "@waits/openblocks-react";
+import { useSelf, useOthers } from "@waits/lively-react";
+import type { PresenceUser } from "@waits/lively-react";
 
 function StatusDot({ status }: { status: PresenceUser["onlineStatus"] }) {
   const colors = {
@@ -349,7 +349,7 @@ function WhosHereSidebar() {
 A compact badge for headers or toolbars.
 
 ```tsx
-import { useOthers, useSelf } from "@waits/openblocks-react";
+import { useOthers, useSelf } from "@waits/lively-react";
 
 function UserCountBadge() {
   const others = useOthers();
@@ -375,7 +375,7 @@ Pass role information through `metadata` via `updatePresence`, then read it with
 // When joining the room, set your role in metadata:
 // room.updatePresence({ metadata: { role: "editor" } });
 
-import { useSelf, useOthers } from "@waits/openblocks-react";
+import { useSelf, useOthers } from "@waits/lively-react";
 
 function Toolbar() {
   const self = useSelf();
@@ -419,7 +419,7 @@ function ViewerList() {
 Combine `useOthers` with the `location` field to show per-section presence. Each user calls `room.updatePresence({ location: sectionId })` when they focus a section.
 
 ```tsx
-import { useOthers } from "@waits/openblocks-react";
+import { useOthers } from "@waits/lively-react";
 
 function SectionHeader({ sectionId, title }: { sectionId: string; title: string }) {
   const others = useOthers();
@@ -448,7 +448,7 @@ function SectionHeader({ sectionId, title }: { sectionId: string; title: string 
 }
 ```
 
-> For a more efficient version that only subscribes to users at a specific location, use [`useOthersOnLocation`](./presence.md) from `@waits/openblocks-react`.
+> For a more efficient version that only subscribes to users at a specific location, use [`useOthersOnLocation`](./presence.md) from `@waits/lively-react`.
 
 ---
 
@@ -457,7 +457,7 @@ function SectionHeader({ sectionId, title }: { sectionId: string; title: string 
 Every user gets a unique, server-assigned `color`. Use it consistently across your UI for cursors, selections, and avatar backgrounds so users can visually associate actions with people.
 
 ```tsx
-import { useOthers } from "@waits/openblocks-react";
+import { useOthers } from "@waits/lively-react";
 
 function SelectionOverlay({ selections }: {
   selections: Map<string, { x: number; y: number; width: number; height: number }>;
@@ -550,7 +550,7 @@ useEffect(() => { setOnlineCount(others.filter(...).length); }, [others]);
 When you only care about users at a specific location (e.g., a document section, a page, a canvas area), use `useOthersOnLocation(locationId)` from [`presence.md`](./presence.md). It's more efficient than filtering `useOthers()` because the shallow equality check runs on a smaller array.
 
 ```tsx
-import { useOthersOnLocation } from "@waits/openblocks-react";
+import { useOthersOnLocation } from "@waits/lively-react";
 
 function SectionPresence({ sectionId }: { sectionId: string }) {
   const usersHere = useOthersOnLocation(sectionId);

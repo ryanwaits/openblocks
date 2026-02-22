@@ -5,13 +5,13 @@ import type {
   SerializedCrdt,
   StorageOp,
   OnlineStatus,
-} from "@waits/openblocks-types";
+} from "@waits/lively-types";
 import {
   StorageDocument,
   LiveObject,
   AbstractCrdt,
   HistoryManager,
-} from "@waits/openblocks-storage";
+} from "@waits/lively-storage";
 import { EventEmitter } from "./event-emitter.js";
 import { ConnectionManager } from "./connection.js";
 import { ActivityTracker } from "./activity-tracker.js";

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { ActivityTracker } from "../activity-tracker";
-import type { OnlineStatus } from "@waits/openblocks-types";
+import type { OnlineStatus } from "@waits/lively-types";
 
 describe("ActivityTracker", () => {
   // Note: Since bun:test doesn't have a DOM, the tracker's SSR guard

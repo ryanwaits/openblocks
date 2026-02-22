@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: openblocks-ws
+    name: lively-ws
     runtime: docker
     dockerfilePath: ./Dockerfile
-    repo: https://github.com/ryanwaits/openblocks
-    branch: feat/openblocks
+    repo: https://github.com/ryanwaits/lively
+    branch: main
     healthCheckPath: /health
     envVars:
       - key: PORT

@@ -1,12 +1,12 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import WebSocket from "ws";
-import { OpenBlocksServer } from "@waits/openblocks-server";
-import { OpenBlocksClient } from "../client";
-import { LiveObject } from "@waits/openblocks-storage";
+import { LivelyServer } from "@waits/lively-server";
+import { LivelyClient } from "../client";
+import { LiveObject } from "@waits/lively-storage";
 
 describe("Client Storage", () => {
-  let server: OpenBlocksServer | null = null;
-  const clients: OpenBlocksClient[] = [];
+  let server: LivelyServer | null = null;
+  const clients: LivelyClient[] = [];
 
   afterEach(async () => {
     for (const client of clients) {
@@ -21,8 +21,8 @@ describe("Client Storage", () => {
     }
   });
 
-  function createClient(port: number): OpenBlocksClient {
-    const client = new OpenBlocksClient({
+  function createClient(port: number): LivelyClient {
+    const client = new LivelyClient({
       serverUrl: `ws://127.0.0.1:${port}`,
       WebSocket: WebSocket as any,
       reconnect: false,
@@ -32,7 +32,7 @@ describe("Client Storage", () => {
   }
 
   function waitForStatus(
-    client: OpenBlocksClient,
+    client: LivelyClient,
     roomId: string,
     target: string
   ): Promise<void> {
@@ -52,7 +52,7 @@ describe("Client Storage", () => {
   }
 
   it("getStorage resolves after server sends init with data", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const client = createClient(server.port);
@@ -71,7 +71,7 @@ describe("Client Storage", () => {
   });
 
   it("mutations generate and send ops", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const client = createClient(server.port);
@@ -88,7 +88,7 @@ describe("Client Storage", () => {
   });
 
   it("subscribe fires on local mutation", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const client = createClient(server.port);
@@ -108,7 +108,7 @@ describe("Client Storage", () => {
   });
 
   it("batch groups storage ops", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const client = createClient(server.port);
@@ -131,7 +131,7 @@ describe("Client Storage", () => {
   });
 
   it("initialStorage sends storage:init to server on first connect", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const client = createClient(server.port);

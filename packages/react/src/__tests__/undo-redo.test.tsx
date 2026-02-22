@@ -4,7 +4,7 @@ import { createMockRoom, createMockClient, type MockRoom } from "./setup";
 
 const { act, renderHook } = await import("@testing-library/react");
 const { createElement } = await import("react");
-const { OpenBlocksProvider } = await import("../client-context.js");
+const { LivelyProvider } = await import("../client-context.js");
 const { RoomProvider } = await import("../room-context.js");
 const { useUndo, useRedo, useCanUndo, useCanRedo, useHistory } = await import(
   "../use-undo-redo.js"
@@ -20,7 +20,7 @@ function setup() {
 
 function wrapper({ children }: { children: any }) {
   return createElement(
-    OpenBlocksProvider,
+    LivelyProvider,
     { client },
     createElement(
       RoomProvider,

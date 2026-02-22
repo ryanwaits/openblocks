@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
-import { useRoom, useSelf } from "@waits/openblocks-react";
-import { OpenBlocksYjsProvider } from "@waits/openblocks-yjs";
+import { useRoom, useSelf } from "@waits/lively-react";
+import { LivelyYjsProvider } from "@waits/lively-yjs";
 import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
@@ -18,7 +18,7 @@ function defaultMarkdown() {
   return markdown({ base: markdownLanguage, codeLanguages: languages });
 }
 
-export interface UseOpenBlocksCodeMirrorOptions {
+export interface UseLivelyCodeMirrorOptions {
   /** Y.Text field name in the Y.Doc. Defaults to "source". */
   field?: string;
   /** Cursor display info. Omitted fields auto-source from server presence. */
@@ -29,8 +29,8 @@ export interface UseOpenBlocksCodeMirrorOptions {
   filename?: string;
 }
 
-export function useOpenBlocksCodeMirror(
-  options?: UseOpenBlocksCodeMirrorOptions
+export function useLivelyCodeMirror(
+  options?: UseLivelyCodeMirrorOptions
 ): {
   containerRef: RefObject<HTMLDivElement | null>;
   viewRef: RefObject<EditorView | null>;
@@ -46,14 +46,14 @@ export function useOpenBlocksCodeMirror(
   const containerRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const mountedRef = useRef(true);
-  const providerRef = useRef<OpenBlocksYjsProvider | null>(null);
+  const providerRef = useRef<LivelyYjsProvider | null>(null);
   const langCompartmentRef = useRef(new Compartment());
 
   const [languageName, setLanguageName] = useState("Markdown");
 
   // Create provider once — set awareness BEFORE connect()
   if (!providerRef.current) {
-    providerRef.current = new OpenBlocksYjsProvider(room);
+    providerRef.current = new LivelyYjsProvider(room);
     providerRef.current.awareness.setLocalStateField("user", {
       name: userName,
       color: userColor,

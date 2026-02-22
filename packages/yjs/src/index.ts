@@ -1,2 +1,2 @@
-export { OpenBlocksYjsProvider } from "./provider.js";
-export type { OpenBlocksYjsProviderOptions } from "./provider.js";
+export { LivelyYjsProvider } from "./provider.js";
+export type { LivelyYjsProviderOptions } from "./provider.js";

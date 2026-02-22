@@ -6,7 +6,7 @@ const mockUseCursors = mock(() => new Map());
 const mockUseSelf = mock(() => ({ userId: "self" }));
 const mockUseOthers = mock(() => [] as any[]);
 
-mock.module("@waits/openblocks-react", () => ({
+mock.module("@waits/lively-react", () => ({
   useCursors: mockUseCursors,
   useSelf: mockUseSelf,
   useOthers: mockUseOthers,

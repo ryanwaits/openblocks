@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Markdown Editor — OpenBlocks",
+  title: "Markdown Editor — Lively",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

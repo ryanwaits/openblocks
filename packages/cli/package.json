@@ -1,10 +1,10 @@
 {
-  "name": "@waits/openblocks-cli",
+  "name": "@waits/lively-cli",
   "version": "0.0.1",
   "type": "module",
-  "description": "CLI dev server for OpenBlocks — zero-config real-time collaboration",
+  "description": "CLI dev server for Lively — zero-config real-time collaboration",
   "bin": {
-    "openblocks": "./dist/index.js"
+    "lively": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -25,8 +25,8 @@
     "postbuild": "chmod +x dist/index.js"
   },
   "dependencies": {
-    "@waits/openblocks-server": "workspace:*",
-    "@waits/openblocks-types": "workspace:*",
+    "@waits/lively-server": "workspace:*",
+    "@waits/lively-types": "workspace:*",
     "commander": "^14.0.3",
     "chalk": "^5.6.2",
     "ora": "^9.3.0"

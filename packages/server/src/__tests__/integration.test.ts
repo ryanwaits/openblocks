@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach, mock } from "bun:test";
 import WebSocket from "ws";
-import { OpenBlocksServer } from "../server";
+import { LivelyServer } from "../server";
 import { connectClient, waitForOpen, createMessageStream } from "./test-helpers";
 
 describe("Integration", () => {
-  let server: OpenBlocksServer | null = null;
+  let server: LivelyServer | null = null;
   const clients: WebSocket[] = [];
 
   afterEach(async () => {
@@ -24,7 +24,7 @@ describe("Integration", () => {
   }
 
   it("single client receives presence with 1 user", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice", displayName: "Alice" }));
@@ -41,7 +41,7 @@ describe("Integration", () => {
   });
 
   it("2 clients see each other in presence, 1 disconnects → other sees 1 user", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -72,7 +72,7 @@ describe("Integration", () => {
   });
 
   it("cursor:update is enriched and relayed to other clients, not sender", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice", displayName: "Alice" }));
@@ -108,7 +108,7 @@ describe("Integration", () => {
 
   it("custom message is broadcast and triggers onMessage callback", async () => {
     const onMessage = mock(() => {});
-    server = new OpenBlocksServer({ onMessage });
+    server = new LivelyServer({ onMessage });
     await server.start(0);
 
     const ws1 = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -136,7 +136,7 @@ describe("Integration", () => {
   });
 
   it("room cleanup removes empty room after timeout", async () => {
-    server = new OpenBlocksServer({ roomConfig: { cleanupTimeoutMs: 100 } });
+    server = new LivelyServer({ roomConfig: { cleanupTimeoutMs: 100 } });
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));
@@ -157,7 +157,7 @@ describe("Integration", () => {
   });
 
   it("rejects connection to invalid path", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws = track(new WebSocket(`ws://127.0.0.1:${server.port}/invalid/path`));
@@ -173,7 +173,7 @@ describe("Integration", () => {
   it("onJoin and onLeave callbacks fire", async () => {
     const onJoin = mock(() => {});
     const onLeave = mock(() => {});
-    server = new OpenBlocksServer({ onJoin, onLeave });
+    server = new LivelyServer({ onJoin, onLeave });
     await server.start(0);
 
     const ws = track(connectClient(server.port, "room1", { userId: "alice" }));

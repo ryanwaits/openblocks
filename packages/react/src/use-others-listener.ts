@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { PresenceUser } from "@waits/openblocks-types";
+import type { PresenceUser } from "@waits/lively-types";
 import { useRoom } from "./room-context.js";
 import { shallowEqual } from "./shallow-equal.js";
 

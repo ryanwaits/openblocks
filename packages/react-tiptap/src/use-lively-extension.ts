@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useRoom, useSelf } from "@waits/openblocks-react";
-import { OpenBlocksYjsProvider } from "@waits/openblocks-yjs";
+import { useRoom, useSelf } from "@waits/lively-react";
+import { LivelyYjsProvider } from "@waits/lively-yjs";
 import { Extension } from "@tiptap/react";
 import {
   ySyncPlugin,
@@ -20,15 +20,15 @@ export function yjsRedo(editor: { view: { state: any; dispatch: any } }): boolea
   return yRedo(editor.view.state, editor.view.dispatch);
 }
 
-export interface UseOpenBlocksExtensionOptions {
+export interface UseLivelyExtensionOptions {
   /** Name of the Y.XmlFragment field in the Y.Doc. Defaults to "default". */
   field?: string;
   /** Override cursor display info. Defaults to presence name + color from server. */
   user?: { name?: string; color?: string };
 }
 
-export function useOpenBlocksExtension(
-  options?: UseOpenBlocksExtensionOptions
+export function useLivelyExtension(
+  options?: UseLivelyExtensionOptions
 ): Extension {
   const room = useRoom();
   const self = useSelf();
@@ -39,12 +39,12 @@ export function useOpenBlocksExtension(
 
   // Track mount state for strict-mode-safe cleanup (same pattern as RoomProvider)
   const mountedRef = useRef(true);
-  const providerRef = useRef<OpenBlocksYjsProvider | null>(null);
+  const providerRef = useRef<LivelyYjsProvider | null>(null);
 
   // Create provider once — persists through strict mode re-renders
   // Set awareness BEFORE connect() so user info is available during sync
   if (!providerRef.current) {
-    providerRef.current = new OpenBlocksYjsProvider(room);
+    providerRef.current = new LivelyYjsProvider(room);
     providerRef.current.awareness.setLocalStateField("user", {
       name: userName ?? "Anonymous",
       color: userColor ?? "#999999",
@@ -83,7 +83,7 @@ export function useOpenBlocksExtension(
     const fragment = provider.doc.getXmlFragment(field);
 
     return Extension.create({
-      name: "openblocks",
+      name: "lively",
       addKeyboardShortcuts() {
         return {
           "Mod-z": () => yUndo(this.editor.view.state, this.editor.view.dispatch),

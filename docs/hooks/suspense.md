@@ -7,7 +7,7 @@
 ## Import Path
 
 ```typescript
-import { useStorageSuspense } from "@waits/openblocks-react/suspense";
+import { useStorageSuspense } from "@waits/lively-react/suspense";
 ```
 
 > The `/suspense` sub-path is a **separate entry point**. It is declared in the package's `exports` field and ships its own bundle. You do not need to import from the root entry point when using suspense hooks.
@@ -37,7 +37,7 @@ Reads a value from the room's shared CRDT storage via a selector function. Suspe
 
 | | `useStorage(selector)` | `useStorageSuspense(selector)` |
 |---|---|---|
-| **Import** | `@waits/openblocks-react` | `@waits/openblocks-react/suspense` |
+| **Import** | `@waits/lively-react` | `@waits/lively-react/suspense` |
 | **Loading behavior** | Returns `null` | Suspends (throws a Promise) |
 | **Return type** | `T \| null` | `T` |
 | **Requires `<Suspense>` boundary** | No | Yes |
@@ -51,7 +51,7 @@ Reads a value from the room's shared CRDT storage via a selector function. Suspe
 ### Without Suspense (traditional)
 
 ```tsx
-import { useStorage } from "@waits/openblocks-react";
+import { useStorage } from "@waits/lively-react";
 
 function TodoList() {
   const todos = useStorage((root) => root.get("todos"));
@@ -72,7 +72,7 @@ function TodoList() {
 
 ```tsx
 import { Suspense } from "react";
-import { useStorageSuspense } from "@waits/openblocks-react/suspense";
+import { useStorageSuspense } from "@waits/lively-react/suspense";
 
 function TodoList() {
   const todos = useStorageSuspense((root) => root.get("todos"));
@@ -102,7 +102,7 @@ function App() {
 An SSR-safe wrapper that defers rendering until the client has mounted. On the server (and on the first client render), it shows the `fallback`. After mount, it renders `children()` inside a `<Suspense>` boundary.
 
 ```ts
-import { ClientSideSuspense } from "@waits/openblocks-react";
+import { ClientSideSuspense } from "@waits/lively-react";
 ```
 
 ### Signature
@@ -119,8 +119,8 @@ function ClientSideSuspense(props: {
 ### Example -- SSR-safe room component
 
 ```tsx
-import { ClientSideSuspense } from "@waits/openblocks-react";
-import { useStorageSuspense } from "@waits/openblocks-react/suspense";
+import { ClientSideSuspense } from "@waits/lively-react";
+import { useStorageSuspense } from "@waits/lively-react/suspense";
 
 function Editor() {
   const doc = useStorageSuspense((root) => root.get("document"));
@@ -166,7 +166,7 @@ Three additional suspense hooks for direct CRDT access (thin wrappers around `us
 | `useListSuspense<T>(key)` | `(key: string) => LiveList<T>` | `LiveList<T>` |
 
 ```ts
-import { useObjectSuspense, useMapSuspense, useListSuspense } from "@waits/openblocks-react/suspense";
+import { useObjectSuspense, useMapSuspense, useListSuspense } from "@waits/lively-react/suspense";
 ```
 
 These never return `null` -- they suspend while storage loads instead. See [crdt-shortcuts.md](./crdt-shortcuts.md) for full documentation and use cases.
@@ -376,7 +376,7 @@ const Editor = React.lazy(() => import("./Editor"));
 
 ### Non-storage hooks work the same regardless of entry point
 
-`useSelf`, `useOthers`, `useCursors`, `useMutation`, and all other hooks behave identically whether you import them from `@waits/openblocks-react` or `@waits/openblocks-react/suspense`. Only the storage access differs.
+`useSelf`, `useOthers`, `useCursors`, `useMutation`, and all other hooks behave identically whether you import them from `@waits/lively-react` or `@waits/lively-react/suspense`. Only the storage access differs.
 
 ```tsx
 import {
@@ -385,7 +385,7 @@ import {
   useOthers,
   useMutation,
   useCursors,
-} from "@waits/openblocks-react/suspense";
+} from "@waits/lively-react/suspense";
 
 // All of these work exactly the same as the root entry point
 const me = useSelf();
@@ -442,8 +442,8 @@ The `/suspense` sub-path re-exports everything you need so you can import from a
 
 | Export | Description |
 |--------|-------------|
-| `OpenBlocksProvider` | Top-level client provider |
-| `useClient` | Access the OpenBlocks client instance |
+| `LivelyProvider` | Top-level client provider |
+| `useClient` | Access the Lively client instance |
 | `RoomProvider` | Join a room and provide it to child hooks |
 | `useRoom` | Access the current `Room` instance |
 | `useStorageRoot` | Raw storage root (prefer `useStorageSuspense`) |

@@ -1,7 +1,7 @@
 export {
-  useOpenBlocksCodeMirror,
-  type UseOpenBlocksCodeMirrorOptions,
-} from "./use-openblocks-codemirror.js";
+  useLivelyCodeMirror,
+  type UseLivelyCodeMirrorOptions,
+} from "./use-lively-codemirror.js";
 
 export { typoraTheme, typoraHighlightStyle } from "./theme.js";
 export { codeblockPlugin } from "./codeblock-plugin.js";

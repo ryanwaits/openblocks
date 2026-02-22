@@ -12,10 +12,10 @@ Small, focused hooks for batching mutations, guarding against missing providers,
 | `useIsInsideRoom` | `() => boolean` | Returns `true` when called inside a `<RoomProvider>`, `false` otherwise. For conditional rendering and guard logic. |
 | `useErrorListener` | `(callback: (error: Error) => void) => void` | Fires the callback on WebSocket-level errors. Uses the callbackRef pattern -- no stale closures. |
 
-All hooks are available from `@waits/openblocks-react`.
+All hooks are available from `@waits/lively-react`.
 
 ```ts
-import { useBatch, useIsInsideRoom, useErrorListener } from "@waits/openblocks-react";
+import { useBatch, useIsInsideRoom, useErrorListener } from "@waits/lively-react";
 ```
 
 ---
@@ -42,7 +42,7 @@ function useBatch(): <T>(fn: () => T) => T
 ### Example
 
 ```tsx
-import { useBatch } from "@waits/openblocks-react";
+import { useBatch } from "@waits/lively-react";
 
 function Canvas() {
   const batch = useBatch();
@@ -79,7 +79,7 @@ function useIsInsideRoom(): boolean
 ### Example
 
 ```tsx
-import { useIsInsideRoom } from "@waits/openblocks-react";
+import { useIsInsideRoom } from "@waits/lively-react";
 
 function CollaborationIndicator() {
   const isInRoom = useIsInsideRoom();
@@ -117,7 +117,7 @@ function useErrorListener(callback: (error: Error) => void): void
 ### Example
 
 ```tsx
-import { useErrorListener } from "@waits/openblocks-react";
+import { useErrorListener } from "@waits/lively-react";
 
 function ErrorLogger() {
   useErrorListener((error) => {
@@ -137,8 +137,8 @@ function ErrorLogger() {
 Moving a shape involves setting `x`, `y`, and possibly `rotation`. Without batching, each field is a separate undo step -- the user presses Cmd+Z three times to undo one drag. `useBatch` collapses them into a single entry.
 
 ```tsx
-import { useBatch, useStorage } from "@waits/openblocks-react";
-import type { LiveObject, LiveMap } from "@waits/openblocks-react";
+import { useBatch, useStorage } from "@waits/lively-react";
+import type { LiveObject, LiveMap } from "@waits/lively-react";
 
 function ShapeCanvas() {
   const batch = useBatch();
@@ -187,7 +187,7 @@ function ShapeCanvas() {
 Components that can render both inside and outside a `<RoomProvider>` -- like a shared header -- use `useIsInsideRoom` to decide whether to show collaboration features.
 
 ```tsx
-import { useIsInsideRoom, useOthers, useSelf } from "@waits/openblocks-react";
+import { useIsInsideRoom, useOthers, useSelf } from "@waits/lively-react";
 
 function Header() {
   const isInRoom = useIsInsideRoom();
@@ -237,7 +237,7 @@ function CollaboratorAvatars() {
 Show a toast notification when the WebSocket connection encounters an error. Log it to an external service for observability.
 
 ```tsx
-import { useErrorListener } from "@waits/openblocks-react";
+import { useErrorListener } from "@waits/lively-react";
 import { toast } from "sonner";
 
 function ConnectionErrorHandler() {
@@ -253,7 +253,7 @@ function ConnectionErrorHandler() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         level: "error",
-        source: "openblocks",
+        source: "lively",
         message: error.message,
         timestamp: Date.now(),
       }),
@@ -282,8 +282,8 @@ Mount it once at the top of your room tree:
 When you need to call multiple existing `useMutation` hooks as a single atomic operation, wrap them in `useBatch`. Each `useMutation` callback is already batched internally, but calling two separate mutations produces two undo steps. `useBatch` collapses them.
 
 ```tsx
-import { useBatch, useMutation, useStorage } from "@waits/openblocks-react";
-import type { LiveObject, LiveMap } from "@waits/openblocks-react";
+import { useBatch, useMutation, useStorage } from "@waits/lively-react";
+import type { LiveObject, LiveMap } from "@waits/lively-react";
 
 function KanbanBoard() {
   const batch = useBatch();
@@ -333,8 +333,8 @@ function KanbanBoard() {
 Combine `useErrorListener` with component state to show an inline retry banner when the connection encounters errors.
 
 ```tsx
-import { useErrorListener } from "@waits/openblocks-react";
-import { useRoom } from "@waits/openblocks-react";
+import { useErrorListener } from "@waits/lively-react";
+import { useRoom } from "@waits/lively-react";
 import { useState, useCallback } from "react";
 
 function RoomWithErrorBoundary({ children }: { children: React.ReactNode }) {

@@ -1,6 +1,6 @@
 import "./setup";
 import { describe, it, expect } from "bun:test";
-import type { PresenceUser } from "@waits/openblocks-types";
+import type { PresenceUser } from "@waits/lively-types";
 
 const { render } = await import("@testing-library/react");
 const React = await import("react");

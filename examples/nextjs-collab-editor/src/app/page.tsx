@@ -1,20 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { OpenBlocksClient, LiveObject } from "@waits/openblocks-client";
+import { LivelyClient, LiveObject } from "@waits/lively-client";
 import {
-  OpenBlocksProvider,
+  LivelyProvider,
   RoomProvider,
   ClientSideSuspense,
   useStorage,
   useMutation,
-} from "@waits/openblocks-react";
-import { AvatarStack, ConnectionBadge } from "@waits/openblocks-ui";
+} from "@waits/lively-react";
+import { AvatarStack, ConnectionBadge } from "@waits/lively-ui";
 import { CollaborativeEditor } from "./editor";
 
 const serverUrl =
-  process.env.NEXT_PUBLIC_OPENBLOCKS_HOST || "http://localhost:2002";
-const client = new OpenBlocksClient({ serverUrl, reconnect: true });
+  process.env.NEXT_PUBLIC_LIVELY_HOST || "http://localhost:2002";
+const client = new LivelyClient({ serverUrl, reconnect: true });
 
 export default function EditorPage() {
   const [userId] = useState(() => crypto.randomUUID().slice(0, 8));
@@ -53,7 +53,7 @@ export default function EditorPage() {
   }
 
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <RoomProvider
         roomId="editor-default"
         userId={userId}
@@ -72,7 +72,7 @@ export default function EditorPage() {
           {() => <EditorLayout />}
         </ClientSideSuspense>
       </RoomProvider>
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 

@@ -1,4 +1,4 @@
-# OpenBlocks
+# Lively
 
 Real-time collaboration framework for React. CRDT storage, presence, cursors, live state, and undo/redo — all over WebSockets.
 
@@ -6,13 +6,13 @@ Real-time collaboration framework for React. CRDT storage, presence, cursors, li
 
 | Package | Description |
 |---------|-------------|
-| [`@waits/openblocks-types`](packages/types/) | Shared TypeScript types and wire protocol definitions |
-| [`@waits/openblocks-storage`](packages/storage/) | CRDT primitives — `LiveObject`, `LiveMap`, `LiveList` |
-| [`@waits/openblocks-client`](packages/client/) | Framework-agnostic client SDK (browser + Node/Bun) |
-| [`@waits/openblocks-server`](packages/server/) | WebSocket collaboration server |
-| [`@waits/openblocks-react`](packages/react/) | React hooks and providers (40+ hooks) |
-| [`@waits/openblocks-ui`](packages/ui/) | Pre-built components — cursors, avatars, connection badge |
-| [`@waits/openblocks-cli`](packages/cli/) | `openblocks` dev server CLI |
+| [`@waits/lively-types`](packages/types/) | Shared TypeScript types and wire protocol definitions |
+| [`@waits/lively-storage`](packages/storage/) | CRDT primitives — `LiveObject`, `LiveMap`, `LiveList` |
+| [`@waits/lively-client`](packages/client/) | Framework-agnostic client SDK (browser + Node/Bun) |
+| [`@waits/lively-server`](packages/server/) | WebSocket collaboration server |
+| [`@waits/lively-react`](packages/react/) | React hooks and providers (40+ hooks) |
+| [`@waits/lively-ui`](packages/ui/) | Pre-built components — cursors, avatars, connection badge |
+| [`@waits/lively-cli`](packages/cli/) | `lively` dev server CLI |
 
 ## Architecture
 
@@ -35,24 +35,24 @@ Each layer depends only on layers below it.
 **Server:**
 
 ```ts
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 
-const server = new OpenBlocksServer({ port: 1999 });
+const server = new LivelyServer({ port: 1999 });
 await server.start();
 ```
 
 **Client (React):**
 
 ```tsx
-import { OpenBlocksClient } from "@waits/openblocks-client";
-import { OpenBlocksProvider, RoomProvider } from "@waits/openblocks-react";
-import { CursorOverlay, AvatarStack, useCursorTracking } from "@waits/openblocks-ui";
+import { LivelyClient } from "@waits/lively-client";
+import { LivelyProvider, RoomProvider } from "@waits/lively-react";
+import { CursorOverlay, AvatarStack, useCursorTracking } from "@waits/lively-ui";
 
-const client = new OpenBlocksClient({ serverUrl: "ws://localhost:1999" });
+const client = new LivelyClient({ serverUrl: "ws://localhost:1999" });
 
 function App() {
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <RoomProvider
         roomId="my-room"
         userId={user.id}
@@ -62,7 +62,7 @@ function App() {
         <Toolbar />
         <Canvas />
       </RoomProvider>
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 

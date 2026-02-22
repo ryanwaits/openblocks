@@ -1,9 +1,9 @@
 export {
-  useOpenBlocksExtension,
+  useLivelyExtension,
   yjsUndo,
   yjsRedo,
-  type UseOpenBlocksExtensionOptions,
-} from "./use-openblocks-extension.js";
+  type UseLivelyExtensionOptions,
+} from "./use-lively-extension.js";
 
 export { Toolbar, ToolbarButton, ToolbarDivider } from "./toolbar.js";
 export type { ToolbarProps, ToolbarButtonProps } from "./toolbar.js";

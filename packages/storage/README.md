@@ -1,11 +1,11 @@
-# @waits/openblocks-storage
+# @waits/lively-storage
 
-CRDT storage types for OpenBlocks real-time collaboration. Provides `LiveObject`, `LiveMap`, and `LiveList` — conflict-free replicated data types with Last-Writer-Wins (LWW) conflict resolution via Lamport clocks.
+CRDT storage types for Lively real-time collaboration. Provides `LiveObject`, `LiveMap`, and `LiveList` — conflict-free replicated data types with Last-Writer-Wins (LWW) conflict resolution via Lamport clocks.
 
 ## Installation
 
 ```bash
-bun add @waits/openblocks-storage
+bun add @waits/lively-storage
 ```
 
 ## API
@@ -15,7 +15,7 @@ bun add @waits/openblocks-storage
 Key-value store with per-field LWW conflict resolution.
 
 ```ts
-import { LiveObject } from "@waits/openblocks-storage";
+import { LiveObject } from "@waits/lively-storage";
 
 const obj = new LiveObject({ name: "Alice", score: 0 });
 obj.get("name");        // "Alice"
@@ -30,7 +30,7 @@ obj.toImmutable();      // Readonly<T>, cached until next mutation
 String-keyed map with tombstone-based deletion.
 
 ```ts
-import { LiveMap } from "@waits/openblocks-storage";
+import { LiveMap } from "@waits/lively-storage";
 
 const map = new LiveMap<number>();
 map.set("a", 1);
@@ -47,7 +47,7 @@ map.toImmutable();      // ReadonlyMap<string, V>
 Ordered list using fractional indexing for concurrent inserts.
 
 ```ts
-import { LiveList } from "@waits/openblocks-storage";
+import { LiveList } from "@waits/lively-storage";
 
 const list = new LiveList<string>();
 list.push("a");
@@ -64,7 +64,7 @@ list.toImmutable();     // readonly T[]
 Manages the CRDT tree, op routing, and subscriptions.
 
 ```ts
-import { StorageDocument, LiveObject } from "@waits/openblocks-storage";
+import { StorageDocument, LiveObject } from "@waits/lively-storage";
 
 const root = new LiveObject({ counter: 0, items: new LiveMap() });
 const doc = new StorageDocument(root);
@@ -89,7 +89,7 @@ doc.setOnOpsGenerated((ops) => sendToServer(ops));
 Logical clock for causal ordering.
 
 ```ts
-import { LamportClock } from "@waits/openblocks-storage";
+import { LamportClock } from "@waits/lively-storage";
 
 const clock = new LamportClock();
 clock.tick();       // 1
@@ -103,7 +103,7 @@ clock.value;        // 6
 Generates sort keys for ordered lists without renumbering.
 
 ```ts
-import { generateKeyBetween, generateNKeysBetween } from "@waits/openblocks-storage";
+import { generateKeyBetween, generateNKeysBetween } from "@waits/lively-storage";
 
 const a = generateKeyBetween(null, null);      // middle key
 const b = generateKeyBetween(a, null);          // after a

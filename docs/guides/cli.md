@@ -1,19 +1,19 @@
 # CLI
 
-`@waits/openblocks-cli` — local dev server with room persistence and inspection tools.
+`@waits/lively-cli` — local dev server with room persistence and inspection tools.
 
 ```bash
-npx openblocks dev
+npx lively dev
 ```
 
 ---
 
-## `openblocks dev`
+## `lively dev`
 
-Starts a local OpenBlocks WebSocket server with automatic room persistence.
+Starts a local Lively WebSocket server with automatic room persistence.
 
 ```bash
-openblocks dev [options]
+lively dev [options]
 ```
 
 ### Options
@@ -21,7 +21,7 @@ openblocks dev [options]
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `-p, --port <number>` | `number` | `1999` | WebSocket server port. |
-| `--data-dir <path>` | `string` | `.openblocks` | Directory for persisted room data. |
+| `--data-dir <path>` | `string` | `.lively` | Directory for persisted room data. |
 | `--reset` | `boolean` | `false` | Clear all persisted data before starting. |
 
 ### Persistence
@@ -44,24 +44,24 @@ When running in a TTY, the dev server accepts these keys:
 
 ```bash
 # Start on port 3000 with custom data directory
-openblocks dev --port 3000 --data-dir ./my-data
+lively dev --port 3000 --data-dir ./my-data
 
 # Start fresh — wipe all rooms
-openblocks dev --reset
+lively dev --reset
 ```
 
 ---
 
-## `openblocks rooms`
+## `lively rooms`
 
-Manage persisted room data. All subcommands accept `--data-dir` (default `.openblocks`).
+Manage persisted room data. All subcommands accept `--data-dir` (default `.lively`).
 
 ### `rooms list`
 
 List all persisted rooms with update time and file size.
 
 ```bash
-openblocks rooms list [--data-dir <path>]
+lively rooms list [--data-dir <path>]
 ```
 
 Output:
@@ -81,10 +81,10 @@ Clear persisted data. Pass a `roomId` to clear a single room, or omit to clear a
 
 ```bash
 # Clear a specific room
-openblocks rooms clear my-room
+lively rooms clear my-room
 
 # Clear all rooms (prompts y/N)
-openblocks rooms clear
+lively rooms clear
 ```
 
 ### `rooms inspect <roomId>`
@@ -92,7 +92,7 @@ openblocks rooms clear
 Inspect the persisted CRDT tree for a room. Prints a colorized tree view showing `LiveObject`, `LiveMap`, and `LiveList` nodes with their values.
 
 ```bash
-openblocks rooms inspect my-room
+lively rooms inspect my-room
 ```
 
 Output:
@@ -112,12 +112,12 @@ LiveObject {
 
 ## Connecting Your App
 
-Point your `OpenBlocksClient` at the dev server:
+Point your `LivelyClient` at the dev server:
 
 ```ts
-import { OpenBlocksClient } from "@waits/openblocks-client";
+import { LivelyClient } from "@waits/lively-client";
 
-const client = new OpenBlocksClient({
+const client = new LivelyClient({
   serverUrl: "ws://localhost:1999",
 });
 ```

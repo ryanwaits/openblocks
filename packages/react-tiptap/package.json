@@ -1,8 +1,8 @@
 {
-  "name": "@waits/openblocks-react-tiptap",
+  "name": "@waits/lively-react-tiptap",
   "version": "0.0.1",
   "type": "module",
-  "description": "Tiptap integration for OpenBlocks collaborative editing",
+  "description": "Tiptap integration for Lively collaborative editing",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,8 +23,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/openblocks-yjs": "workspace:*",
-    "@waits/openblocks-react": "workspace:*",
+    "@waits/lively-yjs": "workspace:*",
+    "@waits/lively-react": "workspace:*",
     "@tiptap/suggestion": "^3.20.0",
     "y-prosemirror": "^1.3.7"
   },

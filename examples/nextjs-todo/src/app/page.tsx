@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  OpenBlocksClient,
+  LivelyClient,
   LiveObject,
   LiveList,
-} from "@waits/openblocks-client";
+} from "@waits/lively-client";
 import {
-  OpenBlocksProvider,
+  LivelyProvider,
   RoomProvider,
   useStorageSuspense,
   useMutation,
@@ -23,18 +23,18 @@ import {
   useErrorListener,
   useOthersListener,
   ClientSideSuspense,
-} from "@waits/openblocks-react";
+} from "@waits/lively-react";
 import {
   AvatarStack,
   CursorOverlay,
   useCursorTracking,
-} from "@waits/openblocks-ui";
-import type { PresenceUser } from "@waits/openblocks-types";
+} from "@waits/lively-ui";
+import type { PresenceUser } from "@waits/lively-types";
 
-// ── OpenBlocks client singleton ─────────────────────────────
+// ── Lively client singleton ─────────────────────────────
 const serverUrl =
-  process.env.NEXT_PUBLIC_OPENBLOCKS_HOST || "http://localhost:2001";
-const client = new OpenBlocksClient({ serverUrl, reconnect: true });
+  process.env.NEXT_PUBLIC_LIVELY_HOST || "http://localhost:2001";
+const client = new LivelyClient({ serverUrl, reconnect: true });
 
 // ── Types ───────────────────────────────────────────────────
 interface Todo {
@@ -83,7 +83,7 @@ export default function TodoPage() {
   }
 
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <RoomProvider
         roomId="todo-default"
         userId={userId}
@@ -94,7 +94,7 @@ export default function TodoPage() {
           {() => <TodoContent />}
         </ClientSideSuspense>
       </RoomProvider>
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 

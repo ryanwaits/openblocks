@@ -49,8 +49,8 @@ next-env.d.ts
 # package build output
 packages/*/dist/
 
-# openblocks dev server data
-.openblocks/
+# lively dev server data
+.lively/
 
 # AI dirs
 

@@ -106,7 +106,7 @@ for (const key of DOM_GLOBALS) {
 const { render, act, renderHook } = await import("@testing-library/react");
 const { createElement } = await import("react");
 type ReactNode = import("react").ReactNode;
-const { OpenBlocksProvider, useClient } = await import("../client-context.js");
+const { LivelyProvider, useClient } = await import("../client-context.js");
 const { RoomProvider, useStorageRoot, useIsInsideRoom } = await import("../room-context.js");
 
 // ---------------------------------------------------------------------------
@@ -149,11 +149,11 @@ function createMockClient(roomFactory?: (roomId: string) => ReturnType<typeof cr
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("OpenBlocksProvider", () => {
+describe("LivelyProvider", () => {
   it("renders children", () => {
     const client = createMockClient();
     const { container } = render(
-      createElement(OpenBlocksProvider, { client }, createElement("div", { "data-testid": "child" }, "hello"))
+      createElement(LivelyProvider, { client }, createElement("div", { "data-testid": "child" }, "hello"))
     );
     const el = container.querySelector("[data-testid='child']");
     expect(el).not.toBeNull();
@@ -168,7 +168,7 @@ describe("useClient", () => {
 
     expect(() => {
       renderHook(() => useClient());
-    }).toThrow("useClient must be used within an <OpenBlocksProvider>");
+    }).toThrow("useClient must be used within an <LivelyProvider>");
 
     console.error = orig;
   });
@@ -179,7 +179,7 @@ describe("RoomProvider", () => {
 
   function Wrapper({ roomId, children }: { roomId: string; children?: ReactNode }) {
     return createElement(
-      OpenBlocksProvider,
+      LivelyProvider,
       { client },
       createElement(
         RoomProvider,
@@ -220,7 +220,7 @@ describe("RoomProvider", () => {
 
     const { container } = render(
       createElement(
-        OpenBlocksProvider,
+        LivelyProvider,
         { client },
         createElement(
           RoomProvider,
@@ -258,7 +258,7 @@ describe("RoomProvider", () => {
 
     function TestHarness({ roomId }: { roomId: string }) {
       return createElement(
-        OpenBlocksProvider,
+        LivelyProvider,
         { client },
         createElement(
           RoomProvider,
@@ -297,7 +297,7 @@ describe("useIsInsideRoom", () => {
     const c = createMockClient();
     function wrapper({ children }: { children: any }) {
       return createElement(
-        OpenBlocksProvider,
+        LivelyProvider,
         { client: c },
         createElement(
           RoomProvider,

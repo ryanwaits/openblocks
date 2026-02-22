@@ -40,20 +40,20 @@ The `ConnectionManager` drives this lifecycle internally. On connection loss, it
 
 | Export | Package | Signature | Returns | Description |
 |---|---|---|---|---|
-| `useStatus` | `@waits/openblocks-react` | `()` | `ConnectionStatus` | Current connection status. Re-renders on change. |
-| `useSyncStatus` | `@waits/openblocks-react` | `()` | `SyncStatus` | High-level sync status combining connection + storage state. Re-renders on change. |
-| `useLostConnectionListener` | `@waits/openblocks-react` | `(callback: () => void)` | `void` | Fires `callback` once when connection drops from `"connected"` to `"reconnecting"`. |
-| `useErrorListener` | `@waits/openblocks-react` | `(callback: (error: Error) => void)` | `void` | Fires on WebSocket-level errors. See [utility-hooks.md](./utility-hooks.md). |
-| `ConnectionBadge` | `@waits/openblocks-ui` | `({ className? })` | `JSX.Element \| null` | Status pill. Returns `null` when connected. |
-| `ConnectionStatus` | `@waits/openblocks-types` | -- | `type` | `"connecting" \| "connected" \| "reconnecting" \| "disconnected"` |
-| `SyncStatus` | `@waits/openblocks-react` | -- | `type` | `"synchronized" \| "synchronizing" \| "not-synchronized"` |
+| `useStatus` | `@waits/lively-react` | `()` | `ConnectionStatus` | Current connection status. Re-renders on change. |
+| `useSyncStatus` | `@waits/lively-react` | `()` | `SyncStatus` | High-level sync status combining connection + storage state. Re-renders on change. |
+| `useLostConnectionListener` | `@waits/lively-react` | `(callback: () => void)` | `void` | Fires `callback` once when connection drops from `"connected"` to `"reconnecting"`. |
+| `useErrorListener` | `@waits/lively-react` | `(callback: (error: Error) => void)` | `void` | Fires on WebSocket-level errors. See [utility-hooks.md](./utility-hooks.md). |
+| `ConnectionBadge` | `@waits/lively-ui` | `({ className? })` | `JSX.Element \| null` | Status pill. Returns `null` when connected. |
+| `ConnectionStatus` | `@waits/lively-types` | -- | `type` | `"connecting" \| "connected" \| "reconnecting" \| "disconnected"` |
+| `SyncStatus` | `@waits/lively-react` | -- | `type` | `"synchronized" \| "synchronizing" \| "not-synchronized"` |
 
 ---
 
 ## `useStatus`
 
 ```ts
-import { useStatus } from "@waits/openblocks-react";
+import { useStatus } from "@waits/lively-react";
 
 const status = useStatus();
 // "connecting" | "connected" | "reconnecting" | "disconnected"
@@ -73,7 +73,7 @@ Returns the current `ConnectionStatus` string. Built on `useSyncExternalStore`, 
 ### Basic example -- conditional UI
 
 ```tsx
-import { useStatus } from "@waits/openblocks-react";
+import { useStatus } from "@waits/lively-react";
 
 function EditorStatus() {
   const status = useStatus();
@@ -97,7 +97,7 @@ function EditorStatus() {
 ### Loading state -- wait for connection before rendering
 
 ```tsx
-import { useStatus } from "@waits/openblocks-react";
+import { useStatus } from "@waits/lively-react";
 
 function App() {
   const status = useStatus();
@@ -122,7 +122,7 @@ function App() {
 ## `useLostConnectionListener`
 
 ```ts
-import { useLostConnectionListener } from "@waits/openblocks-react";
+import { useLostConnectionListener } from "@waits/lively-react";
 
 useLostConnectionListener(() => {
   console.warn("Connection lost, reconnecting...");
@@ -138,7 +138,7 @@ The callback is stored in a ref internally, so you don't need to memoize it. Any
 ### Example -- toast notification on disconnect
 
 ```tsx
-import { useLostConnectionListener } from "@waits/openblocks-react";
+import { useLostConnectionListener } from "@waits/lively-react";
 import { toast } from "sonner";
 
 function ConnectionMonitor() {
@@ -155,7 +155,7 @@ function ConnectionMonitor() {
 ## `useSyncStatus`
 
 ```ts
-import { useSyncStatus } from "@waits/openblocks-react";
+import { useSyncStatus } from "@waits/lively-react";
 
 const sync = useSyncStatus();
 // "synchronized" | "synchronizing" | "not-synchronized"
@@ -182,7 +182,7 @@ type SyncStatus = "synchronized" | "synchronizing" | "not-synchronized";
 ### Example -- save indicator
 
 ```tsx
-import { useSyncStatus } from "@waits/openblocks-react";
+import { useSyncStatus } from "@waits/lively-react";
 
 function SyncIndicator() {
   const sync = useSyncStatus();
@@ -205,7 +205,7 @@ function SyncIndicator() {
 ### Example -- disable editing while not synchronized
 
 ```tsx
-import { useSyncStatus } from "@waits/openblocks-react";
+import { useSyncStatus } from "@waits/lively-react";
 
 function Editor() {
   const sync = useSyncStatus();
@@ -231,7 +231,7 @@ function Editor() {
 ## `ConnectionBadge`
 
 ```tsx
-import { ConnectionBadge } from "@waits/openblocks-ui";
+import { ConnectionBadge } from "@waits/lively-ui";
 
 <ConnectionBadge />
 ```
@@ -258,8 +258,8 @@ The pill displays the raw status string as its label (e.g., "reconnecting", "dis
 ### Example -- toolbar placement
 
 ```tsx
-import { ConnectionBadge } from "@waits/openblocks-ui";
-import { AvatarStack } from "@waits/openblocks-ui";
+import { ConnectionBadge } from "@waits/lively-ui";
+import { AvatarStack } from "@waits/lively-ui";
 
 function Toolbar() {
   return (
@@ -281,7 +281,7 @@ function Toolbar() {
 Show a yellow warning bar when the connection drops. Auto-dismiss with a fade when reconnected.
 
 ```tsx
-import { useStatus } from "@waits/openblocks-react";
+import { useStatus } from "@waits/lively-react";
 
 function ReconnectingBanner() {
   const status = useStatus();
@@ -319,8 +319,8 @@ function App() {
 Compose `ConnectionBadge` alongside user avatars so collaborators can see connection health at a glance.
 
 ```tsx
-import { ConnectionBadge, AvatarStack } from "@waits/openblocks-ui";
-import { useOthers, useSelf } from "@waits/openblocks-react";
+import { ConnectionBadge, AvatarStack } from "@waits/lively-ui";
+import { useOthers, useSelf } from "@waits/lively-react";
 
 function CollaborationToolbar() {
   const self = useSelf();
@@ -346,7 +346,7 @@ function CollaborationToolbar() {
 When the connection drops, warn the user. When it reconnects, confirm that changes are synced.
 
 ```tsx
-import { useStatus, useLostConnectionListener } from "@waits/openblocks-react";
+import { useStatus, useLostConnectionListener } from "@waits/lively-react";
 import { toast } from "sonner";
 import { useEffect, useRef } from "react";
 
@@ -378,7 +378,7 @@ function SyncMonitor() {
 Disable mutation controls when the connection is not healthy. Users can still view content, but can't make changes that would be lost.
 
 ```tsx
-import { useStatus, useMutation, useStorage } from "@waits/openblocks-react";
+import { useStatus, useMutation, useStorage } from "@waits/lively-react";
 
 function TaskItem({ taskId }: { taskId: string }) {
   const status = useStatus();
@@ -416,7 +416,7 @@ function TaskItem({ taskId }: { taskId: string }) {
 Track how often the connection drops. If reconnecting too frequently, suggest the user check their network.
 
 ```tsx
-import { useLostConnectionListener, useStatus } from "@waits/openblocks-react";
+import { useLostConnectionListener, useStatus } from "@waits/lively-react";
 import { useRef, useState } from "react";
 
 function ConnectionQuality() {

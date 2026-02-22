@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useCursors, useOthers, useSelf } from "@waits/openblocks-react";
+import { useCursors, useOthers, useSelf } from "@waits/lively-react";
 import { Cursor } from "./cursor.js";
 
 export interface CursorOverlayProps {

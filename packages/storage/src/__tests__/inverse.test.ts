@@ -6,7 +6,7 @@ import type {
   ListInsertOp,
   ListDeleteOp,
   ListMoveOp,
-} from "@waits/openblocks-types";
+} from "@waits/lively-types";
 
 function makeGetter(
   data: Record<string, FieldSnapshot | undefined>

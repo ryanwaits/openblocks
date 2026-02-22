@@ -1,8 +1,8 @@
 {
-  "name": "@waits/openblocks-react-codemirror",
+  "name": "@waits/lively-react-codemirror",
   "version": "0.0.1",
   "type": "module",
-  "description": "CodeMirror 6 integration for OpenBlocks collaborative editing",
+  "description": "CodeMirror 6 integration for Lively collaborative editing",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,8 +23,8 @@
     "build": "bunup src/index.ts --format esm,cjs --dts"
   },
   "dependencies": {
-    "@waits/openblocks-yjs": "workspace:*",
-    "@waits/openblocks-react": "workspace:*",
+    "@waits/lively-yjs": "workspace:*",
+    "@waits/lively-react": "workspace:*",
     "@codemirror/language-data": "^6.5.2",
     "@codemirror/lang-markdown": "^6.5.0",
     "y-codemirror.next": "^0.3.5"

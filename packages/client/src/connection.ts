@@ -1,4 +1,4 @@
-import type { ConnectionStatus } from "@waits/openblocks-types";
+import type { ConnectionStatus } from "@waits/lively-types";
 import { EventEmitter } from "./event-emitter.js";
 
 export interface ConnectionConfig {

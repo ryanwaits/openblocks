@@ -3,7 +3,7 @@
 Figma-style "follow user" — mirror another user's viewport with smooth 60fps interpolation. Auto-exits when the followed user disconnects or when the local user interacts.
 
 ```tsx
-import { useFollowUser } from "@waits/openblocks-react";
+import { useFollowUser } from "@waits/lively-react";
 ```
 
 ---

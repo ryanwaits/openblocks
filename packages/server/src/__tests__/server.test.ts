@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from "bun:test";
-import { OpenBlocksServer } from "../server";
+import { LivelyServer } from "../server";
 
-describe("OpenBlocksServer", () => {
-  let server: OpenBlocksServer | null = null;
+describe("LivelyServer", () => {
+  let server: LivelyServer | null = null;
 
   afterEach(async () => {
     if (server) {
@@ -12,7 +12,7 @@ describe("OpenBlocksServer", () => {
   });
 
   it("starts on a random port and stops cleanly", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
     expect(server.port).toBeGreaterThan(0);
     await server.stop();
@@ -20,12 +20,12 @@ describe("OpenBlocksServer", () => {
   });
 
   it("returns -1 port before starting", () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     expect(server.port).toBe(-1);
   });
 
   it("broadcastToRoom returns false for unknown room", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
     expect(server.broadcastToRoom("nonexistent", "hi")).toBe(false);
   });
@@ -34,7 +34,7 @@ describe("OpenBlocksServer", () => {
 
   it("ws error does not crash server", async () => {
     const WebSocket = (await import("ws")).default;
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const ws = new WebSocket(

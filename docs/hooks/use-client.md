@@ -1,9 +1,9 @@
 # useClient
 
-Returns the `OpenBlocksClient` instance from context. Must be called inside `<OpenBlocksProvider>`.
+Returns the `LivelyClient` instance from context. Must be called inside `<LivelyProvider>`.
 
 ```tsx
-import { useClient } from "@waits/openblocks-react";
+import { useClient } from "@waits/lively-react";
 ```
 
 ---
@@ -11,18 +11,18 @@ import { useClient } from "@waits/openblocks-react";
 ## API Reference
 
 ```ts
-function useClient(): OpenBlocksClient;
+function useClient(): LivelyClient;
 ```
 
-Returns the `OpenBlocksClient` passed to `<OpenBlocksProvider client={client}>`. Throws if called outside a provider.
+Returns the `LivelyClient` passed to `<LivelyProvider client={client}>`. Throws if called outside a provider.
 
 ### Error Behavior
 
 ```
-Error: useClient must be used within an <OpenBlocksProvider>
+Error: useClient must be used within an <LivelyProvider>
 ```
 
-This error fires when `useClient` is called outside of an `<OpenBlocksProvider>` tree. Ensure the component is rendered as a descendant of the provider.
+This error fires when `useClient` is called outside of an `<LivelyProvider>` tree. Ensure the component is rendered as a descendant of the provider.
 
 ---
 
@@ -82,5 +82,5 @@ function DynamicRoom({ roomId }: { roomId: string }) {
 
 ## See Also
 
-- [Getting Started](../guides/getting-started.md) — `OpenBlocksProvider` setup
-- [Architecture](../architecture.md) — `OpenBlocksClient` API reference
+- [Getting Started](../guides/getting-started.md) — `LivelyProvider` setup
+- [Architecture](../architecture.md) — `LivelyClient` API reference

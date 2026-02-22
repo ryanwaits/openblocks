@@ -1,27 +1,27 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { OpenBlocksClient, LiveObject } from "@waits/openblocks-client";
+import { LivelyClient, LiveObject } from "@waits/lively-client";
 import {
-  OpenBlocksProvider,
+  LivelyProvider,
   RoomProvider,
   ClientSideSuspense,
   useStorage,
   useMutation,
   useStatus,
   useOthers,
-} from "@waits/openblocks-react";
+} from "@waits/lively-react";
 import {
   AvatarStack,
   ConnectionBadge,
   CursorOverlay,
   useCursorTracking,
-} from "@waits/openblocks-ui";
+} from "@waits/lively-ui";
 import { NotionEditor } from "./editor";
 
 const serverUrl =
-  process.env.NEXT_PUBLIC_OPENBLOCKS_HOST || "http://localhost:2004";
-const client = new OpenBlocksClient({ serverUrl, reconnect: true });
+  process.env.NEXT_PUBLIC_LIVELY_HOST || "http://localhost:2004";
+const client = new LivelyClient({ serverUrl, reconnect: true });
 
 export default function NotionPage() {
   const [userId] = useState(() => crypto.randomUUID().slice(0, 8));
@@ -77,7 +77,7 @@ export default function NotionPage() {
   }
 
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <RoomProvider
         roomId="notion-default"
         userId={userId}
@@ -96,7 +96,7 @@ export default function NotionPage() {
           {() => <NotionLayout />}
         </ClientSideSuspense>
       </RoomProvider>
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 

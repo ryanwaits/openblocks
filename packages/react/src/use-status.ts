@@ -1,5 +1,5 @@
 import { useSyncExternalStore, useCallback, useEffect, useRef } from "react";
-import type { ConnectionStatus } from "@waits/openblocks-types";
+import type { ConnectionStatus } from "@waits/lively-types";
 import { useRoom, useStorageRoot } from "./room-context.js";
 
 export type SyncStatus = "synchronized" | "synchronizing" | "not-synchronized";

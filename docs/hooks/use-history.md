@@ -17,7 +17,7 @@ Automatic undo/redo for any CRDT mutation. No manual tracking -- the SDK capture
 All hooks must be called inside a `<RoomProvider>`.
 
 ```tsx
-import { useHistory } from "@waits/openblocks-react";
+import { useHistory } from "@waits/lively-react";
 
 function Toolbar() {
   const { undo, redo, canUndo, canRedo } = useHistory();
@@ -34,7 +34,7 @@ function Toolbar() {
 Or use the individual hooks when you only need a subset:
 
 ```tsx
-import { useUndo, useCanUndo } from "@waits/openblocks-react";
+import { useUndo, useCanUndo } from "@waits/lively-react";
 
 function UndoButton() {
   const undo = useUndo();
@@ -63,7 +63,7 @@ function UndoButton() {
 Multiple mutations inside `room.batch()` become a **single undo step**.
 
 ```tsx
-import { useMutation } from "@waits/openblocks-react";
+import { useMutation } from "@waits/lively-react";
 
 // useMutation automatically wraps your callback in room.batch()
 const moveCard = useMutation(({ storage }, cardId: string, fromCol: string, toCol: string) => {
@@ -107,7 +107,7 @@ room.batch(() => {
 Users drag, resize, and recolor objects constantly. Undo should reverse an entire drag operation, not each pixel of movement.
 
 ```tsx
-import { useHistory, useMutation } from "@waits/openblocks-react";
+import { useHistory, useMutation } from "@waits/lively-react";
 import { useEffect } from "react";
 
 function Canvas() {

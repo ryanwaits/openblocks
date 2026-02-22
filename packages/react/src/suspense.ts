@@ -1,5 +1,5 @@
 import { useSyncExternalStore, useCallback, useRef, useContext } from "react";
-import type { LiveObject, LiveMap, LiveList } from "@waits/openblocks-client";
+import type { LiveObject, LiveMap, LiveList } from "@waits/lively-client";
 import { useRoom, useStorageRoot, StorageContext } from "./room-context.js";
 import { shallowEqual } from "./shallow-equal.js";
 
@@ -26,10 +26,10 @@ export { ClientSideSuspense } from "./client-side-suspense.js";
 export { useIsInsideRoom } from "./room-context.js";
 
 // Re-export providers
-export { OpenBlocksProvider, useClient } from "./client-context.js";
+export { LivelyProvider, useClient } from "./client-context.js";
 export { RoomProvider, useRoom, useStorageRoot } from "./room-context.js";
-export { LiveObject, LiveMap, LiveList } from "@waits/openblocks-client";
-export type { ConnectionStatus, PresenceUser, CursorData, OnlineStatus } from "@waits/openblocks-types";
+export { LiveObject, LiveMap, LiveList } from "@waits/lively-client";
+export type { ConnectionStatus, PresenceUser, CursorData, OnlineStatus } from "@waits/lively-types";
 
 export function useStorageSuspense<T>(
   selector: (root: LiveObject) => T

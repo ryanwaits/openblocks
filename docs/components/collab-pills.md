@@ -3,7 +3,7 @@
 Renders a row of colored name pills for all users in the room. Each pill uses the user's server-assigned color as a solid background.
 
 ```tsx
-import { CollabPills } from "@waits/openblocks-ui";
+import { CollabPills } from "@waits/lively-ui";
 ```
 
 > **Requirement:** Must be rendered inside a `<RoomProvider>`. Uses `useOthers()` and `useSelf()` internally.

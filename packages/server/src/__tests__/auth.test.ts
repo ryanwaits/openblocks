@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import WebSocket from "ws";
-import { OpenBlocksServer } from "../server";
+import { LivelyServer } from "../server";
 import type { AuthHandler } from "../types";
 
 const validToken = "valid-secret";
@@ -23,7 +23,7 @@ function nextMessage(ws: WebSocket): Promise<Record<string, unknown>> {
 }
 
 describe("Auth", () => {
-  let server: OpenBlocksServer | null = null;
+  let server: LivelyServer | null = null;
 
   afterEach(async () => {
     if (server) {
@@ -33,7 +33,7 @@ describe("Auth", () => {
   });
 
   it("rejects connection without valid token", async () => {
-    server = new OpenBlocksServer({ auth: tokenAuth });
+    server = new LivelyServer({ auth: tokenAuth });
     await server.start(0);
 
     const ws = new WebSocket(
@@ -50,7 +50,7 @@ describe("Auth", () => {
   });
 
   it("accepts connection with valid token", async () => {
-    server = new OpenBlocksServer({ auth: tokenAuth });
+    server = new LivelyServer({ auth: tokenAuth });
     await server.start(0);
 
     const ws = new WebSocket(
@@ -73,7 +73,7 @@ describe("Auth", () => {
   });
 
   it("auth handler userId overrides query params", async () => {
-    server = new OpenBlocksServer({ auth: tokenAuth });
+    server = new LivelyServer({ auth: tokenAuth });
     await server.start(0);
 
     // Pass userId in query params AND valid token — auth result should win

@@ -1,5 +1,5 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
-import { OpenBlocksClient } from "../client";
+import { LivelyClient } from "../client";
 
 class MockWebSocket {
   static instances: MockWebSocket[] = [];
@@ -18,13 +18,13 @@ class MockWebSocket {
   }
 }
 
-describe("OpenBlocksClient", () => {
+describe("LivelyClient", () => {
   beforeEach(() => {
     MockWebSocket.instances = [];
   });
 
   it("joinRoom creates and auto-connects a Room", async () => {
-    const client = new OpenBlocksClient({
+    const client = new LivelyClient({
       serverUrl: "ws://localhost:3000",
       WebSocket: MockWebSocket as any,
       reconnect: false,
@@ -37,7 +37,7 @@ describe("OpenBlocksClient", () => {
   });
 
   it("joinRoom returns existing room on duplicate", () => {
-    const client = new OpenBlocksClient({
+    const client = new LivelyClient({
       serverUrl: "ws://localhost:3000",
       WebSocket: MockWebSocket as any,
       reconnect: false,
@@ -50,7 +50,7 @@ describe("OpenBlocksClient", () => {
   });
 
   it("getRoom returns room or undefined", () => {
-    const client = new OpenBlocksClient({
+    const client = new LivelyClient({
       serverUrl: "ws://localhost:3000",
       WebSocket: MockWebSocket as any,
       reconnect: false,
@@ -62,7 +62,7 @@ describe("OpenBlocksClient", () => {
   });
 
   it("getRooms returns all active rooms", () => {
-    const client = new OpenBlocksClient({
+    const client = new LivelyClient({
       serverUrl: "ws://localhost:3000",
       WebSocket: MockWebSocket as any,
       reconnect: false,
@@ -74,7 +74,7 @@ describe("OpenBlocksClient", () => {
   });
 
   it("leaveRoom disconnects and removes", async () => {
-    const client = new OpenBlocksClient({
+    const client = new LivelyClient({
       serverUrl: "ws://localhost:3000",
       WebSocket: MockWebSocket as any,
       reconnect: false,
@@ -90,7 +90,7 @@ describe("OpenBlocksClient", () => {
   });
 
   it("leaveRoom is no-op for unknown room", () => {
-    const client = new OpenBlocksClient({
+    const client = new LivelyClient({
       serverUrl: "ws://localhost:3000",
       WebSocket: MockWebSocket as any,
       reconnect: false,

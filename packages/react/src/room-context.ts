@@ -8,8 +8,8 @@ import {
   type Context,
   type ReactNode,
 } from "react";
-import type { Room } from "@waits/openblocks-client";
-import type { LiveObject } from "@waits/openblocks-client";
+import type { Room } from "@waits/lively-client";
+import type { LiveObject } from "@waits/lively-client";
 import { useClient } from "./client-context.js";
 
 export const RoomContext: Context<Room | null> = createContext<Room | null>(null);
@@ -45,14 +45,14 @@ export interface RoomProviderProps {
  * Joins a room and provides it to child hooks. Creates the room synchronously
  * on first render. Leaves the room on unmount.
  *
- * Must be nested inside `<OpenBlocksProvider>`.
+ * Must be nested inside `<LivelyProvider>`.
  *
  * @example
- * <OpenBlocksProvider client={client}>
+ * <LivelyProvider client={client}>
  *   <RoomProvider roomId="my-room" userId={uid} displayName={name}>
  *     <App />
  *   </RoomProvider>
- * </OpenBlocksProvider>
+ * </LivelyProvider>
  */
 export function RoomProvider({
   roomId,
@@ -111,7 +111,7 @@ export function RoomProvider({
     });
 
     // After reconnection, applySnapshot replaces the root. Update React state
-    // so useMutation / useOpenBlocksSync closures see the new tree.
+    // so useMutation / useLivelySync closures see the new tree.
     const unsubReset = (room as any).onStorageReset?.((newRoot: LiveObject) => {
       if (!cancelled) setStorage({ root: newRoot });
     });

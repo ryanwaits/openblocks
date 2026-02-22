@@ -1,10 +1,10 @@
 import { describe, it, expect, afterEach } from "bun:test";
 import WebSocket from "ws";
-import { OpenBlocksServer } from "@waits/openblocks-server";
+import { LivelyServer } from "@waits/lively-server";
 import { Room } from "../room";
 
 describe("Smoke: Room + real server", () => {
-  let server: OpenBlocksServer | null = null;
+  let server: LivelyServer | null = null;
   const rooms: Room[] = [];
 
   afterEach(async () => {
@@ -46,7 +46,7 @@ describe("Smoke: Room + real server", () => {
   }
 
   it("connects, receives presence, getSelf() works", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const room = track(
@@ -72,7 +72,7 @@ describe("Smoke: Room + real server", () => {
   });
 
   it("two clients see each other in presence", async () => {
-    server = new OpenBlocksServer();
+    server = new LivelyServer();
     await server.start(0);
 
     const room1 = track(

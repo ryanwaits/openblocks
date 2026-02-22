@@ -2,10 +2,10 @@
 
 Pre-built components for showing who's in a room. `Avatar` renders a single user (initials or image, with an optional status dot). `AvatarStack` renders a row of overlapping avatars with an overflow count.
 
-Both components live in `@waits/openblocks-ui`.
+Both components live in `@waits/lively-ui`.
 
 ```tsx
-import { Avatar, AvatarStack } from "@waits/openblocks-ui";
+import { Avatar, AvatarStack } from "@waits/lively-ui";
 ```
 
 > **Requirement:** `AvatarStack` uses `useOthers()` and `useSelf()` internally, so it **must** be rendered inside a `<RoomProvider>`. `Avatar` is a pure presentational component -- it only needs a `PresenceUser` object passed as a prop.
@@ -25,7 +25,7 @@ Renders a single user as a colored circle with initials, or as a round image whe
 | `showStatus` | `boolean` | `false` | When `true`, renders a small colored dot in the bottom-right corner indicating the user's `onlineStatus`. |
 | `className` | `string` | `undefined` | Additional CSS classes applied to the outer wrapper `<div>`. |
 
-### `PresenceUser` shape (from `@waits/openblocks-types`)
+### `PresenceUser` shape (from `@waits/lively-types`)
 
 ```ts
 interface PresenceUser {
@@ -87,7 +87,7 @@ interface PresenceUser {
 ### Basic usage
 
 ```tsx
-import { Avatar } from "@waits/openblocks-ui";
+import { Avatar } from "@waits/lively-ui";
 
 const user: PresenceUser = {
   userId: "u1",
@@ -138,7 +138,7 @@ Renders a horizontal row of overlapping `Avatar` components for every user in th
 ### Basic usage
 
 ```tsx
-import { AvatarStack } from "@waits/openblocks-ui";
+import { AvatarStack } from "@waits/lively-ui";
 
 // Inside a <RoomProvider>:
 <AvatarStack />                               // default: max=4, showSelf=true
@@ -155,7 +155,7 @@ import { AvatarStack } from "@waits/openblocks-ui";
 Show a presence bar at the top of your app with the avatar stack and connection status side by side.
 
 ```tsx
-import { AvatarStack, ConnectionBadge } from "@waits/openblocks-ui";
+import { AvatarStack, ConnectionBadge } from "@waits/lively-ui";
 
 function PresenceBar() {
   return (
@@ -207,7 +207,7 @@ function PageNav({ pages }: { pages: string[] }) {
 Like Figma's "follow" feature: click an avatar to snap your viewport to that user's position. Use `onUserClick` to receive the clicked `PresenceUser`.
 
 ```tsx
-import { AvatarStack } from "@waits/openblocks-ui";
+import { AvatarStack } from "@waits/lively-ui";
 
 function CanvasHeader() {
   const handleFollow = (user: PresenceUser) => {
@@ -234,8 +234,8 @@ When `onUserClick` is provided, each avatar wrapper gets `cursor-pointer`, givin
 For a vertical list layout, render individual `Avatar` components rather than the stacked row.
 
 ```tsx
-import { Avatar } from "@waits/openblocks-ui";
-import { useOthers, useSelf } from "@waits/openblocks-react";
+import { Avatar } from "@waits/lively-ui";
+import { useOthers, useSelf } from "@waits/lively-react";
 
 function UserList() {
   const self = useSelf();
@@ -318,11 +318,11 @@ Use the `className` prop or wrap the components in your own containers for diffe
 
 ### Providing context
 
-`AvatarStack` calls `useOthers()` and `useSelf()` from `@waits/openblocks-react`, so the component tree must include a `<RoomProvider>` ancestor.
+`AvatarStack` calls `useOthers()` and `useSelf()` from `@waits/lively-react`, so the component tree must include a `<RoomProvider>` ancestor.
 
 ```tsx
-import { RoomProvider } from "@waits/openblocks-react";
-import { AvatarStack } from "@waits/openblocks-ui";
+import { RoomProvider } from "@waits/lively-react";
+import { AvatarStack } from "@waits/lively-ui";
 
 function App() {
   return (
@@ -348,8 +348,8 @@ function App() {
 A complete presence toolbar combining `AvatarStack` and `ConnectionBadge`:
 
 ```tsx
-import { AvatarStack, ConnectionBadge } from "@waits/openblocks-ui";
-import type { PresenceUser } from "@waits/openblocks-types";
+import { AvatarStack, ConnectionBadge } from "@waits/lively-ui";
+import type { PresenceUser } from "@waits/lively-types";
 
 function PresenceToolbar() {
   const handleFollow = (user: PresenceUser) => {

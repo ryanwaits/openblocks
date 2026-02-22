@@ -1,9 +1,9 @@
-# @waits/openblocks-yjs
+# @waits/lively-yjs
 
-Yjs provider that bridges an OpenBlocks `Room` to a `Y.Doc` for collaborative text editing. Used by `@waits/openblocks-react-tiptap` and `@waits/openblocks-react-codemirror` under the hood.
+Yjs provider that bridges an Lively `Room` to a `Y.Doc` for collaborative text editing. Used by `@waits/lively-react-tiptap` and `@waits/lively-react-codemirror` under the hood.
 
 ```bash
-npm install @waits/openblocks-yjs yjs y-protocols
+npm install @waits/lively-yjs yjs y-protocols
 ```
 
 ---
@@ -11,10 +11,10 @@ npm install @waits/openblocks-yjs yjs y-protocols
 ## Quick Start
 
 ```ts
-import { OpenBlocksYjsProvider } from "@waits/openblocks-yjs";
+import { LivelyYjsProvider } from "@waits/lively-yjs";
 
-// `room` is an OpenBlocks Room instance (from client.joinRoom() or useRoom())
-const provider = new OpenBlocksYjsProvider(room);
+// `room` is an Lively Room instance (from client.joinRoom() or useRoom())
+const provider = new LivelyYjsProvider(room);
 provider.connect();
 
 // Access the Y.Doc and Awareness
@@ -32,12 +32,12 @@ provider.destroy();
 ### Constructor
 
 ```ts
-new OpenBlocksYjsProvider(room: Room, options?: OpenBlocksYjsProviderOptions)
+new LivelyYjsProvider(room: Room, options?: LivelyYjsProviderOptions)
 ```
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `room` | `Room` | An OpenBlocks `Room` instance. The provider sends/receives Yjs updates over the room's message channel. |
+| `room` | `Room` | An Lively `Room` instance. The provider sends/receives Yjs updates over the room's message channel. |
 | `options.doc` | `Y.Doc` | Existing Y.Doc to use. If omitted, a new one is created. |
 
 ### Properties
@@ -103,20 +103,20 @@ After initial sync, incremental updates flow as `yjs:update` messages whenever e
 
 You typically don't use this package directly. Instead, use the editor-specific packages:
 
-- **TipTap** — [`@waits/openblocks-react-tiptap`](./react-tiptap.md) provides `useOpenBlocksExtension()` which creates and manages the provider automatically.
-- **CodeMirror** — [`@waits/openblocks-react-codemirror`](./react-codemirror.md) provides `useOpenBlocksCodeMirror()` which does the same.
+- **TipTap** — [`@waits/lively-react-tiptap`](./react-tiptap.md) provides `useLivelyExtension()` which creates and manages the provider automatically.
+- **CodeMirror** — [`@waits/lively-react-codemirror`](./react-codemirror.md) provides `useLivelyCodeMirror()` which does the same.
 
 ### Manual Integration
 
 If you're integrating with a different editor or need direct Y.Doc access:
 
 ```ts
-import { OpenBlocksYjsProvider } from "@waits/openblocks-yjs";
+import { LivelyYjsProvider } from "@waits/lively-yjs";
 import * as Y from "yjs";
 
 // Bring your own Y.Doc
 const ydoc = new Y.Doc();
-const provider = new OpenBlocksYjsProvider(room, { doc: ydoc });
+const provider = new LivelyYjsProvider(room, { doc: ydoc });
 
 // Set awareness state for collaborative cursors
 provider.awareness.setLocalStateField("user", {

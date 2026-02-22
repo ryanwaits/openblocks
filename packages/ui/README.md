@@ -1,17 +1,17 @@
-# @waits/openblocks-ui
+# @waits/lively-ui
 
 Pre-built React components and hooks for multiplayer UI: cursors, avatars, and connection status.
 
 ## Install
 
 ```sh
-bun add @waits/openblocks-ui
+bun add @waits/lively-ui
 ```
 
 Peer deps:
 
 ```sh
-bun add react react-dom @waits/openblocks-react
+bun add react react-dom @waits/lively-react
 ```
 
 ## Tailwind
@@ -23,7 +23,7 @@ Components use Tailwind classes. You must tell Tailwind to scan the package sour
 ```css
 /* globals.css */
 @import "tailwindcss";
-@source "../node_modules/@waits/openblocks-ui/dist";
+@source "../node_modules/@waits/lively-ui/dist";
 ```
 
 In a Bun monorepo, point directly at the package source instead:
@@ -38,7 +38,7 @@ In a Bun monorepo, point directly at the package source instead:
 export default {
   content: [
     // ...your app paths
-    "./node_modules/@waits/openblocks-ui/dist/**/*.js",
+    "./node_modules/@waits/lively-ui/dist/**/*.js",
   ],
 };
 ```
@@ -134,7 +134,7 @@ Avatar mode:
 
 ### `<Avatar>`
 
-A colored circle with the user's initials and a tooltip. Accepts a `PresenceUser` object from `@waits/openblocks-react`.
+A colored circle with the user's initials and a tooltip. Accepts a `PresenceUser` object from `@waits/lively-react`.
 
 ```ts
 interface AvatarProps {
@@ -209,7 +209,7 @@ import {
   CursorOverlay,
   AvatarStack,
   ConnectionBadge,
-} from "@waits/openblocks-ui";
+} from "@waits/lively-ui";
 
 function Canvas() {
   const { ref, onMouseMove } = useCursorTracking<HTMLDivElement>();

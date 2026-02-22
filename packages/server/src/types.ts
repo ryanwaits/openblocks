@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "node:http";
 import type WebSocket from "ws";
 
-// Re-export shared types from @waits/openblocks-types
+// Re-export shared types from @waits/lively-types
 export type {
   OnlineStatus,
   PresenceUser,
@@ -19,9 +19,9 @@ export type {
   LiveStateUpdateMessage,
   LiveStateInitMessage,
   LiveStateUpdateBroadcast,
-} from "@waits/openblocks-types";
+} from "@waits/lively-types";
 
-import type { OnlineStatus, PresenceUser, StorageOp, SerializedCrdt } from "@waits/openblocks-types";
+import type { OnlineStatus, PresenceUser, StorageOp, SerializedCrdt } from "@waits/lively-types";
 
 // --- Auth ---
 

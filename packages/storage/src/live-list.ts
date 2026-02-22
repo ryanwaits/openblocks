@@ -5,7 +5,7 @@ import type {
   ListInsertOp,
   ListDeleteOp,
   ListMoveOp,
-} from "@waits/openblocks-types";
+} from "@waits/lively-types";
 import { AbstractCrdt } from "./abstract-crdt.js";
 import { generateKeyBetween } from "./fractional-index.js";
 

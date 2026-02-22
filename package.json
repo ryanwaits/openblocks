@@ -1,8 +1,8 @@
 {
-  "name": "openblocks",
+  "name": "lively",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["packages/*", "examples/*"],
+  "workspaces": ["packages/*", "examples/*", "apps/*"],
   "scripts": {
     "build:packages": "bunup",
     "test:packages": "bun test packages/"

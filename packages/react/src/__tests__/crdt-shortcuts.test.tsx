@@ -4,10 +4,10 @@ import { createMockRoom, createMockClient, createDeferredPromise, type MockRoom 
 
 const { act, renderHook } = await import("@testing-library/react");
 const { createElement } = await import("react");
-const { OpenBlocksProvider } = await import("../client-context.js");
+const { LivelyProvider } = await import("../client-context.js");
 const { RoomProvider } = await import("../room-context.js");
 const { useObject, useMap, useList } = await import("../use-crdt-shortcuts.js");
-const { LiveObject, LiveMap, LiveList, StorageDocument } = await import("@waits/openblocks-client");
+const { LiveObject, LiveMap, LiveList, StorageDocument } = await import("@waits/lively-client");
 
 function createStorageRoom() {
   const root = new LiveObject({
@@ -47,7 +47,7 @@ function setup() {
 
 function wrapper({ children }: { children: any }) {
   return createElement(
-    OpenBlocksProvider,
+    LivelyProvider,
     { client },
     createElement(
       RoomProvider,

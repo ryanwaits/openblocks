@@ -1,6 +1,6 @@
 import type { Editor } from "@tiptap/react";
 import type { ReactNode, ButtonHTMLAttributes, JSX } from "react";
-import { yjsUndo, yjsRedo } from "./use-openblocks-extension.js";
+import { yjsUndo, yjsRedo } from "./use-lively-extension.js";
 
 // --- Shared primitives ---
 

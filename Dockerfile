@@ -29,4 +29,4 @@ COPY examples/nextjs-whiteboard/server/ examples/nextjs-whiteboard/server/
 COPY examples/nextjs-whiteboard/src/types/ examples/nextjs-whiteboard/src/types/
 
 EXPOSE 10000
-CMD ["bun", "run", "examples/nextjs-whiteboard/server/openblocks.ts"]
+CMD ["bun", "run", "examples/nextjs-whiteboard/server/lively.ts"]

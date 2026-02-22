@@ -4,14 +4,14 @@ import { createMockRoom, createMockClient, createDeferredPromise, type MockRoom 
 
 const { render, act, renderHook } = await import("@testing-library/react");
 const { createElement, Suspense } = await import("react");
-const { OpenBlocksProvider } = await import("../client-context.js");
+const { LivelyProvider } = await import("../client-context.js");
 const { RoomProvider } = await import("../room-context.js");
 const { useStorage } = await import("../use-storage.js");
 const { useMutation } = await import("../use-mutation.js");
 const { useStorageSuspense } = await import("../suspense.js");
 
 // Use real LiveObject + StorageDocument for storage tests (via client re-export)
-const { LiveObject, StorageDocument } = await import("@waits/openblocks-client");
+const { LiveObject, StorageDocument } = await import("@waits/lively-client");
 
 function createStorageRoom() {
   const root = new LiveObject<Record<string, unknown>>({ count: 0, name: "test" });
@@ -43,7 +43,7 @@ function makeWrapper(mockRoom: MockRoom) {
   client = createMockClient(() => mockRoom);
   return function wrapper({ children }: { children: any }) {
     return createElement(
-      OpenBlocksProvider,
+      LivelyProvider,
       { client },
       createElement(
         RoomProvider,
@@ -173,7 +173,7 @@ describe("useStorageSuspense", () => {
 
     const { container } = render(
       createElement(
-        OpenBlocksProvider,
+        LivelyProvider,
         { client },
         createElement(
           RoomProvider,

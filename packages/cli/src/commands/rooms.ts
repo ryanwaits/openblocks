@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import { RoomPersistence } from "../persistence.js";
-import type { SerializedCrdt } from "@waits/openblocks-types";
+import type { SerializedCrdt } from "@waits/lively-types";
 
 function relativeTime(timestamp: number): string {
   const diff = Date.now() - timestamp;
@@ -74,7 +74,7 @@ export const roomsCommand = new Command("rooms")
 roomsCommand
   .command("list")
   .description("List all persisted rooms")
-  .option("--data-dir <path>", "Data directory", ".openblocks")
+  .option("--data-dir <path>", "Data directory", ".lively")
   .action(async (opts) => {
     const persistence = new RoomPersistence(opts.dataDir);
     const rooms = await persistence.list();
@@ -107,7 +107,7 @@ roomsCommand
 roomsCommand
   .command("clear [roomId]")
   .description("Clear persisted data (all rooms or a specific room)")
-  .option("--data-dir <path>", "Data directory", ".openblocks")
+  .option("--data-dir <path>", "Data directory", ".lively")
   .action(async (roomId: string | undefined, opts) => {
     const persistence = new RoomPersistence(opts.dataDir);
 
@@ -139,7 +139,7 @@ roomsCommand
 roomsCommand
   .command("inspect <roomId>")
   .description("Inspect persisted storage for a room")
-  .option("--data-dir <path>", "Data directory", ".openblocks")
+  .option("--data-dir <path>", "Data directory", ".lively")
   .action(async (roomId: string, opts) => {
     const persistence = new RoomPersistence(opts.dataDir);
     const root = await persistence.load(roomId);

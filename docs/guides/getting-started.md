@@ -1,46 +1,46 @@
 # Getting Started
 
-OpenBlocks is a real-time collaboration framework. This guide covers the four foundational APIs you need to go from zero to a live, multiplayer app: **`OpenBlocksClient`**, **`OpenBlocksProvider`**, **`RoomProvider`**, and the hooks **`useRoom`** and **`useStorageRoot`**.
+Lively is a real-time collaboration framework. This guide covers the four foundational APIs you need to go from zero to a live, multiplayer app: **`LivelyClient`**, **`LivelyProvider`**, **`RoomProvider`**, and the hooks **`useRoom`** and **`useStorageRoot`**.
 
 ---
 
 ## Step 0: Start the Dev Server
 
-Before writing any client code, start the local OpenBlocks server:
+Before writing any client code, start the local Lively server:
 
 ```bash
-npx openblocks dev
+npx lively dev
 ```
 
-This starts a WebSocket server on `ws://localhost:1999` with automatic room persistence to `.openblocks/rooms/`. See the [CLI docs](./cli.md) for all flags (`--port`, `--data-dir`, `--reset`) and room management commands.
+This starts a WebSocket server on `ws://localhost:1999` with automatic room persistence to `.lively/rooms/`. See the [CLI docs](./cli.md) for all flags (`--port`, `--data-dir`, `--reset`) and room management commands.
 
 ---
 
 ## Quick Start
 
 ```bash
-npm install @waits/openblocks-client @waits/openblocks-react
+npm install @waits/lively-client @waits/lively-react
 ```
 
 ```tsx
-import { OpenBlocksClient } from "@waits/openblocks-client";
+import { LivelyClient } from "@waits/lively-client";
 import {
-  OpenBlocksProvider,
+  LivelyProvider,
   RoomProvider,
   useStorage,
   useMutation,
   LiveObject,
-} from "@waits/openblocks-react";
+} from "@waits/lively-react";
 
 // 1. Create a single client instance (module-level singleton)
-const client = new OpenBlocksClient({
+const client = new LivelyClient({
   serverUrl: "ws://localhost:2001",
 });
 
 // 2. Wrap your app with providers
 function App() {
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <RoomProvider
         roomId="my-room"
         userId="user-123"
@@ -49,7 +49,7 @@ function App() {
       >
         <Counter />
       </RoomProvider>
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 
@@ -69,16 +69,16 @@ That's it. Every browser tab pointing at `"my-room"` sees the same counter and u
 
 ---
 
-## `OpenBlocksClient`
+## `LivelyClient`
 
 The client manages WebSocket connections and room lifecycles. Create **one instance** and reuse it everywhere.
 
 ### Constructor
 
 ```ts
-import { OpenBlocksClient } from "@waits/openblocks-client";
+import { LivelyClient } from "@waits/lively-client";
 
-const client = new OpenBlocksClient({
+const client = new LivelyClient({
   serverUrl: "ws://localhost:2001",
   reconnect: true,
   maxRetries: 10,
@@ -99,11 +99,11 @@ const client = new OpenBlocksClient({
 > **Always create the client at module level, outside any component.** Placing it inside a component causes a new instance on every render, which leaks connections and breaks room state.
 
 ```ts
-// lib/openblocks.ts
-import { OpenBlocksClient } from "@waits/openblocks-client";
+// lib/lively.ts
+import { LivelyClient } from "@waits/lively-client";
 
-export const client = new OpenBlocksClient({
-  serverUrl: process.env.NEXT_PUBLIC_OPENBLOCKS_URL!,
+export const client = new LivelyClient({
+  serverUrl: process.env.NEXT_PUBLIC_LIVELY_URL!,
   reconnect: true,
 });
 ```
@@ -121,19 +121,19 @@ export const client = new OpenBlocksClient({
 
 ---
 
-## `OpenBlocksProvider`
+## `LivelyProvider`
 
-A React context provider that makes the `OpenBlocksClient` available to all descendant hooks. It must wrap everything that uses OpenBlocks.
+A React context provider that makes the `LivelyClient` available to all descendant hooks. It must wrap everything that uses Lively.
 
 ```tsx
-import { OpenBlocksProvider } from "@waits/openblocks-react";
-import { client } from "./lib/openblocks";
+import { LivelyProvider } from "@waits/lively-react";
+import { client } from "./lib/lively";
 
 function Root() {
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <App />
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 ```
@@ -142,14 +142,14 @@ function Root() {
 
 | Prop | Type | Description |
 |---|---|---|
-| `client` | `OpenBlocksClient` | **Required.** The singleton client instance. |
+| `client` | `LivelyClient` | **Required.** The singleton client instance. |
 | `children` | `ReactNode` | Your application tree. |
 
 ---
 
 ## `RoomProvider`
 
-Joins a room on mount, leaves on unmount, and provides room + storage context to all child hooks. Must be nested inside `<OpenBlocksProvider>`.
+Joins a room on mount, leaves on unmount, and provides room + storage context to all child hooks. Must be nested inside `<LivelyProvider>`.
 
 ```tsx
 import {
@@ -157,7 +157,7 @@ import {
   LiveObject,
   LiveMap,
   LiveList,
-} from "@waits/openblocks-react";
+} from "@waits/lively-react";
 
 <RoomProvider
   roomId="project-abc"
@@ -189,7 +189,7 @@ import {
 | `offlineInactivityTime` | `number` | `undefined` | Milliseconds of inactivity before the user's presence status becomes `"offline"`. |
 | `location` | `string` | `undefined` | Location identifier for this client (e.g., a page or tab). Used with `useOthersOnLocation`. |
 | `presenceMetadata` | `Record<string, unknown>` | `undefined` | Arbitrary metadata attached to this user's presence. |
-| `children` | `ReactNode` | **required** | Components that use OpenBlocks hooks. |
+| `children` | `ReactNode` | **required** | Components that use Lively hooks. |
 
 ### Initial Storage
 
@@ -222,7 +222,7 @@ initialStorage={{
 Returns the current `Room` instance. Use it when you need direct access to room methods that don't have dedicated hooks.
 
 ```tsx
-import { useRoom } from "@waits/openblocks-react";
+import { useRoom } from "@waits/lively-react";
 
 function BatchButton() {
   const room = useRoom();
@@ -271,7 +271,7 @@ function StatusLogger() {
 Returns the raw `{ root: LiveObject }` storage object, or `null` while storage is still loading from the server.
 
 ```tsx
-import { useStorageRoot } from "@waits/openblocks-react";
+import { useStorageRoot } from "@waits/lively-react";
 
 function DebugStorage() {
   const storage = useStorageRoot();
@@ -309,7 +309,7 @@ function CollabPage() {
   const { roomId } = useParams<{ roomId: string }>();
 
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <RoomProvider
         roomId={roomId!}
         userId={auth.userId}
@@ -318,7 +318,7 @@ function CollabPage() {
       >
         <Editor />
       </RoomProvider>
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 ```
@@ -339,7 +339,7 @@ function AuthenticatedApp() {
   if (!user) return <LoginPage />;
 
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <RoomProvider
         roomId="shared-workspace"
         userId={user.id}
@@ -349,7 +349,7 @@ function AuthenticatedApp() {
       >
         <Workspace />
       </RoomProvider>
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 ```
@@ -359,7 +359,7 @@ function AuthenticatedApp() {
 Nested CRDTs for a whiteboard-style application:
 
 ```tsx
-import { LiveObject, LiveMap, LiveList } from "@waits/openblocks-react";
+import { LiveObject, LiveMap, LiveList } from "@waits/lively-react";
 
 const initialStorage = {
   // Document-level metadata
@@ -394,7 +394,7 @@ const initialStorage = {
 Handle the brief moment before storage initializes from the server:
 
 ```tsx
-import { useStorageRoot, useStorage, useStatus } from "@waits/openblocks-react";
+import { useStorageRoot, useStorage, useStatus } from "@waits/lively-react";
 
 // Option 1: Check storage root directly
 function LoadingGuard({ children }: { children: ReactNode }) {
@@ -461,33 +461,33 @@ function Broken() {
 }
 
 // Fix: ensure the component is rendered inside both providers
-<OpenBlocksProvider client={client}>
+<LivelyProvider client={client}>
   <RoomProvider roomId="room-1" userId="u1" displayName="Alice">
     <Broken /> {/* Now works */}
   </RoomProvider>
-</OpenBlocksProvider>
+</LivelyProvider>
 ```
 
-All OpenBlocks hooks (`useRoom`, `useStorage`, `useMutation`, `useSelf`, `useOthers`, etc.) require both `<OpenBlocksProvider>` and `<RoomProvider>` as ancestors.
+All Lively hooks (`useRoom`, `useStorage`, `useMutation`, `useSelf`, `useOthers`, etc.) require both `<LivelyProvider>` and `<RoomProvider>` as ancestors.
 
 ### Creating Multiple Client Instances
 
 ```tsx
 // Bad -- new client on every render, leaks WebSocket connections
 function App() {
-  const client = new OpenBlocksClient({ serverUrl: "ws://localhost:2001" });
-  return <OpenBlocksProvider client={client}>...</OpenBlocksProvider>;
+  const client = new LivelyClient({ serverUrl: "ws://localhost:2001" });
+  return <LivelyProvider client={client}>...</LivelyProvider>;
 }
 
 // Good -- module-level singleton
-const client = new OpenBlocksClient({ serverUrl: "ws://localhost:2001" });
+const client = new LivelyClient({ serverUrl: "ws://localhost:2001" });
 
 function App() {
-  return <OpenBlocksProvider client={client}>...</OpenBlocksProvider>;
+  return <LivelyProvider client={client}>...</LivelyProvider>;
 }
 ```
 
-Each `OpenBlocksClient` instance maintains its own connection pool. Creating one inside a component means a fresh pool on every render -- connections pile up and state is lost.
+Each `LivelyClient` instance maintains its own connection pool. Creating one inside a component means a fresh pool on every render -- connections pile up and state is lost.
 
 ---
 

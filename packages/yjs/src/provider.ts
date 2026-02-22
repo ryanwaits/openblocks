@@ -1,8 +1,8 @@
 import * as Y from "yjs";
 import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate, removeAwarenessStates } from "y-protocols/awareness";
-import type { Room } from "@waits/openblocks-client";
+import type { Room } from "@waits/lively-client";
 
-export interface OpenBlocksYjsProviderOptions {
+export interface LivelyYjsProviderOptions {
   /** Existing Y.Doc to use. If omitted, a new one is created. */
   doc?: Y.Doc;
 }
@@ -28,7 +28,7 @@ function decodeUpdate(data: string): Uint8Array {
 type ProviderEvent = "sync" | "awareness-update" | "status";
 type EventCallback = (...args: unknown[]) => void;
 
-export class OpenBlocksYjsProvider {
+export class LivelyYjsProvider {
   readonly doc: Y.Doc;
   readonly awareness: Awareness;
   private readonly room: Room;
@@ -43,7 +43,7 @@ export class OpenBlocksYjsProvider {
 
   private eventListeners = new Map<ProviderEvent, Set<EventCallback>>();
 
-  constructor(room: Room, options?: OpenBlocksYjsProviderOptions) {
+  constructor(room: Room, options?: LivelyYjsProviderOptions) {
     this.room = room;
     this.doc = options?.doc ?? new Y.Doc();
     this.awareness = new Awareness(this.doc);

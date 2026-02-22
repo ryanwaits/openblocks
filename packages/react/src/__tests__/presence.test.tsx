@@ -4,7 +4,7 @@ import { createMockRoom, createMockClient, type MockRoom } from "./setup";
 
 const { render, act, renderHook } = await import("@testing-library/react");
 const { createElement } = await import("react");
-const { OpenBlocksProvider } = await import("../client-context.js");
+const { LivelyProvider } = await import("../client-context.js");
 const { RoomProvider } = await import("../room-context.js");
 const { useStatus, useLostConnectionListener } = await import("../use-status.js");
 const { useSelf } = await import("../use-self.js");
@@ -20,7 +20,7 @@ function setup() {
 
 function wrapper({ children }: { children: any }) {
   return createElement(
-    OpenBlocksProvider,
+    LivelyProvider,
     { client },
     createElement(
       RoomProvider,
