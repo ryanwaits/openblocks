@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
-import { useOthersMapped, useSelf } from "@waits/openblocks-react";
+import { useOthersMapped, useSelf } from "@waits/lively-react";
 
 function getInitials(name: string): string {
   return name
@@ -26,6 +26,7 @@ export function OnlineUsers({ followingUserId, onFollow }: OnlineUsersProps) {
   const seen = new Set<string>(selfMapped ? [selfMapped.userId] : []);
   const dedupedOthers = others.filter((u) => {
     if (seen.has(u.userId)) return false;
+    if (u.userId.startsWith("ai-")) return false;
     seen.add(u.userId);
     return true;
   });

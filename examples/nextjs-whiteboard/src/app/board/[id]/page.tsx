@@ -8,6 +8,8 @@ import { CursorsOverlay } from "@/components/presence/cursors-overlay";
 import { OnlineUsers } from "@/components/presence/online-users";
 import { NameDialog } from "@/components/auth/name-dialog";
 import { Sidebar } from "@/components/canvas/sidebar";
+import { FrameSwitcher } from "@/components/canvas/frame-switcher";
+import { ShortcutHint, useShortcutHint } from "@/components/canvas/shortcut-hint";
 import { ZoomControls } from "@/components/canvas/zoom-controls";
 import { GhostPreview } from "@/components/canvas/ghost-preview";
 import { InlineTextEditor } from "@/components/canvas/inline-text-editor";
@@ -25,14 +27,67 @@ import type { BoardObject, ToolMode, Frame } from "@/types/board";
 import { useFrameStore } from "@/lib/store/frame-store";
 import { useLineDrawing } from "@/hooks/use-line-drawing";
 import { AICommandBar } from "@/components/ai/ai-command-bar";
-import { OpenBlocksProvider, RoomProvider, useSelf, useOthers, useHistory, useFollowUser, useErrorListener, useLostConnectionListener, useOthersListener, useSyncStatus } from "@waits/openblocks-react";
-import { ConnectionBadge } from "@waits/openblocks-ui";
+import { LivelyProvider, RoomProvider, useSelf, useOthers, useHistory, useFollowUser, useErrorListener, useLostConnectionListener, useOthersListener, useSyncStatus, useUpdateMyPresence } from "@waits/lively-react";
+import { ConnectionBadge } from "@waits/lively-ui";
 import { client, buildInitialStorage } from "@/lib/sync/client";
-import { useOpenBlocksSync } from "@/lib/sync/use-openblocks-sync";
+import { useLivelySync } from "@/lib/sync/use-lively-sync";
 import { useBoardMutations } from "@/lib/sync/use-board-mutations";
 
 const CREATION_TOOLS: ToolMode[] = ["sticky", "rectangle", "text", "circle", "diamond", "pill"];
 const EDITABLE_TYPES: BoardObject["type"][] = ["sticky", "text"];
+
+/** Isolated viewport-dependent overlays — subscribe independently so BoardPageInner doesn't re-render on pan/zoom */
+
+function SelectionRectOverlay({ rect }: { rect: { x: number; y: number; width: number; height: number } }) {
+  const scale = useViewportStore((s) => s.scale);
+  const pos = useViewportStore((s) => s.pos);
+  return (
+    <div
+      className="pointer-events-none absolute z-30"
+      style={{
+        left: rect.x * scale + pos.x,
+        top: rect.y * scale + pos.y,
+        width: rect.width * scale,
+        height: rect.height * scale,
+        border: "1.5px solid #3b82f6",
+        backgroundColor: "rgba(59, 130, 246, 0.08)",
+        borderRadius: 2,
+      }}
+    />
+  );
+}
+
+function PositionedFormattingToolbar({ object, onFormatChange }: { object: BoardObject; onFormatChange: (updates: Partial<BoardObject>) => void }) {
+  const scale = useViewportStore((s) => s.scale);
+  const pos = useViewportStore((s) => s.pos);
+  const bounds = getRotatedAABB(object);
+  return (
+    <FormattingToolbar
+      object={object}
+      onFormatChange={onFormatChange}
+      screenX={bounds.x * scale + pos.x}
+      screenY={bounds.y * scale + pos.y}
+      screenW={bounds.width * scale}
+    />
+  );
+}
+
+function PositionedLineFormattingToolbar({ object, onUpdate }: { object: BoardObject; onUpdate: (updates: Partial<BoardObject>) => void }) {
+  const scale = useViewportStore((s) => s.scale);
+  const pos = useViewportStore((s) => s.pos);
+  const bounds = object.points && object.points.length >= 2
+    ? computeLineBounds(object.points)
+    : { x: object.x, y: object.y, width: object.width, height: object.height };
+  return (
+    <LineFormattingToolbar
+      object={object}
+      onUpdate={onUpdate}
+      screenX={bounds.x * scale + pos.x}
+      screenY={bounds.y * scale + pos.y}
+      screenW={bounds.width * scale}
+    />
+  );
+}
 
 export default function BoardPage() {
   const params = useParams();
@@ -60,7 +115,7 @@ export default function BoardPage() {
   }
 
   return (
-    <OpenBlocksProvider client={client}>
+    <LivelyProvider client={client}>
       <RoomProvider
         roomId={roomId}
         userId={userId || ""}
@@ -69,17 +124,33 @@ export default function BoardPage() {
       >
         <BoardPageInner roomId={roomId} userId={userId || ""} displayName={displayName || ""} />
       </RoomProvider>
-    </OpenBlocksProvider>
+    </LivelyProvider>
   );
 }
 
 function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userId: string; displayName: string }) {
   const { objects, selectedIds, setSelected, setSelectedIds } = useBoardStore();
-  const connectionIndex = useMemo(() => buildConnectionIndex(objects), [objects]);
+  const activeFrameIndex = useFrameStore((s) => s.activeFrameIndex);
+  const activeFrameId = useFrameStore((s) => {
+    const idx = s.activeFrameIndex;
+    return s.frames.find((f) => f.index === idx)?.id;
+  });
+
+  // Filter objects to only show those belonging to the active frame
+  const filteredObjects = useMemo(() => {
+    if (!activeFrameId) return objects;
+    const filtered = new Map<string, BoardObject>();
+    for (const [id, obj] of objects) {
+      if (obj.frame_id === activeFrameId) {
+        filtered.set(id, obj);
+      }
+    }
+    return filtered;
+  }, [objects, activeFrameId]);
+
+  const connectionIndex = useMemo(() => buildConnectionIndex(filteredObjects), [filteredObjects]);
   const self = useSelf();
   const others = useOthers();
-  const viewportScale = useViewportStore((s) => s.scale);
-  const viewportPos = useViewportStore((s) => s.pos);
   const [activeTool, setActiveTool] = useState<ToolMode>("select");
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -96,6 +167,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   const multiDragStartRef = useRef<Map<string, BoardObject> | null>(null);
   const clipboardRef = useRef<BoardObject[]>([]);
   const lineDrawing = useLineDrawing();
+  const shortcutHint = useShortcutHint();
 
   const selectedId = selectedIds.size === 1 ? Array.from(selectedIds)[0] : null;
 
@@ -103,7 +175,18 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     localStorage.setItem(`ai-open:${roomId}`, String(aiOpen));
   }, [aiOpen, roomId]);
 
-  useOpenBlocksSync();
+  // Clear selection and editing when switching frames
+  const updatePresence = useUpdateMyPresence();
+  useEffect(() => {
+    setSelected(null);
+    setEditingId(null);
+    // Broadcast active frame to other users for cursor isolation
+    if (activeFrameId) {
+      updatePresence({ location: activeFrameId });
+    }
+  }, [activeFrameIndex, activeFrameId, setSelected, updatePresence]);
+
+  useLivelySync();
   const mutations = useBoardMutations();
   const { undo, redo } = useHistory();
   const isFollowingRef = useRef(false);
@@ -157,8 +240,8 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     }
   });
 
-  useErrorListener((err) => console.error("[OpenBlocks]", err.message));
-  useLostConnectionListener(() => console.warn("[OpenBlocks] Connection lost, reconnecting…"));
+  useErrorListener((err) => console.error("[Lively]", err.message));
+  useLostConnectionListener(() => console.warn("[Lively] Connection lost, reconnecting…"));
   const syncStatus = useSyncStatus();
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -168,6 +251,11 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   const handleMouseLeave = useCallback(() => {
     setMousePos(null);
   }, []);
+
+  const activeFrame = useFrameStore((s) => {
+    const idx = s.activeFrameIndex;
+    return s.frames.find((f) => f.index === idx);
+  });
 
   const createObjectAt = useCallback(
     (type: BoardObject["type"], x: number, y: number) => {
@@ -195,20 +283,22 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         created_by: userId || null,
         created_by_name: displayName || undefined,
         updated_at: new Date().toISOString(),
+        frame_id: activeFrame?.id,
       };
       mutations.createObject(obj);
     },
-    [roomId, objects.size, userId, displayName, mutations],
+    [roomId, objects.size, userId, displayName, mutations, activeFrame],
   );
 
   const finalizeLineDrawing = useCallback(() => {
     const boardUUID = roomId === "default" ? "00000000-0000-0000-0000-000000000000" : roomId;
     const obj = lineDrawing.finalize(boardUUID, userId || null, displayName || undefined, objects.size);
     if (obj) {
+      obj.frame_id = activeFrame?.id;
       mutations.createObject(obj);
       setActiveTool("select");
     }
-  }, [lineDrawing, roomId, userId, displayName, objects.size, mutations]);
+  }, [lineDrawing, roomId, userId, displayName, objects.size, mutations, activeFrame]);
 
   const handleCanvasClick = useCallback(
     (canvasX: number, canvasY: number, metaKey?: boolean) => {
@@ -490,6 +580,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         created_by: userId || null,
         created_by_name: displayName || undefined,
         updated_at: now,
+        frame_id: activeFrame?.id,
       };
       mutations.createObject(newObj);
       newObjs.push(newObj);
@@ -497,7 +588,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     }
     setSelectedIds(newIds);
     return newObjs;
-  }, [objects, userId, displayName, mutations, setSelectedIds]);
+  }, [objects, userId, displayName, mutations, setSelectedIds, activeFrame]);
 
   // Keyboard handler
   useEffect(() => {
@@ -579,7 +670,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       setSelectionRect(null);
       const ids = new Set<string>();
       const rx = rect.x, ry = rect.y, rr = rect.x + rect.width, rb = rect.y + rect.height;
-      for (const obj of objects.values()) {
+      for (const obj of filteredObjects.values()) {
         let bounds: { x: number; y: number; width: number; height: number };
         if (obj.type === "line" && obj.points && obj.points.length >= 2) {
           bounds = computeLineBounds(obj.points);
@@ -592,7 +683,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       if (ids.size > 0) setSelectedIds(ids);
       else setSelected(null);
     },
-    [objects, setSelected, setSelectedIds],
+    [filteredObjects, setSelected, setSelectedIds],
   );
 
   const handleNewFrame = useCallback(async () => {
@@ -620,16 +711,16 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
 
   const lineSnapTarget = useMemo(() => {
     if (activeTool !== "line" || !stageMousePos) return null;
-    const snap = findSnapTarget(stageMousePos, objects);
+    const snap = findSnapTarget(stageMousePos, filteredObjects);
     if (!snap) return null;
-    const shape = objects.get(snap.objectId);
+    const shape = filteredObjects.get(snap.objectId);
     if (!shape) return snap;
     const otherEnd = lineDrawing.drawingState.isDrawing
       ? lineDrawing.drawingState.points[0]
       : stageMousePos;
     const edge = computeEdgePoint(shape, otherEnd);
     return { ...snap, x: edge.x, y: edge.y };
-  }, [activeTool, stageMousePos, objects, lineDrawing.drawingState]);
+  }, [activeTool, stageMousePos, filteredObjects, lineDrawing.drawingState]);
 
   const currentUserColor = self?.color || "#3b82f6";
   const isCreationTool = CREATION_TOOLS.includes(activeTool);
@@ -643,7 +734,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       className="relative h-screen w-screen overflow-hidden bg-gray-50"
       onMouseMove={isCreationTool || isLineTool ? handleMouseMove : undefined}
       onMouseLeave={isCreationTool || isLineTool ? handleMouseLeave : undefined}
-      style={{ cursor: isCreationTool || isLineTool ? "crosshair" : undefined }}
+      style={{ cursor: isCreationTool || isLineTool ? "crosshair" : undefined, overscrollBehavior: "none" }}
     >
       {/* Presence + connection status */}
       <div className="absolute right-4 top-4 z-40 flex items-center gap-3">
@@ -688,7 +779,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         onSelectionComplete={handleSelectionComplete}
       >
         <CanvasObjects
-          objects={objects}
+          objects={filteredObjects}
           selectedIds={selectedIds}
           onSelect={(id, shiftKey) => {
             if (!id) { setSelected(null); return; }
@@ -711,7 +802,6 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
           onLineUpdateEnd={handleLineUpdateEnd}
           interactive={activeTool === "select"}
           editingId={editingId}
-          scale={viewportScale}
         />
         {isLineTool && (
           <SvgLineDrawingLayer
@@ -723,31 +813,12 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       </SvgCanvas>
 
       {/* Selection rect overlay */}
-      {selectionRect && (
-        <div
-          className="pointer-events-none absolute z-30"
-          style={{
-            left: selectionRect.x * viewportScale + viewportPos.x,
-            top: selectionRect.y * viewportScale + viewportPos.y,
-            width: selectionRect.width * viewportScale,
-            height: selectionRect.height * viewportScale,
-            border: "1.5px solid #3b82f6",
-            backgroundColor: "rgba(59, 130, 246, 0.08)",
-            borderRadius: 2,
-          }}
-        />
-      )}
+      {selectionRect && <SelectionRectOverlay rect={selectionRect} />}
 
       {/* Inline text editor + formatting toolbar */}
       {editingObject && (
         <>
-          <FormattingToolbar
-            object={editingObject}
-            onFormatChange={handleFormatChange}
-            screenX={getRotatedAABB(editingObject).x * viewportScale + viewportPos.x}
-            screenY={getRotatedAABB(editingObject).y * viewportScale + viewportPos.y}
-            screenW={getRotatedAABB(editingObject).width * viewportScale}
-          />
+          <PositionedFormattingToolbar object={editingObject} onFormatChange={handleFormatChange} />
           <InlineTextEditor
             object={editingObject}
             onSave={handleInlineSave}
@@ -760,16 +831,10 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       {!editingId && selectedId && (() => {
         const selObj = objects.get(selectedId);
         if (!selObj || selObj.type !== "line") return null;
-        const bounds = selObj.points && selObj.points.length >= 2
-          ? computeLineBounds(selObj.points)
-          : { x: selObj.x, y: selObj.y, width: selObj.width, height: selObj.height };
         return (
-          <LineFormattingToolbar
+          <PositionedLineFormattingToolbar
             object={selObj}
             onUpdate={(updates) => handleLineUpdateEnd(selectedId, updates)}
-            screenX={bounds.x * viewportScale + viewportPos.x}
-            screenY={bounds.y * viewportScale + viewportPos.y}
-            screenW={bounds.width * viewportScale}
           />
         );
       })()}
@@ -778,6 +843,17 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       <CursorsOverlay
         mousePosition={stageMousePos}
         currentUserColor={currentUserColor}
+        activeFrameId={activeFrameId}
+      />
+
+      {/* Frame switcher */}
+      <FrameSwitcher
+        frames={frames}
+        activeFrameIndex={activeFrameIndex}
+        onSwitch={(index) => { canvasRef.current?.navigateToFrame(index); shortcutHint.trigger(); }}
+        onCreate={handleNewFrame}
+        onDelete={handleDeleteFrame}
+        onRename={(frameId, label) => mutations.renameFrame(frameId, label)}
       />
 
       {/* Sidebar */}
@@ -791,10 +867,6 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         currentBoardId={roomId}
         onAIToggle={() => setAiOpen((v) => !v)}
         aiOpen={aiOpen}
-        onNewFrame={handleNewFrame}
-        frames={frames}
-        onDeleteFrame={handleDeleteFrame}
-        onNavigateToFrame={(index) => canvasRef.current?.navigateToFrame(index)}
       />
 
       {/* AI Command Bar */}
@@ -805,7 +877,13 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         userId={userId || ""}
         displayName={displayName || ""}
         selectedIds={selectedIds}
+        activeFrameId={activeFrameId}
+        onFrameCreated={(index) => canvasRef.current?.navigateToFrame(index)}
+        onObjectsAffected={(bounds) => canvasRef.current?.panToObjects(bounds)}
       />
+
+      {/* Shortcut hint toast */}
+      <ShortcutHint visible={shortcutHint.visible} />
 
       {/* Zoom controls */}
       <ZoomControls

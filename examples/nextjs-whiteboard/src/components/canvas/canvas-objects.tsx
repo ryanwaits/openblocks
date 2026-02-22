@@ -8,6 +8,7 @@ import { SvgCircleShape } from "./svg-circle-shape";
 import { SvgDiamondShape } from "./svg-diamond-shape";
 import { SvgPillShape } from "./svg-pill-shape";
 import { SvgLineShape } from "./svg-line-shape";
+import { useViewportStore } from "@/lib/store/viewport-store";
 import type { BoardObject } from "@/types/board";
 
 interface CanvasObjectsProps {
@@ -25,15 +26,15 @@ interface CanvasObjectsProps {
   onLineUpdateEnd?: (id: string, updates: Partial<BoardObject>) => void;
   interactive?: boolean;
   editingId?: string | null;
-  scale?: number;
 }
 
 export const CanvasObjects = memo(function CanvasObjects({
   objects, selectedIds, onSelect, onDragMove, onDragEnd, onDoubleClick,
   onResize, onResizeEnd, onRotate, onRotateEnd,
   onLineUpdate, onLineUpdateEnd,
-  interactive = true, editingId, scale = 1,
+  interactive = true, editingId,
 }: CanvasObjectsProps) {
+  const scale = useViewportStore((s) => s.scale);
   const sorted = Array.from(objects.values()).sort((a, b) => a.z_index - b.z_index);
 
   return (

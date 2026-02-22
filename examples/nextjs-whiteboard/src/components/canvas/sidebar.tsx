@@ -17,12 +17,11 @@ import {
   Home,
   LogOut,
   Sparkles,
-  Plus,
 } from "lucide-react";
 import { ColorPicker } from "./color-picker";
 import { fetchBoards, type Board } from "@/lib/supabase/boards";
 import { useAuthStore } from "@/lib/store/auth-store";
-import type { ToolMode, Frame } from "@/types/board";
+import type { ToolMode } from "@/types/board";
 
 interface SidebarProps {
   activeTool: ToolMode;
@@ -34,10 +33,6 @@ interface SidebarProps {
   currentBoardId?: string;
   onAIToggle?: () => void;
   aiOpen?: boolean;
-  onNewFrame?: () => void;
-  frames?: Frame[];
-  onDeleteFrame?: (frameId: string) => void;
-  onNavigateToFrame?: (frameIndex: number) => void;
 }
 
 const tools: { mode: ToolMode; icon: typeof MousePointer2; label: string; shortcut: string }[] = [
@@ -65,16 +60,11 @@ export function Sidebar({
   currentBoardId,
   onAIToggle,
   aiOpen,
-  onNewFrame,
-  frames,
-  onDeleteFrame,
-  onNavigateToFrame,
 }: SidebarProps) {
   const signOut = useAuthStore((s) => s.signOut);
   const [hoveredTool, setHoveredTool] = useState<ToolMode | null>(null);
   const [boardPanelOpen, setBoardPanelOpen] = useState(false);
   const [boards, setBoards] = useState<Board[]>([]);
-  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const loadBoards = useCallback(async () => {
@@ -184,74 +174,6 @@ export function Sidebar({
               )}
             </div>
             <div className="my-2 h-px bg-gray-200" />
-            {frames && frames.length > 0 && (
-              <div className="mb-1">
-                <span className="px-3 text-xs font-semibold text-gray-400 uppercase">Frames</span>
-                <div className="mt-1 flex flex-col gap-0.5">
-                  {frames.map((frame) => (
-                    <div
-                      key={frame.id}
-                      className="flex cursor-pointer items-center rounded-lg px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
-                      onClick={() => {
-                        if (confirmingDeleteId !== frame.id) {
-                          onNavigateToFrame?.(frame.index);
-                          setBoardPanelOpen(false);
-                        }
-                      }}
-                    >
-                      {confirmingDeleteId === frame.id ? (
-                        <div className="flex w-full items-center justify-between">
-                          <span className="text-xs text-red-600">Delete this frame?</span>
-                          <div className="flex gap-1">
-                            <button
-                              className="rounded px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-100"
-                              onClick={(e) => { e.stopPropagation(); setConfirmingDeleteId(null); }}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              className="rounded bg-red-500 px-2 py-0.5 text-xs text-white hover:bg-red-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteFrame?.(frame.id);
-                                setConfirmingDeleteId(null);
-                                setBoardPanelOpen(false);
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <span className="flex-1 truncate">{frame.label}</span>
-                          {frames.length > 1 && onDeleteFrame && (
-                            <button
-                              className="ml-2 rounded p-0.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500"
-                              onClick={(e) => { e.stopPropagation(); setConfirmingDeleteId(frame.id); }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {onNewFrame && (
-              <button
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-800"
-                onClick={() => {
-                  setBoardPanelOpen(false);
-                  onNewFrame();
-                }}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                New Frame
-              </button>
-            )}
             <button
               className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
               onClick={() => {

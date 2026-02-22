@@ -1,11 +1,11 @@
 "use client";
 
-import { OpenBlocksClient, LiveObject, LiveMap } from "@waits/openblocks-client";
+import { LivelyClient, LiveObject, LiveMap } from "@waits/lively-client";
 
 const serverUrl =
-  process.env.NEXT_PUBLIC_OPENBLOCKS_HOST || "http://localhost:1999";
+  process.env.NEXT_PUBLIC_LIVELY_HOST || "http://localhost:1999";
 
-export const client = new OpenBlocksClient({ serverUrl, reconnect: true });
+export const client = new LivelyClient({ serverUrl, reconnect: true });
 
 export function buildInitialStorage() {
   const defaultFrameId = crypto.randomUUID();

@@ -1,5 +1,5 @@
-import type { Room, LiveObject, LiveMap } from "@waits/openblocks-client";
-import { LiveObject as LO } from "@waits/openblocks-storage";
+import type { Room, LiveObject, LiveMap } from "@waits/lively-client";
+import { LiveObject as LO } from "@waits/lively-storage";
 import type { BoardObject, Frame } from "@/types/board";
 import { serializeBoardState, serializeFrameState } from "./system-prompt";
 import { computeEdgePoint, computeLineBounds } from "@/lib/geometry/edge-intersection";
@@ -16,11 +16,13 @@ export interface ExecutorContext {
   objectsMap: LiveMap<LiveObject>;
   framesMap?: LiveMap<LiveObject>;
   frames: Frame[];
+  activeFrameId?: string;
 }
 
 interface ToolResult {
   result: string;
   objects?: BoardObject[];
+  newFrameIndex?: number;
 }
 
 function nextZIndex(objects: BoardObject[]): number {
@@ -46,6 +48,7 @@ function makeObject(
     created_by: ctx.userId,
     created_by_name: `AI (${ctx.displayName})`,
     updated_at: new Date().toISOString(),
+    frame_id: ctx.activeFrameId,
   };
 }
 
@@ -134,7 +137,7 @@ export async function executeToolCall(
       obj.y = toolInput.y as number;
       obj.updated_at = new Date().toISOString();
       crdtUpdate(ctx, obj);
-      return { result: `Moved object ${obj.id} to (${obj.x}, ${obj.y})` };
+      return { result: `Moved object ${obj.id} to (${obj.x}, ${obj.y})`, objects: [obj] };
     }
 
     case "resizeObject": {
@@ -144,7 +147,7 @@ export async function executeToolCall(
       obj.height = toolInput.height as number;
       obj.updated_at = new Date().toISOString();
       crdtUpdate(ctx, obj);
-      return { result: `Resized object ${obj.id} to ${obj.width}x${obj.height}` };
+      return { result: `Resized object ${obj.id} to ${obj.width}x${obj.height}`, objects: [obj] };
     }
 
     case "updateText": {
@@ -153,7 +156,7 @@ export async function executeToolCall(
       obj.text = toolInput.newText as string;
       obj.updated_at = new Date().toISOString();
       crdtUpdate(ctx, obj);
-      return { result: `Updated text of ${obj.id}` };
+      return { result: `Updated text of ${obj.id}`, objects: [obj] };
     }
 
     case "changeColor": {
@@ -162,7 +165,7 @@ export async function executeToolCall(
       obj.color = toolInput.color as string;
       obj.updated_at = new Date().toISOString();
       crdtUpdate(ctx, obj);
-      return { result: `Changed color of ${obj.id} to ${obj.color}` };
+      return { result: `Changed color of ${obj.id} to ${obj.color}`, objects: [obj] };
     }
 
     case "createConnector": {
@@ -233,9 +236,12 @@ export async function executeToolCall(
         ctx.framesMap!.set(frame.id, new LO({ ...frame }));
       });
       ctx.frames.push(frame);
+      // Update active frame so subsequent objects go to this new frame
+      ctx.activeFrameId = frame.id;
       const originX = frameOriginX(nextIndex);
       return {
-        result: `Created frame "${label}" (id: ${frame.id}, index: ${nextIndex}). Origin: (${originX}, ${FRAME_ORIGIN_Y}). Place objects within x: ${originX}–${originX + 4000}, y: ${FRAME_ORIGIN_Y}–${FRAME_ORIGIN_Y + 3000}.`,
+        result: `Created frame "${label}" (id: ${frame.id}, index: ${nextIndex}). Place objects using local coordinates (e.g. x: 200–800, y: 100–600). Objects are automatically assigned to the active frame.`,
+        newFrameIndex: nextIndex,
       };
     }
 

@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useCursors, useSelf } from "@waits/openblocks-react";
+import { useEffect, useRef, useMemo } from "react";
+import { useCursors, useSelf, useOthersOnLocation } from "@waits/lively-react";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import type { CursorData } from "@/types/board";
 
 interface CursorsOverlayProps {
   mousePosition?: { x: number; y: number } | null;
   currentUserColor?: string;
+  activeFrameId?: string;
 }
 
 interface InterpolatedCursor {
@@ -17,9 +18,11 @@ interface InterpolatedCursor {
   currentY: number;
 }
 
-export function CursorsOverlay({ mousePosition, currentUserColor }: CursorsOverlayProps) {
+export function CursorsOverlay({ mousePosition, currentUserColor, activeFrameId }: CursorsOverlayProps) {
   const cursors = useCursors();
   const self = useSelf();
+  const othersOnFrame = useOthersOnLocation(activeFrameId || "");
+  const frameUserIds = useMemo(() => new Set(othersOnFrame.map((u) => u.userId)), [othersOnFrame]);
   const interpolatedRef = useRef<Map<string, InterpolatedCursor>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
@@ -99,7 +102,13 @@ export function CursorsOverlay({ mousePosition, currentUserColor }: CursorsOverl
   }, []);
 
   const cursorEntries = Array.from(cursors.entries()).filter(
-    ([userId]) => userId !== self?.userId
+    ([userId]) => {
+      if (userId === self?.userId) return false;
+      if (userId.startsWith("ai-")) return false;
+      // Only show cursors from users on the same frame
+      if (activeFrameId) return frameUserIds.has(userId);
+      return true;
+    }
   );
 
   return (

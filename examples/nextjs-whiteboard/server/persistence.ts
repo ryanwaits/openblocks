@@ -1,6 +1,6 @@
-import type { OpenBlocksServer } from "@waits/openblocks-server";
-import type { StorageOp, SerializedCrdt } from "@waits/openblocks-types";
-import { LiveObject, LiveMap, StorageDocument } from "@waits/openblocks-storage";
+import type { LivelyServer } from "@waits/lively-server";
+import type { StorageOp, SerializedCrdt } from "@waits/lively-types";
+import { LiveObject, LiveMap, StorageDocument } from "@waits/lively-storage";
 import type { BoardObject, Frame } from "../src/types/board";
 
 // --- Config ---
@@ -94,6 +94,7 @@ function normalizeForUpsert(objects: BoardObject[]): Record<string, unknown>[] {
     end_object_id: obj.end_object_id ?? null,
     label: obj.label ?? null,
     rotation: obj.rotation ?? null,
+    frame_id: obj.frame_id ?? null,
   }));
 }
 
@@ -225,7 +226,7 @@ const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 const DEBOUNCE_MS = 2000;
 
-function readCurrentState(server: OpenBlocksServer, roomId: string): { objects: Map<string, BoardObject>; frames: Map<string, Frame> } | null {
+function readCurrentState(server: LivelyServer, roomId: string): { objects: Map<string, BoardObject>; frames: Map<string, Frame> } | null {
   const room = server.getRoomManager().get(roomId);
   if (!room || !room.storageInitialized) return null;
   const doc = room.getStorageDocument()!;
@@ -253,7 +254,7 @@ function readCurrentState(server: OpenBlocksServer, roomId: string): { objects: 
   return { objects, frames };
 }
 
-async function flushRoom(server: OpenBlocksServer, roomId: string): Promise<void> {
+async function flushRoom(server: LivelyServer, roomId: string): Promise<void> {
   const boardUUID = resolveBoardId(roomId);
   if (!boardUUID) return;
   const current = readCurrentState(server, roomId);
@@ -301,7 +302,7 @@ async function flushRoom(server: OpenBlocksServer, roomId: string): Promise<void
   snapshots.set(roomId, current);
 }
 
-export function createStorageChangeHandler(server: OpenBlocksServer) {
+export function createStorageChangeHandler(server: LivelyServer) {
   return (_roomId: string, _ops: StorageOp[]) => {
     // Debounce per room
     const existing = debounceTimers.get(_roomId);
@@ -319,7 +320,7 @@ export function createStorageChangeHandler(server: OpenBlocksServer) {
   };
 }
 
-export function createLeaveHandler(server: OpenBlocksServer) {
+export function createLeaveHandler(server: LivelyServer) {
   return (roomId: string, _user: unknown) => {
     const room = server.getRoomManager().get(roomId);
     // If last client disconnected, flush immediately

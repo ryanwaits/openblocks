@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback } from "react";
-import { type LiveMap, LiveObject as LO } from "@waits/openblocks-client";
-import type { LiveObject } from "@waits/openblocks-client";
-import { useMutation, useUpdateCursor } from "@waits/openblocks-react";
+import { type LiveMap, LiveObject as LO } from "@waits/lively-client";
+import type { LiveObject } from "@waits/lively-client";
+import { useMutation, useUpdateCursor } from "@waits/lively-react";
 import type { BoardObject, Frame } from "@/types/board";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import { cascadeDeleteFrame } from "./cascade-delete-frame";
@@ -71,6 +71,15 @@ export function useBoardMutations() {
     []
   );
 
+  const renameFrame = useMutation(
+    ({ storage }, frameId: string, newLabel: string) => {
+      const frames = storage.root.get("frames") as LiveMap<LiveObject>;
+      const frame = frames.get(frameId);
+      if (frame) frame.update({ label: newLabel });
+    },
+    []
+  );
+
   const updateCursor = useCallback(
     (x: number, y: number) => {
       const { pos, scale } = useViewportStore.getState();
@@ -79,5 +88,5 @@ export function useBoardMutations() {
     [updateCursorFn]
   );
 
-  return { createObject, updateObject, deleteObject, createFrame, deleteFrame, updateCursor };
+  return { createObject, updateObject, deleteObject, createFrame, deleteFrame, renameFrame, updateCursor };
 }

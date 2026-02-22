@@ -102,7 +102,7 @@ export const AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "createConnector",
     description:
-      "Create a line/arrow connecting two objects or two points. Use this to draw connectors between shapes for diagrams.",
+      "Create a line/arrow between two objects or points. Must provide fromObjectId or fromPoint, and toObjectId or toPoint.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -132,7 +132,7 @@ export const AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "createFrame",
     description:
-      "Create a new frame on the whiteboard. Frames are 4000x3000 canvases laid out horizontally. Position is automatic based on index — you only need to provide an optional label. The result includes the frame's origin coordinates so you can place objects inside it.",
+      "Create a new empty frame. ONLY use when the user EXPLICITLY asks to create/add a new frame. Never use for templates (SWOT, Kanban, Retro, etc.) — those go on the active frame using shapes.",
     input_schema: {
       type: "object" as const,
       properties: {
@@ -156,7 +156,7 @@ export const AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "getBoardState",
     description:
-      "Get the current state of all objects on the board. Use this to refresh your view after making changes.",
+      "Get current board state. Only use if you need to re-check object positions before modifying them.",
     input_schema: {
       type: "object" as const,
       properties: {},

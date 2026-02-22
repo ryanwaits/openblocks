@@ -3,15 +3,17 @@
 import { useRef, useCallback, useState, useImperativeHandle, forwardRef, useEffect } from "react";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import { useFrameStore } from "@/lib/store/frame-store";
-import { BOARD_WIDTH, BOARD_HEIGHT, frameOriginX, FRAME_ORIGIN_Y } from "@/lib/geometry/frames";
+import { frameOriginX, FRAME_ORIGIN_Y } from "@/lib/geometry/frames";
 import { animateViewport } from "@/lib/animation/viewport-animation";
+import type { BoardObject } from "@/types/board";
 
 export interface BoardCanvasHandle {
   resetZoom: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
   navigateToFrame: (frameIndex: number) => void;
-  zoomToFitAll: () => Promise<void>;
+  zoomToFitAll: (objects?: Map<string, BoardObject>) => Promise<void>;
+  panToObjects: (bounds: { x: number; y: number; width: number; height: number }[]) => void;
   getSvgElement: () => SVGSVGElement | null;
   setViewport: (pos: { x: number; y: number }, scale: number) => void;
 }
@@ -32,10 +34,8 @@ interface SvgCanvasProps {
 
 const MIN_SCALE = 0.02;
 const MAX_SCALE = 10;
-const ZOOM_STEP = 0.15;
+const ZOOM_FACTOR = 1.15; // 15% per step, multiplicative
 const DOT_SPACING = 30;
-const FRAME_LABEL_FONT_SIZE = 24;
-const FRAME_LABEL_OFFSET_Y = 40;
 
 /**
  * Convert screen (client) coordinates to canvas coordinates
@@ -60,6 +60,8 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
 ) {
   const svgRef = useRef<SVGSVGElement>(null);
   const cameraRef = useRef<SVGGElement>(null);
+  const patternRef = useRef<SVGPatternElement>(null);
+  const dotRef = useRef<SVGCircleElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
@@ -80,21 +82,41 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
     if (cameraRef.current) {
       cameraRef.current.setAttribute("transform", `translate(${pos.x},${pos.y}) scale(${scale})`);
     }
+    // tldraw-style dot grid: scale tile size, modulo the offset (no patternTransform)
+    if (patternRef.current && dotRef.current) {
+      const s = DOT_SPACING * scale;
+      const xo = 0.5 + pos.x;
+      const yo = 0.5 + pos.y;
+      // Modulo wraps offset to stay within one tile — avoids floating-point precision issues
+      const gxo = xo > 0 ? xo % s : s + (xo % s);
+      const gyo = yo > 0 ? yo % s : s + (yo % s);
+      patternRef.current.setAttribute("width", String(s));
+      patternRef.current.setAttribute("height", String(s));
+      dotRef.current.setAttribute("cx", String(gxo));
+      dotRef.current.setAttribute("cy", String(gyo));
+      dotRef.current.setAttribute("r", String(Math.max(0.5, 1.5 * Math.min(scale, 2))));
+    }
     useViewportStore.getState().setViewport(pos, scale);
   }
 
   const debouncedSave = useCallback((pos: { x: number; y: number }, scale: number) => {
     if (!boardId) return;
+    const frameId = useFrameStore.getState().frames.find(
+      (f) => f.index === useFrameStore.getState().activeFrameIndex
+    )?.id;
+    const key = frameId ? `${boardId}:${frameId}` : boardId;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      useViewportStore.getState().saveForBoard(boardId);
+      useViewportStore.getState().saveForBoard(key);
     }, 300);
   }, [boardId]);
 
   const zoomBy = useCallback(
-    (delta: number) => {
+    (direction: number) => {
       const { pos, scale: oldScale } = vpRef.current;
-      const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, oldScale + delta));
+      const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE,
+        direction > 0 ? oldScale * ZOOM_FACTOR : oldScale / ZOOM_FACTOR
+      ));
       const center = { x: dimensions.width / 2, y: dimensions.height / 2 };
       const mousePointTo = {
         x: (center.x - pos.x) / oldScale,
@@ -115,13 +137,50 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
       if (dimensions.width === 0) return;
       animCancelRef.current?.();
 
-      const targetScale = 1;
-      const frameCenterX = frameOriginX(frameIndex) + BOARD_WIDTH / 2;
-      const frameCenterY = FRAME_ORIGIN_Y + BOARD_HEIGHT / 2;
-      const targetPos = {
-        x: dimensions.width / 2 - frameCenterX * targetScale,
-        y: dimensions.height / 2 - frameCenterY * targetScale,
-      };
+      // Save current frame's viewport before switching
+      if (boardId) {
+        const currentFrameId = useFrameStore.getState().frames.find(
+          (f) => f.index === useFrameStore.getState().activeFrameIndex
+        )?.id;
+        if (currentFrameId) {
+          const currentKey = `${boardId}:${currentFrameId}`;
+          const { pos, scale } = vpRef.current;
+          useViewportStore.getState().setViewport(pos, scale);
+          useViewportStore.getState().saveForBoard(currentKey);
+        }
+      }
+
+      // Try restoring target frame's viewport
+      const targetFrame = useFrameStore.getState().frames.find((f) => f.index === frameIndex);
+      const targetFrameId = targetFrame?.id;
+
+      let targetPos: { x: number; y: number };
+      let targetScale: number;
+
+      if (boardId && targetFrameId) {
+        const saved = useViewportStore.getState().restoreForBoard(`${boardId}:${targetFrameId}`);
+        if (saved) {
+          targetPos = saved.pos;
+          targetScale = saved.scale;
+        } else {
+          // Default: center on frame origin at scale 1
+          targetScale = 1;
+          const frameCenterX = frameOriginX(frameIndex);
+          const frameCenterY = FRAME_ORIGIN_Y;
+          targetPos = {
+            x: dimensions.width / 2 - frameCenterX * targetScale,
+            y: dimensions.height / 2 - frameCenterY * targetScale,
+          };
+        }
+      } else {
+        targetScale = 1;
+        const frameCenterX = frameOriginX(frameIndex);
+        const frameCenterY = FRAME_ORIGIN_Y;
+        targetPos = {
+          x: dimensions.width / 2 - frameCenterX * targetScale,
+          y: dimensions.height / 2 - frameCenterY * targetScale,
+        };
+      }
 
       const from = { pos: vpRef.current.pos, scale: vpRef.current.scale };
       const to = { pos: targetPos, scale: targetScale };
@@ -137,18 +196,55 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
     [dimensions, debouncedSave, boardId],
   );
 
-  const zoomToFitAll = useCallback(async () => {
-    if (dimensions.width === 0 || frames.length === 0) return;
+  const zoomToFitAll = useCallback(async (scopedObjects?: Map<string, BoardObject>) => {
+    if (dimensions.width === 0) return;
     animCancelRef.current?.();
 
+    if (scopedObjects && scopedObjects.size > 0) {
+      // Fit to active frame's objects
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const obj of scopedObjects.values()) {
+        minX = Math.min(minX, obj.x);
+        minY = Math.min(minY, obj.y);
+        maxX = Math.max(maxX, obj.x + obj.width);
+        maxY = Math.max(maxY, obj.y + obj.height);
+      }
+      const padding = 100;
+      const contentW = maxX - minX + padding * 2;
+      const contentH = maxY - minY + padding * 2;
+      const targetScale = Math.min(dimensions.width / contentW, dimensions.height / contentH, 1);
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      const targetPos = {
+        x: dimensions.width / 2 - centerX * targetScale,
+        y: dimensions.height / 2 - centerY * targetScale,
+      };
+
+      const from = { pos: vpRef.current.pos, scale: vpRef.current.scale };
+      const to = { pos: targetPos, scale: targetScale };
+
+      return new Promise<void>((resolve) => {
+        const cancel = animateViewport(from, to, 400, (pos, scale) => {
+          applyTransform(pos, scale);
+        });
+        animCancelRef.current = cancel;
+        setTimeout(() => {
+          debouncedSave(targetPos, targetScale);
+          resolve();
+        }, 420);
+      });
+    }
+
+    // Fallback: fit all frames
+    if (frames.length === 0) return;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const frame of frames) {
       const ox = frameOriginX(frame.index);
       const oy = FRAME_ORIGIN_Y;
       minX = Math.min(minX, ox);
-      minY = Math.min(minY, oy - FRAME_LABEL_OFFSET_Y - FRAME_LABEL_FONT_SIZE);
-      maxX = Math.max(maxX, ox + BOARD_WIDTH);
-      maxY = Math.max(maxY, oy + BOARD_HEIGHT);
+      minY = Math.min(minY, oy);
+      maxX = Math.max(maxX, ox + 4000);
+      maxY = Math.max(maxY, oy + 3000);
     }
 
     const padding = 100;
@@ -177,19 +273,65 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
     });
   }, [dimensions, frames, debouncedSave]);
 
+  const panToObjects = useCallback((bounds: { x: number; y: number; width: number; height: number }[]) => {
+    if (dimensions.width === 0 || bounds.length === 0) return;
+    animCancelRef.current?.();
+
+    // Compute union bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const b of bounds) {
+      minX = Math.min(minX, b.x);
+      minY = Math.min(minY, b.y);
+      maxX = Math.max(maxX, b.x + b.width);
+      maxY = Math.max(maxY, b.y + b.height);
+    }
+
+    const padding = 80;
+    const bboxCenterX = (minX + maxX) / 2;
+    const bboxCenterY = (minY + maxY) / 2;
+
+    // Visibility check: if bbox center is already within viewport, skip
+    const { pos, scale } = vpRef.current;
+    const screenX = bboxCenterX * scale + pos.x;
+    const screenY = bboxCenterY * scale + pos.y;
+    if (screenX >= 0 && screenX <= dimensions.width && screenY >= 0 && screenY <= dimensions.height) {
+      return;
+    }
+
+    // Compute target scale: keep current unless bbox doesn't fit, then zoom out
+    const contentW = maxX - minX + padding * 2;
+    const contentH = maxY - minY + padding * 2;
+    const fitScale = Math.min(dimensions.width / contentW, dimensions.height / contentH);
+    const targetScale = Math.min(scale, fitScale);
+
+    const targetPos = {
+      x: dimensions.width / 2 - bboxCenterX * targetScale,
+      y: dimensions.height / 2 - bboxCenterY * targetScale,
+    };
+
+    const from = { pos, scale };
+    const to = { pos: targetPos, scale: targetScale };
+    const cancel = animateViewport(from, to, 400, (p, s) => {
+      applyTransform(p, s);
+    });
+    animCancelRef.current = cancel;
+    setTimeout(() => debouncedSave(targetPos, targetScale), 420);
+  }, [dimensions, debouncedSave]);
+
   useImperativeHandle(ref, () => ({
     resetZoom: () => {
       const pos = { x: dimensions.width / 2, y: dimensions.height / 2 };
       applyTransform(pos, 1);
       debouncedSave(pos, 1);
     },
-    zoomIn: () => zoomBy(ZOOM_STEP),
-    zoomOut: () => zoomBy(-ZOOM_STEP),
+    zoomIn: () => zoomBy(1),
+    zoomOut: () => zoomBy(-1),
     navigateToFrame,
     zoomToFitAll,
+    panToObjects,
     getSvgElement: () => svgRef.current,
     setViewport: (pos, scale) => applyTransform(pos, scale),
-  }), [dimensions, zoomBy, debouncedSave, navigateToFrame, zoomToFitAll]);
+  }), [dimensions, zoomBy, debouncedSave, navigateToFrame, zoomToFitAll, panToObjects]);
 
   // Measure container on mount
   const measuredRef = useCallback((node: HTMLDivElement | null) => {
@@ -209,7 +351,25 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
     if (dimensions.width > 0 && !initialized.current && frames.length > 0) {
       initialized.current = true;
 
-      // Try restoring the exact viewport the user had last session
+      // Restore active frame index first
+      const frameIndex = boardId
+        ? useFrameStore.getState().restoreActiveFrame(boardId)
+        : 0;
+
+      const activeFrameId = useFrameStore.getState().frames.find(
+        (f) => f.index === frameIndex
+      )?.id;
+
+      // Try restoring per-frame viewport
+      if (boardId && activeFrameId) {
+        const saved = useViewportStore.getState().restoreForBoard(`${boardId}:${activeFrameId}`);
+        if (saved) {
+          applyTransform(saved.pos, saved.scale);
+          return;
+        }
+      }
+
+      // Try legacy board-level viewport
       if (boardId) {
         const saved = useViewportStore.getState().restoreForBoard(boardId);
         if (saved) {
@@ -218,22 +378,18 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
         }
       }
 
-      // First visit / cleared storage — center on active frame
-      const frameIndex = boardId
-        ? useFrameStore.getState().restoreActiveFrame(boardId)
-        : 0;
-
+      // First visit — center on active frame origin
       const targetScale = 1;
-      const frameCenterX = frameOriginX(frameIndex) + BOARD_WIDTH / 2;
-      const frameCenterY = FRAME_ORIGIN_Y + BOARD_HEIGHT / 2;
+      const frameCenterX = frameOriginX(frameIndex);
+      const frameCenterY = FRAME_ORIGIN_Y;
       const targetPos = {
         x: dimensions.width / 2 - frameCenterX * targetScale,
         y: dimensions.height / 2 - frameCenterY * targetScale,
       };
 
       applyTransform(targetPos, targetScale);
-      if (boardId) {
-        useViewportStore.getState().saveForBoard(boardId);
+      if (boardId && activeFrameId) {
+        useViewportStore.getState().saveForBoard(`${boardId}:${activeFrameId}`);
       }
     }
   }, [dimensions, boardId, frames]);
@@ -248,8 +404,10 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
   }, [getSvgRect]);
 
   // --- Wheel: ctrl/meta = zoom, plain = pan ---
-  const handleWheel = useCallback(
-    (e: React.WheelEvent<SVGSVGElement>) => {
+  // Native non-passive listener so preventDefault() actually blocks browser back/forward swipe
+  const handleWheelRef = useRef<((e: WheelEvent) => void) | null>(null);
+  handleWheelRef.current = useCallback(
+    (e: WheelEvent) => {
       e.preventDefault();
       const { pos, scale: oldScale } = vpRef.current;
 
@@ -279,6 +437,15 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
     },
     [debouncedSave, getSvgRect],
   );
+
+  // Attach non-passive wheel listener to the SVG element
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const handler = (e: WheelEvent) => handleWheelRef.current?.(e);
+    svg.addEventListener("wheel", handler, { passive: false });
+    return () => svg.removeEventListener("wheel", handler);
+  }, [dimensions]); // re-attach when SVG mounts (dimensions gate)
 
   // --- Hand tool drag (pan) ---
   const handlePointerDown = useCallback(
@@ -415,15 +582,14 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
   return (
     <div
       ref={measuredRef}
-      className="h-full w-full"
-      style={{ cursor: isHand ? "grab" : "default" }}
+      className="h-full w-full overflow-hidden"
+      style={{ cursor: isHand ? "grab" : "default", willChange: "transform" }}
     >
       {dimensions.width > 0 && (
         <svg
           ref={svgRef}
-          width={dimensions.width}
-          height={dimensions.height}
-          onWheel={handleWheel}
+          width="100%"
+          height="100%"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -436,40 +602,34 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
           style={{ display: "block", touchAction: "none" }}
         >
           <defs>
-            {/* Dot grid pattern */}
-            <pattern id="dot-grid" width={DOT_SPACING} height={DOT_SPACING} patternUnits="userSpaceOnUse">
-              <circle cx={DOT_SPACING / 2} cy={DOT_SPACING / 2} r={1.5} fill="#d1d5db" />
+            {/* Dot grid pattern — tile size & dot offset set via refs in applyTransform */}
+            <pattern
+              ref={patternRef}
+              id="dot-grid"
+              width={DOT_SPACING}
+              height={DOT_SPACING}
+              patternUnits="userSpaceOnUse"
+            >
+              <circle ref={dotRef} cx={DOT_SPACING / 2} cy={DOT_SPACING / 2} r={1.5} fill="#d1d5db" />
             </pattern>
             {/* Shadow filter for shapes */}
             <filter id="shadow-sm" x="-10%" y="-10%" width="120%" height="130%">
               <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
             </filter>
-            {/* Frame shadow filter */}
-            <filter id="shadow-frame" x="-5%" y="-5%" width="110%" height="115%">
-              <feDropShadow dx="0" dy="4" stdDeviation="20" floodOpacity="0.12" />
-            </filter>
           </defs>
 
-          {/* Transparent background rect (captures clicks on empty canvas) */}
+          {/* Dot grid background — oversized for bleed protection */}
           <rect
-            width={dimensions.width}
-            height={dimensions.height}
-            fill="transparent"
+            x={-200}
+            y={-200}
+            width={dimensions.width + 400}
+            height={dimensions.height + 400}
+            fill="url(#dot-grid)"
             data-canvas-bg="true"
           />
 
           {/* Camera group — transform set via ref for 60fps */}
           <g ref={cameraRef}>
-            {/* Frame backgrounds */}
-            {frames.map((frame) => (
-              <FrameBackground
-                key={frame.id}
-                originX={frameOriginX(frame.index)}
-                originY={FRAME_ORIGIN_Y}
-                label={frame.label}
-              />
-            ))}
-
             {/* Content (shapes, lines, drawing layer) */}
             {children}
           </g>
@@ -478,60 +638,3 @@ export const SvgCanvas = forwardRef<BoardCanvasHandle, SvgCanvasProps>(function 
     </div>
   );
 });
-
-function FrameBackground({ originX, originY, label }: { originX: number; originY: number; label: string }) {
-  return (
-    <g>
-      {/* Label above frame */}
-      <text
-        x={originX}
-        y={originY - FRAME_LABEL_OFFSET_Y + FRAME_LABEL_FONT_SIZE}
-        fontSize={FRAME_LABEL_FONT_SIZE}
-        fontFamily="Inter, system-ui, sans-serif"
-        fontWeight="bold"
-        fill="#9ca3af"
-      >
-        {label}
-      </text>
-
-      {/* White background with shadow */}
-      <rect
-        x={originX}
-        y={originY}
-        width={BOARD_WIDTH}
-        height={BOARD_HEIGHT}
-        rx={8}
-        ry={8}
-        fill="#ffffff"
-        filter="url(#shadow-frame)"
-        data-canvas-bg="true"
-      />
-
-      {/* Dot grid */}
-      <rect
-        x={originX}
-        y={originY}
-        width={BOARD_WIDTH}
-        height={BOARD_HEIGHT}
-        rx={8}
-        ry={8}
-        fill="url(#dot-grid)"
-        data-canvas-bg="true"
-      />
-
-      {/* Border */}
-      <rect
-        x={originX}
-        y={originY}
-        width={BOARD_WIDTH}
-        height={BOARD_HEIGHT}
-        rx={8}
-        ry={8}
-        fill="none"
-        stroke="#e5e7eb"
-        strokeWidth={2}
-        pointerEvents="none"
-      />
-    </g>
-  );
-}

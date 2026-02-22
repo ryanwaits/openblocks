@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { OpenBlocksClient, type Room, type LiveObject, type LiveMap } from "@waits/openblocks-client";
+import { LivelyClient, type Room, type LiveObject, type LiveMap } from "@waits/lively-client";
 import WebSocket from "ws";
 import { AI_TOOLS } from "@/lib/ai/tools";
 import { SYSTEM_PROMPT, serializeBoardState, serializeFrameState } from "@/lib/ai/system-prompt";
@@ -44,13 +44,13 @@ function liveObjectToFrame(lo: LiveObject): Frame {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { message, boardId, userId, displayName, selectedIds, history } = body as {
+    const { message, boardId, userId, displayName, selectedIds, activeFrameId } = body as {
       message: string;
       boardId: string;
       userId: string;
       displayName: string;
       selectedIds?: string[];
-      history?: { role: "user" | "assistant"; content: string }[];
+      activeFrameId?: string;
     };
 
     if (!message || !boardId || !userId || !displayName) {
@@ -66,10 +66,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const serverUrl = process.env.OPENBLOCKS_SERVER_URL || "http://localhost:1999";
+    const serverUrl = process.env.LIVELY_SERVER_URL || "http://localhost:1999";
 
-    // Create temporary OpenBlocks client with Node.js ws
-    const client = new OpenBlocksClient({
+    // Create temporary Lively client with Node.js ws
+    const client = new LivelyClient({
       serverUrl,
       WebSocket: WebSocket as unknown as { new (url: string): globalThis.WebSocket },
       reconnect: false,
@@ -116,41 +116,43 @@ export async function POST(request: Request) {
 
     const boardUUID = boardId === "default" ? "00000000-0000-0000-0000-000000000000" : boardId;
 
+    // Filter objects to active frame — AI can only see and modify objects on the active frame
+    const frameObjects = activeFrameId
+      ? objects.filter((o) => o.frame_id === activeFrameId)
+      : objects;
+
     const ctx: ExecutorContext = {
       boardId,
       boardUUID,
       userId,
       displayName,
-      objects,
+      objects: frameObjects,
       room,
       objectsMap,
       framesMap: framesMap ?? undefined,
       frames,
+      activeFrameId,
     };
 
     // Build user message with board state + selection context
-    let userContent = `Current board state:\n${serializeBoardState(objects)}${serializeFrameState(frames)}`;
+    let userContent = `Current board state:\n${serializeBoardState(frameObjects)}${serializeFrameState(frames)}`;
     if (selectedIds && selectedIds.length > 0) {
-      const selectedObjs = objects.filter((o) => selectedIds.includes(o.id));
+      const selectedObjs = frameObjects.filter((o) => selectedIds.includes(o.id));
       if (selectedObjs.length > 0) {
         userContent += `\n\nCurrently selected objects (user has these selected):\n${JSON.stringify(selectedObjs.map((o) => ({ id: o.id, type: o.type, text: o.text })))}`;
       }
     }
     userContent += `\n\nUser request: ${message}`;
 
-    // Build messages with conversation history for multi-turn context
-    const messages: Anthropic.MessageParam[] = [];
-    if (history && history.length > 0) {
-      const recent = history.slice(-20);
-      for (const msg of recent) {
-        messages.push({ role: msg.role === "assistant" ? "assistant" : "user", content: msg.content });
-      }
-    }
-    messages.push({ role: "user", content: userContent });
+    const messages: Anthropic.MessageParam[] = [
+      { role: "user", content: userContent },
+    ];
 
     let objectsCreated = 0;
     let objectsModified = 0;
     let textResponse = "";
+    let newFrameIndex: number | null = null;
+    const affectedBounds: { x: number; y: number; width: number; height: number }[] = [];
 
     // Agentic loop
     let response = await anthropic.messages.create({
@@ -168,12 +170,20 @@ export async function POST(request: Request) {
         (b): b is Anthropic.Messages.ToolUseBlock => b.type === "tool_use"
       );
 
+      const modifyTools = ["moveObject", "resizeObject", "updateText", "changeColor"];
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
       for (const tool of toolUseBlocks) {
         const result = await executeToolCall(tool.name, tool.input as Record<string, unknown>, ctx);
-        if (result.objects) objectsCreated += result.objects.length;
-        if (["moveObject", "resizeObject", "updateText", "changeColor"].includes(tool.name)) {
-          objectsModified++;
+        const isModify = modifyTools.includes(tool.name);
+        if (result.objects) {
+          if (!isModify) objectsCreated += result.objects.length;
+          for (const obj of result.objects) {
+            affectedBounds.push({ x: obj.x, y: obj.y, width: obj.width, height: obj.height });
+          }
+        }
+        if (isModify) objectsModified++;
+        if (tool.name === "createFrame" && result.newFrameIndex != null) {
+          newFrameIndex = result.newFrameIndex;
         }
         toolResults.push({
           type: "tool_result",
@@ -204,7 +214,7 @@ export async function POST(request: Request) {
     // Disconnect AI client
     client.leaveRoom(boardId);
 
-    return Response.json({ reply: textResponse, objectsCreated, objectsModified });
+    return Response.json({ reply: textResponse, objectsCreated, objectsModified, newFrameIndex, affectedBounds });
   } catch (e: unknown) {
     console.error("AI route error:", e);
     const msg = e instanceof Anthropic.APIError

@@ -39,7 +39,8 @@ CREATE TABLE board_objects (
   start_object_id UUID,
   end_object_id UUID,
   label TEXT,
-  rotation DOUBLE PRECISION DEFAULT 0
+  rotation DOUBLE PRECISION DEFAULT 0,
+  frame_id TEXT
 );
 
 CREATE INDEX idx_board_objects_board_id ON board_objects(board_id);

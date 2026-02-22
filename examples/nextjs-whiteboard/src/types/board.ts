@@ -29,6 +29,7 @@ export interface BoardObject {
   end_object_id?: string | null;
   label?: string;
   rotation?: number;
+  frame_id?: string;
 }
 
 export interface Frame {

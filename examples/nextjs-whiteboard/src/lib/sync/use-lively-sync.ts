@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import type { LiveObject, LiveMap } from "@waits/openblocks-client";
-import { useRoom, useStorageRoot } from "@waits/openblocks-react";
+import type { LiveObject, LiveMap } from "@waits/lively-client";
+import { useRoom, useStorageRoot } from "@waits/lively-react";
 import { useBoardStore } from "@/lib/store/board-store";
 import { useFrameStore } from "@/lib/store/frame-store";
 import type { BoardObject, Frame } from "@/types/board";
+import { findFrameForPosition } from "@/lib/geometry/frames";
 
 function liveObjectToBoardObject(lo: LiveObject): BoardObject | null {
   if (typeof lo.toObject !== "function") return null;
@@ -26,7 +27,7 @@ function liveObjectToFrame(lo: LiveObject): Frame | null {
   return lo.toObject() as unknown as Frame;
 }
 
-export function useOpenBlocksSync(): void {
+export function useLivelySync(): void {
   const room = useRoom();
   const storage = useStorageRoot();
   const root = storage?.root ?? null;
@@ -42,9 +43,16 @@ export function useOpenBlocksSync(): void {
     function syncObjects() {
       if (!objectsMap) return;
       const arr: BoardObject[] = [];
+      const currentFrames = useFrameStore.getState().frames;
       objectsMap.forEach((lo: LiveObject) => {
         const obj = liveObjectToBoardObject(lo);
-        if (obj) arr.push(obj);
+        if (obj) {
+          // Lazy migration: compute frame_id for legacy objects without one
+          if (!obj.frame_id && currentFrames.length > 0) {
+            obj.frame_id = findFrameForPosition(obj.x, obj.y, obj.width, obj.height, currentFrames);
+          }
+          arr.push(obj);
+        }
       });
       syncAll(arr);
     }
