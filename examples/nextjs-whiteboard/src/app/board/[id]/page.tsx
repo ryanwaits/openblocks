@@ -22,6 +22,7 @@ import { SvgDrawingPreviewLayer } from "@/components/canvas/svg-drawing-preview-
 import { useViewportStore } from "@/lib/store/viewport-store";
 import { buildConnectionIndex } from "@/lib/utils/connection-index";
 import { computeLineBounds, computeEdgePoint } from "@/lib/geometry/edge-intersection";
+import { maxZInTier } from "@/lib/geometry/render-tiers";
 import { getRotatedAABB } from "@/lib/geometry/rotation";
 import { findSnapTarget } from "@/lib/geometry/snap";
 import type { BoardObject, ToolMode, Frame } from "@/types/board";
@@ -296,8 +297,9 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         ...(type === "emoji" ? { emoji_type: selectedStampType } : {}),
       };
       mutations.createObject(obj);
+      setSelected(obj.id);
     },
-    [roomId, objects.size, userId, displayName, mutations, activeFrame, selectedStampType],
+    [roomId, objects.size, userId, displayName, mutations, activeFrame, selectedStampType, setSelected],
   );
 
   const finalizeLineDrawing = useCallback(() => {
@@ -306,9 +308,10 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     if (obj) {
       obj.frame_id = activeFrame?.id;
       mutations.createObject(obj);
+      setSelected(obj.id);
       setActiveTool("select");
     }
-  }, [lineDrawing, roomId, userId, displayName, objects.size, mutations, activeFrame]);
+  }, [lineDrawing, roomId, userId, displayName, objects.size, mutations, activeFrame, setSelected]);
 
   const handleCanvasClick = useCallback(
     (canvasX: number, canvasY: number, metaKey?: boolean) => {
@@ -321,7 +324,11 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
           lineDrawing.startPoint(pos, snap?.objectId);
         } else {
           lineDrawing.addPoint(pos, snap?.objectId);
-          if (metaKey) finalizeLineDrawing();
+          const isConnectorComplete =
+            snap?.objectId &&
+            lineDrawing.drawingState.startObjectId &&
+            snap.objectId !== lineDrawing.drawingState.startObjectId;
+          if (metaKey || isConnectorComplete) finalizeLineDrawing();
         }
         return;
       }
@@ -334,7 +341,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         setSelected(null);
       }
     },
-    [activeTool, createObjectAt, setSelected, lineDrawing, finalizeLineDrawing],
+    [activeTool, createObjectAt, setSelected, lineDrawing, finalizeLineDrawing, objects],
   );
 
   const handleCanvasDoubleClick = useCallback(
@@ -413,36 +420,46 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       const obj = objects.get(objectId);
       if (!obj) return;
 
+      const objValues = objects.values();
+
       if (selectedIds.has(objectId) && selectedIds.size > 1 && multiDragStartRef.current) {
         const snap = multiDragStartRef.current.get(objectId);
         if (snap) {
           const dx = x - snap.x;
           const dy = y - snap.y;
           const now = new Date().toISOString();
-          for (const id of selectedIds) {
-            const s = multiDragStartRef.current.get(id);
-            if (!s) continue;
-            if (s.type === "line" && s.points && s.points.length > 0 && !s.start_object_id && !s.end_object_id) {
+          const sortedSelected = Array.from(selectedIds)
+            .map(id => multiDragStartRef.current!.get(id))
+            .filter(Boolean)
+            .sort((a, b) => a!.z_index - b!.z_index);
+          sortedSelected.forEach((s, i) => {
+            if (!s) return;
+            const tierMax = maxZInTier(objValues, s.type);
+            const newZ = tierMax + 1 + i;
+            if ((s.type === "line" || s.type === "drawing") && s.points && s.points.length > 0 && !s.start_object_id && !s.end_object_id) {
               const newPoints = s.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
               const bounds = computeLineBounds(newPoints);
-              mutations.updateObject({ ...s, points: newPoints, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, updated_at: now });
+              mutations.updateObject({ ...s, points: newPoints, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, z_index: newZ, updated_at: now });
             } else {
-              mutations.updateObject({ ...s, x: s.x + dx, y: s.y + dy, updated_at: now });
+              mutations.updateObject({ ...s, x: s.x + dx, y: s.y + dy, z_index: newZ, updated_at: now });
             }
-          }
+          });
         }
         multiDragStartRef.current = null;
         return;
       }
+
+      const tierMax = maxZInTier(objValues, obj.type);
+      const newZ = tierMax + 1;
 
       if ((obj.type === "line" || obj.type === "drawing") && obj.points && obj.points.length > 0 && !obj.start_object_id && !obj.end_object_id) {
         const dx = x - obj.x;
         const dy = y - obj.y;
         const newPoints = obj.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
         const bounds = computeLineBounds(newPoints);
-        mutations.updateObject({ ...obj, points: newPoints, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, updated_at: new Date().toISOString() });
+        mutations.updateObject({ ...obj, points: newPoints, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, z_index: newZ, updated_at: new Date().toISOString() });
       } else {
-        mutations.updateObject({ ...obj, x, y, updated_at: new Date().toISOString() });
+        mutations.updateObject({ ...obj, x, y, z_index: newZ, updated_at: new Date().toISOString() });
       }
       multiDragStartRef.current = null;
     },
@@ -576,18 +593,16 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
 
   const duplicateObjects = useCallback((objs: BoardObject[], offset = 20) => {
     const now = new Date().toISOString();
-    const maxZ = objects.size > 0
-      ? Math.max(...Array.from(objects.values()).map(o => o.z_index))
-      : -1;
     const newObjs: BoardObject[] = [];
     const newIds = new Set<string>();
     for (let i = 0; i < objs.length; i++) {
       const obj = objs[i];
+      const tierMax = maxZInTier(objects.values(), obj.type);
       const newObj: BoardObject = {
         ...obj,
         id: crypto.randomUUID(),
         x: obj.x + offset, y: obj.y + offset,
-        z_index: maxZ + 1 + i,
+        z_index: tierMax + 1 + i,
         created_by: userId || null,
         created_by_name: displayName || undefined,
         updated_at: now,
@@ -820,8 +835,16 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
               const next = new Set(selectedIds);
               next.has(id) ? next.delete(id) : next.add(id);
               setSelectedIds(next);
-            } else if (!selectedIds.has(id)) {
+            } else {
               setSelected(id);
+            }
+            // Bring to front of its render tier
+            const obj = filteredObjects.get(id);
+            if (obj) {
+              const tierMax = maxZInTier(filteredObjects.values(), obj.type);
+              if (obj.z_index < tierMax) {
+                mutations.updateObject({ ...obj, z_index: tierMax + 1, updated_at: new Date().toISOString() });
+              }
             }
           }}
           onDragMove={handleDragMove}
@@ -917,7 +940,10 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         selectedIds={selectedIds}
         activeFrameId={activeFrameId}
         onFrameCreated={(index) => canvasRef.current?.navigateToFrame(index)}
-        onObjectsAffected={(bounds) => canvasRef.current?.panToObjects(bounds)}
+        onObjectsAffected={(bounds) => {
+          setSelectedIds(new Set());
+          canvasRef.current?.panToObjects(bounds);
+        }}
       />
 
       {/* Shortcut hint toast */}

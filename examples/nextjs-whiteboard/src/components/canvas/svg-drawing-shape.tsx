@@ -2,7 +2,6 @@
 
 import { memo, useCallback, useRef } from "react";
 import { catmullRomToSvgPath } from "@/lib/geometry/catmull-rom";
-import { computeLineBounds } from "@/lib/geometry/edge-intersection";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import type { BoardObject } from "@/types/board";
 
@@ -36,11 +35,13 @@ export const SvgDrawingShape = memo(function SvgDrawingShape({
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     onSelect?.(id, e.shiftKey);
     if (!interactive || (!onDragMove && !onDragEnd) || !object.points) return;
 
     const scale = useViewportStore.getState().scale;
-    const startBounds = computeLineBounds(object.points);
+    const startX = object.x;
+    const startY = object.y;
     bodyDragRef.current = {
       startPoints: [...object.points],
       startClientX: e.clientX,
@@ -53,7 +54,7 @@ export const SvgDrawingShape = memo(function SvgDrawingShape({
       if (!d) return;
       const dx = (ev.clientX - d.startClientX) / d.scale;
       const dy = (ev.clientY - d.startClientY) / d.scale;
-      onDragMove?.(id, startBounds.x + dx, startBounds.y + dy);
+      onDragMove?.(id, startX + dx, startY + dy);
     };
 
     const handleUp = (ev: PointerEvent) => {
@@ -61,7 +62,7 @@ export const SvgDrawingShape = memo(function SvgDrawingShape({
       if (!d) { cleanup(); return; }
       const dx = (ev.clientX - d.startClientX) / d.scale;
       const dy = (ev.clientY - d.startClientY) / d.scale;
-      onDragEnd?.(id, startBounds.x + dx, startBounds.y + dy);
+      onDragEnd?.(id, startX + dx, startY + dy);
       bodyDragRef.current = null;
       cleanup();
     };

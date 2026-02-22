@@ -66,6 +66,7 @@ export const SvgEmojiShape = memo(function SvgEmojiShape({
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     onSelect?.(id, e.shiftKey);
     if (!interactive || (!onDragMove && !onDragEnd)) return;
 

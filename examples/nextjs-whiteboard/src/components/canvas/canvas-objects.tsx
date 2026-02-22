@@ -13,6 +13,8 @@ import { SvgEmojiShape } from "./svg-emoji-shape";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import type { BoardObject } from "@/types/board";
 
+import { RENDER_TIER } from "@/lib/geometry/render-tiers";
+
 interface CanvasObjectsProps {
   objects: Map<string, BoardObject>;
   selectedIds: Set<string>;
@@ -37,7 +39,12 @@ export const CanvasObjects = memo(function CanvasObjects({
   interactive = true, editingId,
 }: CanvasObjectsProps) {
   const scale = useViewportStore((s) => s.scale);
-  const sorted = Array.from(objects.values()).sort((a, b) => a.z_index - b.z_index);
+  const sorted = Array.from(objects.values()).sort((a, b) => {
+    const tierA = RENDER_TIER[a.type] ?? 1;
+    const tierB = RENDER_TIER[b.type] ?? 1;
+    if (tierA !== tierB) return tierA - tierB;
+    return a.z_index - b.z_index;
+  });
 
   return (
     <g>

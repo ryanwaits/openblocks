@@ -50,6 +50,7 @@ export function useSvgDrag({ id, objectX, objectY, onDragMove, onDragEnd, enable
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (!enabled) return;
     e.stopPropagation();
+    e.preventDefault();
     const scale = useViewportStore.getState().scale;
     dragRef.current = {
       startClientX: e.clientX,
