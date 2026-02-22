@@ -835,7 +835,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
               const next = new Set(selectedIds);
               next.has(id) ? next.delete(id) : next.add(id);
               setSelectedIds(next);
-            } else {
+            } else if (!selectedIds.has(id)) {
               setSelected(id);
             }
             // Bring to front of its render tier
