@@ -18,6 +18,7 @@ import { LineFormattingToolbar } from "@/components/canvas/line-formatting-toolb
 import { SvgCanvas, type BoardCanvasHandle } from "@/components/canvas/svg-canvas";
 import { CanvasObjects } from "@/components/canvas/canvas-objects";
 import { SvgLineDrawingLayer } from "@/components/canvas/svg-line-drawing-layer";
+import { SvgDrawingPreviewLayer } from "@/components/canvas/svg-drawing-preview-layer";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import { buildConnectionIndex } from "@/lib/utils/connection-index";
 import { computeLineBounds, computeEdgePoint } from "@/lib/geometry/edge-intersection";
@@ -26,6 +27,7 @@ import { findSnapTarget } from "@/lib/geometry/snap";
 import type { BoardObject, ToolMode, Frame } from "@/types/board";
 import { useFrameStore } from "@/lib/store/frame-store";
 import { useLineDrawing } from "@/hooks/use-line-drawing";
+import { useFreehandDrawing } from "@/hooks/use-freehand-drawing";
 import { AICommandBar } from "@/components/ai/ai-command-bar";
 import { LivelyProvider, RoomProvider, useSelf, useOthers, useHistory, useFollowUser, useErrorListener, useLostConnectionListener, useOthersListener, useSyncStatus, useUpdateMyPresence } from "@waits/lively-react";
 import { ConnectionBadge } from "@waits/lively-ui";
@@ -33,7 +35,7 @@ import { client, buildInitialStorage } from "@/lib/sync/client";
 import { useLivelySync } from "@/lib/sync/use-lively-sync";
 import { useBoardMutations } from "@/lib/sync/use-board-mutations";
 
-const CREATION_TOOLS: ToolMode[] = ["sticky", "rectangle", "text", "circle", "diamond", "pill"];
+const CREATION_TOOLS: ToolMode[] = ["sticky", "rectangle", "text", "circle", "diamond", "pill", "stamp"];
 const EDITABLE_TYPES: BoardObject["type"][] = ["sticky", "text"];
 
 /** Isolated viewport-dependent overlays — subscribe independently so BoardPageInner doesn't re-render on pan/zoom */
@@ -167,6 +169,8 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   const multiDragStartRef = useRef<Map<string, BoardObject> | null>(null);
   const clipboardRef = useRef<BoardObject[]>([]);
   const lineDrawing = useLineDrawing();
+  const freehandDrawing = useFreehandDrawing();
+  const [selectedStampType, setSelectedStampType] = useState("thumbsup");
   const shortcutHint = useShortcutHint();
 
   const selectedId = selectedIds.size === 1 ? Array.from(selectedIds)[0] : null;
@@ -205,10 +209,13 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       if (!relativePointerPos) return;
       setStageMousePos(relativePointerPos);
       lineDrawing.setCursorPos(relativePointerPos);
+      if (activeTool === "draw" && freehandDrawing.state.isDrawing) {
+        freehandDrawing.addPoint(relativePointerPos);
+      }
       lastCursorPosRef.current = relativePointerPos;
       mutations.updateCursor(relativePointerPos.x, relativePointerPos.y);
     },
-    [mutations, lineDrawing.setCursorPos],
+    [mutations, lineDrawing.setCursorPos, activeTool, freehandDrawing],
   );
 
   const handleStageMouseLeave = useCallback(() => {
@@ -267,6 +274,8 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         diamond: { width: 150, height: 150, color: "#e9d5ff" },
         pill: { width: 200, height: 80, color: "#d1fae5" },
         line: { width: 0, height: 0, color: "transparent" },
+        drawing: { width: 0, height: 0, color: "transparent" },
+        emoji: { width: 64, height: 64, color: "transparent" },
       };
       const d = defaults[type];
       const obj: BoardObject = {
@@ -284,10 +293,11 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         created_by_name: displayName || undefined,
         updated_at: new Date().toISOString(),
         frame_id: activeFrame?.id,
+        ...(type === "emoji" ? { emoji_type: selectedStampType } : {}),
       };
       mutations.createObject(obj);
     },
-    [roomId, objects.size, userId, displayName, mutations, activeFrame],
+    [roomId, objects.size, userId, displayName, mutations, activeFrame, selectedStampType],
   );
 
   const finalizeLineDrawing = useCallback(() => {
@@ -316,7 +326,8 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         return;
       }
       if (CREATION_TOOLS.includes(activeTool)) {
-        createObjectAt(activeTool as BoardObject["type"], canvasX, canvasY);
+        const objType: BoardObject["type"] = activeTool === "stamp" ? "emoji" : activeTool as BoardObject["type"];
+        createObjectAt(objType, canvasX, canvasY);
         setActiveTool("select");
       } else {
         setEditingId(null);
@@ -373,7 +384,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         for (const id of selectedIds) {
           const s = multiDragStartRef.current.get(id);
           if (!s) continue;
-          if (s.type === "line" && s.points && s.points.length > 0 && !s.start_object_id && !s.end_object_id) {
+          if ((s.type === "line" || s.type === "drawing") && s.points && s.points.length > 0 && !s.start_object_id && !s.end_object_id) {
             const newPoints = s.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
             const bounds = computeLineBounds(newPoints);
             mutations.updateObject({ ...s, points: newPoints, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height, updated_at: now });
@@ -384,7 +395,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         return;
       }
 
-      if (obj.type === "line" && obj.points && obj.points.length > 0 && !obj.start_object_id && !obj.end_object_id) {
+      if ((obj.type === "line" || obj.type === "drawing") && obj.points && obj.points.length > 0 && !obj.start_object_id && !obj.end_object_id) {
         const dx = x - obj.x;
         const dy = y - obj.y;
         const newPoints = obj.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
@@ -424,7 +435,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         return;
       }
 
-      if (obj.type === "line" && obj.points && obj.points.length > 0 && !obj.start_object_id && !obj.end_object_id) {
+      if ((obj.type === "line" || obj.type === "drawing") && obj.points && obj.points.length > 0 && !obj.start_object_id && !obj.end_object_id) {
         const dx = x - obj.x;
         const dy = y - obj.y;
         const newPoints = obj.points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
@@ -538,7 +549,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       for (const id of selectedIds) {
         const obj = objects.get(id);
         if (!obj) continue;
-        const updated = obj.type === "line"
+        const updated = (obj.type === "line" || obj.type === "drawing")
           ? { ...obj, stroke_color: color, updated_at: now }
           : { ...obj, color, updated_at: now };
         mutations.updateObject(updated);
@@ -606,8 +617,17 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         "1": "select", "2": "hand",
         "s": "sticky", "t": "text", "r": "rectangle",
         "c": "circle", "d": "diamond", "p": "pill", "l": "line",
+        "b": "draw", "e": "stamp",
       };
       if (!editingId && !(e.metaKey || e.ctrlKey) && toolKeys[e.key]) { setActiveTool(toolKeys[e.key]); return; }
+      // Stamp type: Tab cycles through options when stamp tool active
+      if (e.key === "Tab" && activeTool === "stamp" && !editingId) {
+        e.preventDefault();
+        const stampTypes = ["thumbsup", "heart", "fire", "star", "eyes", "laughing", "party", "plusone"];
+        const idx = stampTypes.indexOf(selectedStampType);
+        setSelectedStampType(stampTypes[(idx + 1) % stampTypes.length]);
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && e.key === "c" && selectedIds.size > 0) {
         e.preventDefault();
         clipboardRef.current = Array.from(selectedIds).map(id => objects.get(id)!).filter(Boolean);
@@ -632,8 +652,9 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         (document.activeElement as HTMLElement)?.blur?.();
         if (followingUserId) { stopFollowing(); return; }
         if (lineDrawing.drawingState.isDrawing) { lineDrawing.cancel(); return; }
+        if (freehandDrawing.state.isDrawing) { freehandDrawing.cancel(); return; }
         if (editingId) { setEditingId(null); }
-        else if (activeTool === "line" || CREATION_TOOLS.includes(activeTool)) { setActiveTool("select"); }
+        else if (activeTool === "line" || activeTool === "draw" || CREATION_TOOLS.includes(activeTool)) { setActiveTool("select"); }
         else { setSelected(null); }
       }
       if (e.key === "/" && !editingId) { e.preventDefault(); setAiOpen(true); return; }
@@ -658,7 +679,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleDelete, duplicateObjects, editingId, selectedId, selectedIds, objects, setSelected, activeTool, lineDrawing, finalizeLineDrawing, undo, redo, followingUserId, stopFollowing]);
+  }, [handleDelete, duplicateObjects, editingId, selectedId, selectedIds, objects, setSelected, activeTool, lineDrawing, finalizeLineDrawing, freehandDrawing, selectedStampType, setSelectedStampType, undo, redo, followingUserId, stopFollowing]);
 
   const handleSelectionRect = useCallback(
     (rect: { x: number; y: number; width: number; height: number } | null) => { setSelectionRect(rect); },
@@ -672,7 +693,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       const rx = rect.x, ry = rect.y, rr = rect.x + rect.width, rb = rect.y + rect.height;
       for (const obj of filteredObjects.values()) {
         let bounds: { x: number; y: number; width: number; height: number };
-        if (obj.type === "line" && obj.points && obj.points.length >= 2) {
+        if ((obj.type === "line" || obj.type === "drawing") && obj.points && obj.points.length >= 2) {
           bounds = computeLineBounds(obj.points);
         } else {
           bounds = getRotatedAABB(obj);
@@ -725,6 +746,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   const currentUserColor = self?.color || "#3b82f6";
   const isCreationTool = CREATION_TOOLS.includes(activeTool);
   const isLineTool = activeTool === "line";
+  const isDrawTool = activeTool === "draw";
   const canvasMode: "hand" | "select" = activeTool === "hand" ? "hand" : "select";
   const editingObject = editingId ? objects.get(editingId) : undefined;
   const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : null;
@@ -732,9 +754,9 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
   return (
     <div
       className="relative h-screen w-screen overflow-hidden bg-gray-50"
-      onMouseMove={isCreationTool || isLineTool ? handleMouseMove : undefined}
-      onMouseLeave={isCreationTool || isLineTool ? handleMouseLeave : undefined}
-      style={{ cursor: isCreationTool || isLineTool ? "crosshair" : undefined, overscrollBehavior: "none" }}
+      onMouseMove={isCreationTool || isLineTool || isDrawTool ? handleMouseMove : undefined}
+      onMouseLeave={isCreationTool || isLineTool || isDrawTool ? handleMouseLeave : undefined}
+      style={{ cursor: isCreationTool || isLineTool || isDrawTool ? "crosshair" : undefined, overscrollBehavior: "none" }}
     >
       {/* Presence + connection status */}
       <div className="absolute right-4 top-4 z-40 flex items-center gap-3">
@@ -765,9 +787,20 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         ref={canvasRef}
         boardId={roomId}
         mode={canvasMode}
-        isCreationMode={isCreationTool || isLineTool}
+        isCreationMode={isCreationTool || isLineTool || isDrawTool}
         onStageMouseMove={handleStageMouseMove}
         onStageMouseLeave={handleStageMouseLeave}
+        onCanvasPointerDown={isDrawTool ? (x, y) => freehandDrawing.startDrawing({ x, y }) : undefined}
+        onCanvasPointerUp={isDrawTool ? () => {
+          if (freehandDrawing.state.isDrawing) {
+            const boardUUID = roomId === "default" ? "00000000-0000-0000-0000-000000000000" : roomId;
+            const obj = freehandDrawing.finalize(boardUUID, userId || null, displayName || undefined, objects.size);
+            if (obj) {
+              obj.frame_id = activeFrame?.id;
+              mutations.createObject(obj);
+            }
+          }
+        } : undefined}
         onClickEmpty={() => {
           (document.activeElement as HTMLElement)?.blur?.();
           setEditingId(null);
@@ -810,6 +843,9 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
             snapTarget={lineSnapTarget}
           />
         )}
+        {isDrawTool && freehandDrawing.state.isDrawing && (
+          <SvgDrawingPreviewLayer points={freehandDrawing.state.points} />
+        )}
       </SvgCanvas>
 
       {/* Selection rect overlay */}
@@ -830,7 +866,7 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       {/* Line formatting toolbar */}
       {!editingId && selectedId && (() => {
         const selObj = objects.get(selectedId);
-        if (!selObj || selObj.type !== "line") return null;
+        if (!selObj || (selObj.type !== "line" && selObj.type !== "drawing")) return null;
         return (
           <PositionedLineFormattingToolbar
             object={selObj}
@@ -867,6 +903,8 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
         currentBoardId={roomId}
         onAIToggle={() => setAiOpen((v) => !v)}
         aiOpen={aiOpen}
+        selectedStampType={selectedStampType}
+        onStampTypeChange={setSelectedStampType}
       />
 
       {/* AI Command Bar */}
@@ -893,8 +931,24 @@ function BoardPageInner({ roomId, userId, displayName }: { roomId: string; userI
       />
 
       {/* Ghost preview */}
-      {isCreationTool && (
-        <GhostPreview activeTool={activeTool} mousePos={mousePos} />
+      {(isCreationTool) && (
+        <GhostPreview activeTool={activeTool} mousePos={mousePos} selectedStampType={selectedStampType} />
+      )}
+
+      {/* Draw tool cursor indicator */}
+      {isDrawTool && mousePos && !freehandDrawing.state.isDrawing && (
+        <div
+          className="pointer-events-none absolute z-30"
+          style={{
+            left: mousePos.x - 10,
+            top: mousePos.y - 10,
+            width: 20,
+            height: 20,
+            borderRadius: "50%",
+            border: "2px solid #374151",
+            opacity: 0.7,
+          }}
+        />
       )}
 
       {/* Line tool cursor indicator */}

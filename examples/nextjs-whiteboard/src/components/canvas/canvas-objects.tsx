@@ -8,6 +8,8 @@ import { SvgCircleShape } from "./svg-circle-shape";
 import { SvgDiamondShape } from "./svg-diamond-shape";
 import { SvgPillShape } from "./svg-pill-shape";
 import { SvgLineShape } from "./svg-line-shape";
+import { SvgDrawingShape } from "./svg-drawing-shape";
+import { SvgEmojiShape } from "./svg-emoji-shape";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import type { BoardObject } from "@/types/board";
 
@@ -133,6 +135,22 @@ export const CanvasObjects = memo(function CanvasObjects({
                 objects={objects}
                 onLineUpdate={interactive ? onLineUpdate : undefined}
                 onLineUpdateEnd={interactive ? onLineUpdateEnd : undefined}
+              />
+            );
+          case "drawing":
+            return (
+              <SvgDrawingShape
+                key={obj.id}
+                {...shared}
+                scale={scale}
+              />
+            );
+          case "emoji":
+            return (
+              <SvgEmojiShape
+                key={obj.id}
+                {...shared}
+                scale={scale}
               />
             );
           default:

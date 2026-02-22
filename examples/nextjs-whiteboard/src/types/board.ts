@@ -1,9 +1,9 @@
-export type ToolMode = "select" | "hand" | "sticky" | "rectangle" | "text" | "circle" | "diamond" | "pill" | "line";
+export type ToolMode = "select" | "hand" | "sticky" | "rectangle" | "text" | "circle" | "diamond" | "pill" | "line" | "draw" | "stamp";
 
 export interface BoardObject {
   id: string;
   board_id: string;
-  type: "sticky" | "rectangle" | "text" | "circle" | "diamond" | "pill" | "line";
+  type: "sticky" | "rectangle" | "text" | "circle" | "diamond" | "pill" | "line" | "drawing" | "emoji";
   x: number;
   y: number;
   width: number;
@@ -28,6 +28,8 @@ export interface BoardObject {
   start_object_id?: string | null;
   end_object_id?: string | null;
   label?: string;
+  line_style?: "straight" | "curved";
+  emoji_type?: string;
   rotation?: number;
   frame_id?: string;
 }

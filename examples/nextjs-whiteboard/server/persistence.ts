@@ -93,6 +93,8 @@ function normalizeForUpsert(objects: BoardObject[]): Record<string, unknown>[] {
     start_object_id: obj.start_object_id ?? null,
     end_object_id: obj.end_object_id ?? null,
     label: obj.label ?? null,
+    line_style: obj.line_style ?? null,
+    emoji_type: obj.emoji_type ?? null,
     rotation: obj.rotation ?? null,
     frame_id: obj.frame_id ?? null,
   }));

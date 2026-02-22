@@ -40,7 +40,7 @@ export function findSnapTarget(
   let bestDist = SNAP_RADIUS;
 
   for (const obj of objects.values()) {
-    if (obj.type === "line") continue;
+    if (obj.type === "line" || obj.type === "drawing" || obj.type === "emoji") continue;
     if (excludeIds?.has(obj.id)) continue;
 
     for (const mp of edgeMidpoints(obj)) {
@@ -57,7 +57,7 @@ export function findSnapTarget(
   // Fallback: cursor is inside a shape body → snap to nearest edge midpoint
   // For rotated shapes, un-rotate cursor before AABB test
   for (const obj of objects.values()) {
-    if (obj.type === "line") continue;
+    if (obj.type === "line" || obj.type === "drawing" || obj.type === "emoji") continue;
     if (excludeIds?.has(obj.id)) continue;
 
     const rotation = obj.rotation || 0;

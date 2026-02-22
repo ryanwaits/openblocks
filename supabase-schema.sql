@@ -15,7 +15,7 @@ CREATE TABLE boards (
 CREATE TABLE board_objects (
   id UUID PRIMARY KEY,
   board_id UUID NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('sticky', 'rectangle', 'text', 'circle', 'diamond', 'pill', 'line')),
+  type TEXT NOT NULL CHECK (type IN ('sticky', 'rectangle', 'text', 'circle', 'diamond', 'pill', 'line', 'drawing', 'emoji')),
   x DOUBLE PRECISION NOT NULL DEFAULT 0,
   y DOUBLE PRECISION NOT NULL DEFAULT 0,
   width DOUBLE PRECISION NOT NULL DEFAULT 200,
@@ -39,6 +39,8 @@ CREATE TABLE board_objects (
   start_object_id UUID,
   end_object_id UUID,
   label TEXT,
+  line_style TEXT,
+  emoji_type TEXT,
   rotation DOUBLE PRECISION DEFAULT 0,
   frame_id TEXT
 );
