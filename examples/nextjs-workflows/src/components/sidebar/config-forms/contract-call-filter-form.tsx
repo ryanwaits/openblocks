@@ -1,14 +1,14 @@
 "use client";
 
-import type { ContractFilterConfig } from "@/types/node-configs";
+import type { ContractCallFilterConfig } from "@/types/node-configs";
 import { FormField, TextInput } from "./form-field";
 
-export function ContractFilterForm({
+export function ContractCallFilterForm({
   config,
   onChange,
 }: {
-  config: ContractFilterConfig;
-  onChange: (c: Partial<ContractFilterConfig>) => void;
+  config: ContractCallFilterConfig;
+  onChange: (c: Partial<ContractCallFilterConfig>) => void;
 }) {
   return (
     <>
@@ -18,8 +18,8 @@ export function ContractFilterForm({
       <FormField label="Function Name">
         <TextInput value={config.functionName ?? ""} onChange={(v) => onChange({ functionName: v || undefined })} placeholder="function-name (optional)" />
       </FormField>
-      <FormField label="Sender">
-        <TextInput value={config.sender ?? ""} onChange={(v) => onChange({ sender: v || undefined })} placeholder="SP... (optional)" />
+      <FormField label="Caller">
+        <TextInput value={config.caller ?? ""} onChange={(v) => onChange({ caller: v || undefined })} placeholder="SP... (optional)" />
       </FormField>
     </>
   );

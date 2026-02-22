@@ -24,7 +24,7 @@ export function StxFilterForm({
           ]}
         />
       </FormField>
-      {(config.eventType === "transfer" || config.eventType === "lock") && (
+      {config.eventType === "transfer" && (
         <>
           <FormField label="Sender">
             <TextInput
@@ -42,6 +42,15 @@ export function StxFilterForm({
           </FormField>
         </>
       )}
+      {config.eventType === "lock" && (
+        <FormField label="Locked Address">
+          <TextInput
+            value={config.sender ?? ""}
+            onChange={(v) => onChange({ sender: v || undefined })}
+            placeholder="SP... (optional)"
+          />
+        </FormField>
+      )}
       <FormField label="Min Amount">
         <NumberInput
           value={config.minAmount}
@@ -49,13 +58,15 @@ export function StxFilterForm({
           placeholder="No minimum"
         />
       </FormField>
-      <FormField label="Max Amount">
-        <NumberInput
-          value={config.maxAmount}
-          onChange={(v) => onChange({ maxAmount: v })}
-          placeholder="No maximum"
-        />
-      </FormField>
+      {config.eventType === "transfer" && (
+        <FormField label="Max Amount">
+          <NumberInput
+            value={config.maxAmount}
+            onChange={(v) => onChange({ maxAmount: v })}
+            placeholder="No maximum"
+          />
+        </FormField>
+      )}
     </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import type { WebhookActionConfig } from "@/types/node-configs";
-import { FormField, SelectInput, TextInput, NumberInput } from "./form-field";
+import { FormField, TextInput, NumberInput, CheckboxInput } from "./form-field";
 
 export function WebhookActionForm({
   config,
@@ -19,22 +19,31 @@ export function WebhookActionForm({
           placeholder="https://example.com/webhook"
         />
       </FormField>
-      <FormField label="Method">
-        <SelectInput
-          value={config.method}
-          onChange={(v) => onChange({ method: v as WebhookActionConfig["method"] })}
-          options={[
-            { value: "POST", label: "POST" },
-            { value: "PUT", label: "PUT" },
-          ]}
-        />
-      </FormField>
       <FormField label="Retry Count">
         <NumberInput
           value={config.retryCount}
           onChange={(v) => onChange({ retryCount: v ?? 3 })}
           placeholder="3"
         />
+      </FormField>
+      <FormField label="Payload Options">
+        <div className="flex flex-col gap-1.5">
+          <CheckboxInput
+            label="Decode Clarity values"
+            checked={config.decodeClarityValues ?? true}
+            onChange={(v) => onChange({ decodeClarityValues: v })}
+          />
+          <CheckboxInput
+            label="Include raw transaction"
+            checked={config.includeRawTx ?? false}
+            onChange={(v) => onChange({ includeRawTx: v })}
+          />
+          <CheckboxInput
+            label="Include block metadata"
+            checked={config.includeBlockMetadata ?? true}
+            onChange={(v) => onChange({ includeBlockMetadata: v })}
+          />
+        </div>
       </FormField>
     </>
   );

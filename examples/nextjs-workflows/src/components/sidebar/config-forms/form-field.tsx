@@ -83,6 +83,28 @@ export function SelectInput<T extends string>({
   );
 }
 
+export function CheckboxInput({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 py-0.5 text-xs text-gray-700 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600"
+      />
+      {label}
+    </label>
+  );
+}
+
 export function TextAreaInput({
   value,
   onChange,

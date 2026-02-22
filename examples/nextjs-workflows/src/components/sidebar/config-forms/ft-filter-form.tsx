@@ -12,8 +12,8 @@ export function FtFilterForm({
 }) {
   return (
     <>
-      <FormField label="Contract ID">
-        <TextInput value={config.contractId ?? ""} onChange={(v) => onChange({ contractId: v || undefined })} placeholder="SP..contract-name" />
+      <FormField label="Asset Identifier">
+        <TextInput value={config.assetIdentifier ?? ""} onChange={(v) => onChange({ assetIdentifier: v || undefined })} placeholder="SP...::token-name" />
       </FormField>
       <FormField label="Event Type">
         <SelectInput value={config.eventType} onChange={(v) => onChange({ eventType: v as FtFilterConfig["eventType"] })}

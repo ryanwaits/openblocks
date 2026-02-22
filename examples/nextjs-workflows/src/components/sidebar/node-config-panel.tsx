@@ -11,18 +11,18 @@ import { EventTriggerForm } from "./config-forms/event-trigger-form";
 import { StxFilterForm } from "./config-forms/stx-filter-form";
 import { FtFilterForm } from "./config-forms/ft-filter-form";
 import { NftFilterForm } from "./config-forms/nft-filter-form";
-import { ContractFilterForm } from "./config-forms/contract-filter-form";
+import { ContractCallFilterForm } from "./config-forms/contract-call-filter-form";
+import { ContractDeployFilterForm } from "./config-forms/contract-deploy-filter-form";
 import { PrintEventFilterForm } from "./config-forms/print-event-filter-form";
-import { TransformForm } from "./config-forms/transform-form";
 import { WebhookActionForm } from "./config-forms/webhook-action-form";
 import { Trash2 } from "lucide-react";
 
 export function NodeConfigPanel({ mutations }: { mutations: WorkflowMutationsApi }) {
-  const selectedNodeId = useWorkflowStore((s) => s.selectedNodeId);
+  const configNodeId = useWorkflowStore((s) => s.configNodeId);
   const nodes = useWorkflowStore((s) => s.nodes);
 
-  if (!selectedNodeId) return null;
-  const node = nodes.get(selectedNodeId);
+  if (!configNodeId) return null;
+  const node = nodes.get(configNodeId);
   if (!node) return null;
 
   const def = NODE_DEFINITIONS[node.type];
@@ -61,6 +61,7 @@ export function NodeConfigPanel({ mutations }: { mutations: WorkflowMutationsApi
           onClick={() => {
             mutations.deleteNode(node.id);
             useWorkflowStore.getState().selectNode(null);
+            useWorkflowStore.getState().openConfig(null);
           }}
           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
         >
@@ -84,12 +85,12 @@ function ConfigForm({ node, onChange }: { node: WorkflowNode; onChange: (config:
       return <FtFilterForm config={config} onChange={onChange} />;
     case "nft-filter":
       return <NftFilterForm config={config} onChange={onChange} />;
-    case "contract-filter":
-      return <ContractFilterForm config={config} onChange={onChange} />;
+    case "contract-call-filter":
+      return <ContractCallFilterForm config={config} onChange={onChange} />;
+    case "contract-deploy-filter":
+      return <ContractDeployFilterForm config={config} onChange={onChange} />;
     case "print-event-filter":
       return <PrintEventFilterForm config={config} onChange={onChange} />;
-    case "transform":
-      return <TransformForm config={config} onChange={onChange} />;
     case "webhook-action":
       return <WebhookActionForm config={config} onChange={onChange} />;
     default:
