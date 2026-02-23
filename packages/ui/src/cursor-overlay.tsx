@@ -75,6 +75,7 @@ export function CursorOverlay({
             className={className}
             mode={mode}
             avatarUrl={avatarMap.get(userId)}
+            cursorType={cursor.cursorType}
             style={isInactive ? { opacity: 0 } : undefined}
           />
         );
