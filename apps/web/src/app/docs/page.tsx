@@ -1,12 +1,5 @@
 import Link from "next/link";
-
-function CodeBlock({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-code-bg border border-code-border p-4 font-mono text-sm leading-relaxed overflow-x-auto">
-      {children}
-    </div>
-  );
-}
+import { CodeBlock } from "./components/code-block";
 
 const PACKAGES = [
   {

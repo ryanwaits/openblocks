@@ -1,23 +1,5 @@
 import Link from "next/link";
-
-function CodeBlock({ filename, children }: { filename?: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-code-bg border border-code-border overflow-hidden">
-      {filename && (
-        <div className="px-4 py-2 border-b border-code-border bg-surface">
-          <span className="font-mono text-[10px] text-muted">{filename}</span>
-        </div>
-      )}
-      <div className="p-4 font-mono text-sm leading-relaxed overflow-x-auto">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Line({ indent, children }: { indent?: boolean; children: React.ReactNode }) {
-  return <div className={`${indent ? "pl-6" : ""} min-h-[1.5em]`}>{children}</div>;
-}
+import { CodeBlock, Line } from "../components/code-block";
 
 export default function ReactReferencePage() {
   return (
