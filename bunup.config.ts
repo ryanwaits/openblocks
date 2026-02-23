@@ -17,5 +17,8 @@ export default defineWorkspace(
     format: ["esm", "cjs"],
     dts: true,
     clean: true,
+    env: {
+      NODE_ENV: "production",
+    },
   }
 );
