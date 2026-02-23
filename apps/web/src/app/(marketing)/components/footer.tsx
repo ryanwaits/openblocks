@@ -13,7 +13,7 @@ export function Footer() {
 
         <div className="flex flex-col items-center gap-6">
           <a
-            href="#"
+            href="/docs/quick-start"
             className="bg-accent text-accent-fg font-mono font-bold text-base px-10 py-5 hover:scale-105 transition-transform no-underline"
           >
             GET STARTED

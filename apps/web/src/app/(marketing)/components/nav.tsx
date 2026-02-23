@@ -12,20 +12,20 @@ export function Nav() {
         </Link>
 
         <div className="hidden md:flex items-center gap-8 font-mono text-xs tracking-wide text-muted uppercase">
-          <a href="#primitives" className="hover:text-text transition-colors no-underline">
+          <Link href="/docs" className="hover:text-text transition-colors no-underline">
             Documentation
-          </a>
-          <a href="#" className="hover:text-text transition-colors no-underline">
+          </Link>
+          <a href="#examples" className="hover:text-text transition-colors no-underline">
             Examples
           </a>
         </div>
 
-        <a
-          href="#"
+        <Link
+          href="/docs/quick-start"
           className="bg-accent text-accent-fg text-xs font-bold font-mono px-4 py-2 hover:bg-text transition-colors duration-200 no-underline"
         >
           GET STARTED
-        </a>
+        </Link>
       </div>
     </nav>
   );

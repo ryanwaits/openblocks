@@ -31,7 +31,7 @@ export function Hero() {
           <div className="flex flex-col sm:flex-row gap-4">
             <CopyInstall />
             <a
-              href="#"
+              href="/docs"
               className="border border-border text-text font-mono font-medium text-sm px-6 py-4 hover:border-muted transition-colors no-underline text-center"
             >
               Read the Docs
