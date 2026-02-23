@@ -204,7 +204,7 @@ export function Examples() {
     <section id="examples" className="py-24 relative">
       <div className="max-w-7xl mx-auto px-6">
         <div className="mb-16">
-          <h2 className="font-sans text-3xl md:text-4xl font-semibold tracking-tight text-text mb-4 di-separator">
+          <h2 className="font-sans text-3xl md:text-4xl font-semibold tracking-tight text-text mb-4">
             Examples
           </h2>
           <p className="text-muted max-w-xl text-lg">
