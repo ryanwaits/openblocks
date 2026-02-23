@@ -25,6 +25,7 @@ export class StorageDocument implements StorageDocumentHost {
   private _onOpsGenerated: ((ops: StorageOp[]) => void) | null = null;
   _history: HistoryManager;
   _pendingInverse: StorageOp | null = null;
+  _notificationBatch: Set<AbstractCrdt> | null = null;
 
   constructor(root: LiveObject, historyConfig?: HistoryConfig) {
     this._root = root;
@@ -46,12 +47,19 @@ export class StorageDocument implements StorageDocumentHost {
   }
 
   applyOps(ops: StorageOp[]): void {
-    for (const op of ops) {
-      this._clock.merge(op.clock);
-      const target = this._resolveTarget(op);
-      if (target) {
-        target._applyOp(op);
+    this._notificationBatch = new Set();
+    try {
+      for (const op of ops) {
+        this._clock.merge(op.clock);
+        const target = this._resolveTarget(op);
+        if (target) {
+          target._applyOp(op);
+        }
       }
+    } finally {
+      const batch = this._notificationBatch;
+      this._notificationBatch = null;
+      this._flushBatch(batch);
     }
   }
 
@@ -153,6 +161,7 @@ export class StorageDocument implements StorageDocumentHost {
    */
   applyLocalOps(ops: StorageOp[]): StorageOp[] {
     this._history.pause();
+    this._notificationBatch = new Set();
     const reclockedOps: StorageOp[] = [];
     try {
       for (const op of ops) {
@@ -169,7 +178,10 @@ export class StorageDocument implements StorageDocumentHost {
         this._onOpsGenerated(reclockedOps);
       }
     } finally {
+      const batch = this._notificationBatch;
+      this._notificationBatch = null;
       this._history.resume();
+      this._flushBatch(batch);
     }
     return reclockedOps;
   }
@@ -180,6 +192,29 @@ export class StorageDocument implements StorageDocumentHost {
 
   _deserializeValue(data: SerializedCrdt): unknown {
     return deserializeCrdt(data);
+  }
+
+  /** Flush a batch of changed nodes — shallow once per node, deep deduplicated by callback */
+  private _flushBatch(batch: Set<AbstractCrdt>): void {
+    // Fire shallow subscribers for each changed node
+    for (const node of batch) {
+      for (const cb of node._subscribers) {
+        cb();
+      }
+    }
+    // Fire deep subscribers deduplicated by callback identity
+    const firedDeep = new Set<() => void>();
+    for (const sub of this._subscriptions) {
+      if (!sub.isDeep) continue;
+      if (firedDeep.has(sub.callback)) continue;
+      for (const node of batch) {
+        if (isAncestorOrSelf(sub.target, node)) {
+          sub.callback();
+          firedDeep.add(sub.callback);
+          break;
+        }
+      }
+    }
   }
 
   /** Walk the CRDT tree and notify deep subscriptions */
@@ -233,8 +268,11 @@ export class StorageDocument implements StorageDocumentHost {
 
     // Override _notifySubscribers to also trigger deep subscriptions
     const doc = this;
-    const originalNotify = node._notifySubscribers.bind(node);
     node._notifySubscribers = function () {
+      if (doc._notificationBatch) {
+        doc._notificationBatch.add(this);
+        return;
+      }
       // Shallow subscribers
       for (const cb of this._subscribers) {
         cb();
