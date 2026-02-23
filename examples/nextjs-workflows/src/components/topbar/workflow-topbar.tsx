@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import Link from "next/link";
 import { ChevronLeft, Circle, ChevronDown, Play, Pause, Trash2, Rocket, Loader2 } from "lucide-react";
 import { useWorkflowStore, type StreamStatus } from "@/lib/store/workflow-store";
 
@@ -66,9 +67,9 @@ export function WorkflowTopbar({
 
   return (
     <div className="absolute left-1/2 top-4 z-30 flex -translate-x-1/2 items-center gap-2 rounded-xl border bg-white/90 px-3 py-2 shadow-sm backdrop-blur" style={{ borderColor: "#e5e7eb" }}>
-      <button className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600">
+      <Link href="/" className="flex h-6 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600">
         <ChevronLeft size={16} />
-      </button>
+      </Link>
       <div className="h-4 w-px bg-gray-200" />
 
       {/* Editable name */}

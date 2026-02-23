@@ -1,6 +1,7 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { useRef, useCallback, useEffect, useState } from "react";
 import {
   LivelyProvider, RoomProvider,
@@ -32,11 +33,23 @@ import { NODE_DEFINITIONS } from "@/lib/workflow/node-definitions";
 import { client, buildInitialStorage } from "@/lib/sync/client";
 import { useLivelySync } from "@/lib/sync/use-lively-sync";
 import { useWorkflowMutations } from "@/lib/sync/use-workflow-mutations";
+import { TEMPLATE_MAP } from "@/lib/workflow/templates";
 import type { WorkflowNode, WorkflowNodeType } from "@/types/workflow";
 
 export default function WorkflowPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center"><div className="text-gray-400">Loading...</div></div>}>
+      <WorkflowPageWithParams />
+    </Suspense>
+  );
+}
+
+function WorkflowPageWithParams() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const workflowId = params.id as string;
+  const templateId = searchParams.get("template");
+  const template = templateId ? TEMPLATE_MAP.get(templateId) : undefined;
   const { userId, displayName, restore } = useAuthStore();
 
   useEffect(() => { restore(); }, [restore]);
@@ -55,7 +68,7 @@ export default function WorkflowPage() {
         roomId={workflowId}
         userId={userId}
         displayName={displayName}
-        initialStorage={buildInitialStorage()}
+        initialStorage={buildInitialStorage(template)}
       >
         <WorkflowPageInner workflowId={workflowId} />
       </RoomProvider>
@@ -121,7 +134,7 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
   }, []);
 
   // --- Stream deploy + polling ---
-  const { deploy, enable, disable, remove, deploying } = useStreamDeploy(mutations);
+  const { deploy, enable, disable, remove, deploying } = useStreamDeploy(mutations, workflowId);
   useStreamPolling(mutations);
 
   // --- Hooks that mutate via Lively ---
@@ -245,12 +258,11 @@ function WorkflowPageInner({ workflowId }: { workflowId: string }) {
         </div>
       </div>
 
-      {/* Right sidebar: Config panel (double-click to open) */}
       {/* Right sidebar: Config panel or Delivery log */}
       {deliveryLogOpen ? (
         <DeliveryLogPanel onClose={() => setDeliveryLogOpen(false)} />
       ) : configNodeId ? (
-        <NodeConfigPanel mutations={mutations} />
+        <NodeConfigPanel mutations={mutations} workflowId={workflowId} />
       ) : null}
     </div>
   );
