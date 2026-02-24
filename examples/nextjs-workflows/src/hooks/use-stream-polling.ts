@@ -38,8 +38,17 @@ export function useStreamPolling(mutations: WorkflowMutationsApi) {
               errorMessage: res.errorMessage ?? null,
             },
           });
-        }).catch(() => {
-          // Silently ignore polling errors
+        }).catch((err) => {
+          // Stream was deleted server-side — reset to draft so stale data doesn't linger
+          if (err instanceof Error && (err.message.includes("404") || err.message.includes("not found"))) {
+            console.warn(`[stream-polling] stream ${wf.stream.streamId} not found, resetting to draft`);
+            mutations.updateWorkflow(wfId, {
+              stream: {
+                streamId: null, status: "draft", lastDeployedAt: null, errorMessage: null,
+                totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null,
+              },
+            });
+          }
         });
       }
     }

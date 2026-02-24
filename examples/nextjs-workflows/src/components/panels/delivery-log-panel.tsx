@@ -31,10 +31,12 @@ export function DeliveryLogPanel({ onClose }: DeliveryLogPanelProps) {
     if (!streamId) return;
     if (showLoading) setLoading(true);
     try {
+      console.log("[DeliveryLogPanel] fetching deliveries for streamId:", streamId);
       const res = await streamsApi.deliveries(streamId, { limit: 50 });
+      console.log("[DeliveryLogPanel] got", res.deliveries.length, "deliveries");
       setDeliveries(res.deliveries);
-    } catch {
-      // silently fail
+    } catch (err) {
+      console.error("[DeliveryLogPanel] fetch failed for streamId:", streamId, err);
     } finally {
       setLoading(false);
     }
