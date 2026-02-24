@@ -171,7 +171,7 @@ export default function DashboardPage() {
               <p className="mt-2 text-xs text-gray-500">
                 {DEFAULT_BOARD.description}
               </p>
-              {workflowCount != null && (
+              {workflowCount != null && workflowCount > 0 && (
                 <p className="mt-1 text-[11px] text-gray-400">
                   {workflowCount} workflow{workflowCount !== 1 ? "s" : ""}
                 </p>
