@@ -3,9 +3,10 @@
 import { useEffect } from "react";
 import type { LiveObject, LiveMap } from "@waits/lively-client";
 import { useRoom, useStorageRoot } from "@waits/lively-react";
-import { useWorkflowStore } from "@/lib/store/workflow-store";
-import type { StreamState } from "@/lib/store/workflow-store";
-import type { WorkflowNode, WorkflowEdge } from "@/types/workflow";
+import { useBoardStore } from "@/lib/store/board-store";
+import type { StreamState } from "@/types/workflow";
+import type { WorkflowNode, WorkflowEdge, WorkflowRecord } from "@/types/workflow";
+import { migrateRoomStorage } from "@/lib/sync/migrate";
 
 function liveObjectToNode(lo: LiveObject): WorkflowNode | null {
   if (typeof lo.toObject !== "function") return null;
@@ -16,6 +17,7 @@ function liveObjectToNode(lo: LiveObject): WorkflowNode | null {
     label: raw.label as string,
     position: typeof raw.position === "string" ? JSON.parse(raw.position) : raw.position as WorkflowNode["position"],
     config: typeof raw.config === "string" ? JSON.parse(raw.config) : raw.config as WorkflowNode["config"],
+    workflowId: raw.workflowId as string,
   };
 }
 
@@ -28,6 +30,26 @@ function liveObjectToEdge(lo: LiveObject): WorkflowEdge | null {
     sourcePortId: raw.sourcePortId as string,
     targetNodeId: raw.targetNodeId as string,
     targetPortId: raw.targetPortId as string,
+    workflowId: raw.workflowId as string,
+  };
+}
+
+function liveObjectToWorkflow(lo: LiveObject): WorkflowRecord | null {
+  if (typeof lo.toObject !== "function") return null;
+  const raw = lo.toObject();
+  let stream: StreamState;
+  try {
+    stream = typeof raw.stream === "string" ? JSON.parse(raw.stream) : raw.stream as StreamState;
+  } catch {
+    stream = {
+      streamId: null, status: "draft", lastDeployedAt: null, errorMessage: null,
+      totalDeliveries: 0, failedDeliveries: 0, lastTriggeredAt: null, lastTriggeredBlock: null,
+    };
+  }
+  return {
+    id: raw.id as string,
+    name: raw.name as string,
+    stream,
   };
 }
 
@@ -36,18 +58,21 @@ export function useLivelySync(): void {
   const storage = useStorageRoot();
   const root = storage?.root ?? null;
 
-  const syncNodes = useWorkflowStore((s) => s.syncNodes);
-  const syncEdges = useWorkflowStore((s) => s.syncEdges);
-  const syncMeta = useWorkflowStore((s) => s.syncMeta);
-  const syncStream = useWorkflowStore((s) => s.syncStream);
+  const syncNodes = useBoardStore((s) => s.syncNodes);
+  const syncEdges = useBoardStore((s) => s.syncEdges);
+  const syncWorkflows = useBoardStore((s) => s.syncWorkflows);
+  const syncBoardMeta = useBoardStore((s) => s.syncBoardMeta);
 
   useEffect(() => {
     if (!root) return;
 
+    // Migrate old single-workflow rooms to new multi-workflow shape
+    migrateRoomStorage(root);
+
     const nodesMap = root.get("nodes") as LiveMap<LiveObject> | undefined;
     const edgesMap = root.get("edges") as LiveMap<LiveObject> | undefined;
-    const metaObj = root.get("meta") as LiveObject | undefined;
-    const streamObj = root.get("stream") as LiveObject | undefined;
+    const boardMetaObj = root.get("boardMeta") as LiveObject | undefined;
+    const workflowsMap = root.get("workflows") as LiveMap<LiveObject> | undefined;
 
     function doSyncNodes() {
       if (!nodesMap) return;
@@ -69,31 +94,26 @@ export function useLivelySync(): void {
       syncEdges(arr);
     }
 
-    function doSyncMeta() {
-      if (!metaObj) return;
-      const raw = metaObj.toObject();
-      syncMeta({ name: raw.name as string, status: raw.status as string });
+    function doSyncWorkflows() {
+      if (!workflowsMap) return;
+      const arr: WorkflowRecord[] = [];
+      workflowsMap.forEach((lo: LiveObject) => {
+        const wf = liveObjectToWorkflow(lo);
+        if (wf) arr.push(wf);
+      });
+      syncWorkflows(arr);
     }
 
-    function doSyncStream() {
-      if (!streamObj) return;
-      const raw = streamObj.toObject();
-      syncStream({
-        streamId: (raw.streamId as string) || null,
-        status: (raw.status as StreamState["status"]) || "draft",
-        lastDeployedAt: (raw.lastDeployedAt as string) || null,
-        errorMessage: (raw.errorMessage as string) || null,
-        totalDeliveries: (raw.totalDeliveries as number) || 0,
-        failedDeliveries: (raw.failedDeliveries as number) || 0,
-        lastTriggeredAt: (raw.lastTriggeredAt as string) || null,
-        lastTriggeredBlock: (raw.lastTriggeredBlock as number) || null,
-      });
+    function doSyncBoardMeta() {
+      if (!boardMetaObj) return;
+      const raw = boardMetaObj.toObject();
+      syncBoardMeta({ name: raw.name as string });
     }
 
     doSyncNodes();
     doSyncEdges();
-    doSyncMeta();
-    doSyncStream();
+    doSyncWorkflows();
+    doSyncBoardMeta();
 
     const unsubNodes = nodesMap
       ? room.subscribe(nodesMap, doSyncNodes, { isDeep: true })
@@ -101,18 +121,18 @@ export function useLivelySync(): void {
     const unsubEdges = edgesMap
       ? room.subscribe(edgesMap, doSyncEdges, { isDeep: true })
       : undefined;
-    const unsubMeta = metaObj
-      ? room.subscribe(metaObj, doSyncMeta)
+    const unsubWorkflows = workflowsMap
+      ? room.subscribe(workflowsMap, doSyncWorkflows, { isDeep: true })
       : undefined;
-    const unsubStream = streamObj
-      ? room.subscribe(streamObj, doSyncStream)
+    const unsubBoardMeta = boardMetaObj
+      ? room.subscribe(boardMetaObj, doSyncBoardMeta)
       : undefined;
 
     return () => {
       unsubNodes?.();
       unsubEdges?.();
-      unsubMeta?.();
-      unsubStream?.();
+      unsubWorkflows?.();
+      unsubBoardMeta?.();
     };
-  }, [root, room, syncNodes, syncEdges, syncMeta, syncStream]);
+  }, [root, room, syncNodes, syncEdges, syncWorkflows, syncBoardMeta]);
 }

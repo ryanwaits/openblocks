@@ -4,12 +4,13 @@ import { useCallback, useEffect, useRef } from "react";
 import { screenToCanvas } from "@/lib/canvas-utils";
 import { useViewportStore } from "@/lib/store/viewport-store";
 import { useCanvasInteractionStore } from "@/lib/store/canvas-interaction-store";
-import { useWorkflowStore } from "@/lib/store/workflow-store";
+import { useBoardStore } from "@/lib/store/board-store";
 import { NODE_DEFINITIONS } from "@/lib/workflow/node-definitions";
 import { canConnect, findPort } from "@/lib/workflow/port-compatibility";
 import { wouldCreateCycle } from "@/lib/workflow/graph-validation";
 import { getPortPosition, NODE_PORT_RADIUS } from "@/components/nodes/node-port";
-import { NODE_WIDTH } from "@/components/nodes/base-node";
+import { NODE_WIDTH, getNodeHeight } from "@/components/nodes/base-node";
+import { UNASSIGNED_WORKFLOW_ID } from "@/types/workflow";
 import type { WorkflowMutationsApi } from "@/lib/sync/mutations-context";
 
 export function useConnectionDraw(
@@ -24,7 +25,7 @@ export function useConnectionDraw(
 
   const handlePortPointerDown = useCallback(
     (nodeId: string, portId: string, e: React.PointerEvent) => {
-      const node = useWorkflowStore.getState().nodes.get(nodeId);
+      const node = useBoardStore.getState().nodes.get(nodeId);
       if (!node) return;
       const port = findPort(node.type, portId);
       if (!port || port.direction !== "output") return;
@@ -79,7 +80,7 @@ export function useConnectionDraw(
       const { pos, scale } = useViewportStore.getState();
       const rect = svg.getBoundingClientRect();
       const canvasPos = screenToCanvas(e.clientX, e.clientY, rect, pos, scale);
-      const { nodes, edges } = useWorkflowStore.getState();
+      const { nodes, edges } = useBoardStore.getState();
 
       for (const [nodeId, node] of nodes) {
         if (nodeId === draft.sourceNodeId) continue;
@@ -87,7 +88,8 @@ export function useConnectionDraw(
         const inputPorts = def.ports.filter((p) => p.direction === "input");
         for (let i = 0; i < inputPorts.length; i++) {
           const port = inputPorts[i];
-          const portPos = getPortPosition(port, NODE_WIDTH, i, inputPorts.length);
+          const nodeHeight = getNodeHeight(node);
+          const portPos = getPortPosition(port, NODE_WIDTH, i, inputPorts.length, nodeHeight);
           const px = node.position.x + portPos.cx;
           const py = node.position.y + portPos.cy;
           const dist = Math.sqrt((canvasPos.x - px) ** 2 + (canvasPos.y - py) ** 2);
@@ -115,6 +117,7 @@ export function useConnectionDraw(
               sourcePortId: draft.sourcePortId,
               targetNodeId: nodeId,
               targetPortId: port.id,
+              workflowId: UNASSIGNED_WORKFLOW_ID,
             });
             return;
           }

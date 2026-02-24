@@ -3,7 +3,7 @@
 import { useRef, useCallback, useEffect } from "react";
 import { screenToCanvas } from "@/lib/canvas-utils";
 import { useViewportStore } from "@/lib/store/viewport-store";
-import { useWorkflowStore } from "@/lib/store/workflow-store";
+import { useBoardStore } from "@/lib/store/board-store";
 import type { WorkflowMutationsApi } from "@/lib/sync/mutations-context";
 
 const DBLCLICK_MS = 300;
@@ -16,8 +16,8 @@ export function useNodeDrag(
     nodeId: string;
     startCanvasX: number;
     startCanvasY: number;
-    startNodeX: number;
-    startNodeY: number;
+    // Start positions for all nodes in the same workflow group
+    groupStarts: Map<string, { x: number; y: number }>;
   } | null>(null);
   const mutationsRef = useRef(mutations);
   mutationsRef.current = mutations;
@@ -36,7 +36,8 @@ export function useNodeDrag(
       if (!nodeId) return;
       if ((e.target as HTMLElement).closest("[data-node-port]")) return;
 
-      const node = useWorkflowStore.getState().nodes.get(nodeId);
+      const state = useBoardStore.getState();
+      const node = state.nodes.get(nodeId);
       if (!node) return;
       const svg = svgElRef.current;
       if (!svg) return;
@@ -46,25 +47,49 @@ export function useNodeDrag(
       const last = lastClickRef.current;
       if (last && last.nodeId === nodeId && now - last.time < DBLCLICK_MS) {
         lastClickRef.current = null;
-        useWorkflowStore.getState().openConfig(nodeId);
+        useBoardStore.getState().openConfig(nodeId);
         e.preventDefault();
         e.stopPropagation();
         return;
       }
       lastClickRef.current = { nodeId, time: now };
 
+      // Shift+click → toggle multi-selection, no drag
+      if (e.shiftKey) {
+        useBoardStore.getState().toggleNodeSelection(nodeId);
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
       const { pos, scale } = useViewportStore.getState();
       const rect = svg.getBoundingClientRect();
       const canvasPos = screenToCanvas(e.clientX, e.clientY, rect, pos, scale);
+
+      const groupStarts = new Map<string, { x: number; y: number }>();
+      const selectedIds = useBoardStore.getState().selectedNodeIds;
+
+      const isMultiDrag = selectedIds.size > 1 && selectedIds.has(nodeId);
+      if (isMultiDrag) {
+        // Drag all multi-selected nodes
+        for (const sid of selectedIds) {
+          const sNode = state.nodes.get(sid);
+          if (sNode) groupStarts.set(sid, { x: sNode.position.x, y: sNode.position.y });
+        }
+      } else {
+        // Single node drag — clear multi-selection
+        groupStarts.set(nodeId, { x: node.position.x, y: node.position.y });
+      }
 
       dragRef.current = {
         nodeId,
         startCanvasX: canvasPos.x,
         startCanvasY: canvasPos.y,
-        startNodeX: node.position.x,
-        startNodeY: node.position.y,
+        groupStarts,
       };
-      useWorkflowStore.getState().selectNode(nodeId);
+      if (!isMultiDrag) {
+        useBoardStore.getState().selectNode(nodeId); // clears selectedNodeIds
+      }
       e.preventDefault();
       e.stopPropagation();
     },
@@ -81,16 +106,16 @@ export function useNodeDrag(
       const canvasPos = screenToCanvas(e.clientX, e.clientY, rect, pos, scale);
       const dx = canvasPos.x - dragRef.current.startCanvasX;
       const dy = canvasPos.y - dragRef.current.startCanvasY;
-      const node = useWorkflowStore.getState().nodes.get(dragRef.current.nodeId);
-      if (!node) return;
 
-      mutationsRef.current.updateNode({
-        ...node,
-        position: {
-          x: dragRef.current.startNodeX + dx,
-          y: dragRef.current.startNodeY + dy,
-        },
-      });
+      // Move all nodes in the workflow group
+      const updates: { id: string; position: { x: number; y: number } }[] = [];
+      for (const [id, start] of dragRef.current.groupStarts) {
+        updates.push({
+          id,
+          position: { x: start.x + dx, y: start.y + dy },
+        });
+      }
+      mutationsRef.current.moveNodes(updates);
     },
     [],
   );

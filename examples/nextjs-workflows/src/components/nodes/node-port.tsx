@@ -11,6 +11,7 @@ const PORT_COLORS: Record<PortDataType, string> = {
 interface NodePortProps {
   port: Port;
   nodeWidth: number;
+  nodeHeight: number;
   index: number;
   totalPorts: number;
   onPointerDown?: (e: React.PointerEvent) => void;
@@ -23,18 +24,18 @@ export function getPortPosition(
   nodeWidth: number,
   index: number,
   totalPorts: number,
+  nodeHeight: number,
 ): { cx: number; cy: number } {
-  // Ports of same direction are spaced evenly along the edge
-  const sameDirectionIndex = index;
   const spacing = 40;
-  const baseY = 40 + sameDirectionIndex * spacing;
+  const startY = (nodeHeight - (totalPorts - 1) * spacing) / 2;
+  const cy = startY + index * spacing;
   const cx = port.direction === "input" ? 0 : nodeWidth;
-  return { cx, cy: baseY };
+  return { cx, cy };
 }
 
-export function NodePort({ port, nodeWidth, index, totalPorts, onPointerDown }: NodePortProps) {
+export function NodePort({ port, nodeWidth, nodeHeight, index, totalPorts, onPointerDown }: NodePortProps) {
   const color = PORT_COLORS[port.dataType];
-  const { cx, cy } = getPortPosition(port, nodeWidth, index, totalPorts);
+  const { cx, cy } = getPortPosition(port, nodeWidth, index, totalPorts, nodeHeight);
 
   return (
     <circle

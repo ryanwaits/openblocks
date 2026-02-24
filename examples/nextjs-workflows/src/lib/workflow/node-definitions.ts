@@ -32,7 +32,7 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     label: "STX Filter",
     description: "Filter STX transfer, mint, burn, or lock events",
     category: "filters",
-    icon: "Filter",
+    icon: "StxToken",
     color: "#3b82f6",
     ports: [
       { id: "in", direction: "input", dataType: "event", label: "Events" },
@@ -45,7 +45,7 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     label: "FT Filter",
     description: "Filter fungible token events",
     category: "filters",
-    icon: "Coins",
+    icon: "FtToken",
     color: "#3b82f6",
     ports: [
       { id: "in", direction: "input", dataType: "event", label: "Events" },
@@ -58,7 +58,7 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     label: "NFT Filter",
     description: "Filter non-fungible token events",
     category: "filters",
-    icon: "ImageIcon",
+    icon: "NftImage",
     color: "#3b82f6",
     ports: [
       { id: "in", direction: "input", dataType: "event", label: "Events" },
@@ -71,7 +71,7 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     label: "Contract Call",
     description: "Filter contract call events",
     category: "filters",
-    icon: "FileCode",
+    icon: "ContractCall",
     color: "#3b82f6",
     ports: [
       { id: "in", direction: "input", dataType: "event", label: "Events" },
@@ -84,7 +84,7 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     label: "Contract Deploy",
     description: "Filter contract deployment events",
     category: "filters",
-    icon: "Upload",
+    icon: "ContractDeploy",
     color: "#3b82f6",
     ports: [
       { id: "in", direction: "input", dataType: "event", label: "Events" },
@@ -97,7 +97,7 @@ export const NODE_DEFINITIONS: Record<WorkflowNodeType, NodeDefinition> = {
     label: "Print Event Filter",
     description: "Filter contract print events by topic or content",
     category: "filters",
-    icon: "MessageSquare",
+    icon: "PrintEvent",
     color: "#3b82f6",
     ports: [
       { id: "in", direction: "input", dataType: "event", label: "Events" },

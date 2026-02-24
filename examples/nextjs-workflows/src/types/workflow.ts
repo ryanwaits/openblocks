@@ -1,5 +1,7 @@
 import type { NodeConfigMap } from "./node-configs";
 
+export const UNASSIGNED_WORKFLOW_ID = "unassigned";
+
 export interface Position {
   x: number;
   y: number;
@@ -31,6 +33,7 @@ export interface WorkflowNode<T extends WorkflowNodeType = WorkflowNodeType> {
   position: Position;
   config: NodeConfigMap[T];
   label: string;
+  workflowId: string;
 }
 
 export interface WorkflowEdge {
@@ -39,4 +42,28 @@ export interface WorkflowEdge {
   sourcePortId: string;
   targetNodeId: string;
   targetPortId: string;
+  workflowId: string;
+}
+
+export type StreamStatus = "draft" | "deploying" | "active" | "paused" | "failed";
+
+export interface StreamState {
+  streamId: string | null;
+  status: StreamStatus;
+  lastDeployedAt: string | null;
+  errorMessage: string | null;
+  totalDeliveries: number;
+  failedDeliveries: number;
+  lastTriggeredAt: string | null;
+  lastTriggeredBlock: number | null;
+}
+
+export interface WorkflowRecord {
+  id: string;
+  name: string;
+  stream: StreamState;
+}
+
+export interface BoardMeta {
+  name: string;
 }

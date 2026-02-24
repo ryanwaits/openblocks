@@ -1,5 +1,10 @@
+export type TriggerMode = "live" | "single-block" | "range";
+
 export interface EventTriggerConfig {
+  triggerMode?: TriggerMode;
   startBlock?: number;
+  endBlock?: number;
+  singleBlock?: number;
 }
 
 export type StxEventType = "transfer" | "mint" | "burn" | "lock";

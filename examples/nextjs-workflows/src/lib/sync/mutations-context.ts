@@ -1,4 +1,4 @@
-import type { WorkflowNode, WorkflowEdge } from "@/types/workflow";
+import type { WorkflowNode, WorkflowEdge, WorkflowRecord, BoardMeta } from "@/types/workflow";
 
 export interface WorkflowMutationsApi {
   addNode: (node: WorkflowNode) => void;
@@ -6,7 +6,12 @@ export interface WorkflowMutationsApi {
   deleteNode: (nodeId: string) => void;
   addEdge: (edge: WorkflowEdge) => void;
   deleteEdge: (edgeId: string) => void;
-  updateMeta: (updates: Record<string, unknown>) => void;
-  updateStream: (updates: Record<string, unknown>) => void;
+  addWorkflow: (wf: WorkflowRecord) => void;
+  updateWorkflow: (wfId: string, updates: Partial<WorkflowRecord>) => void;
+  deleteWorkflow: (wfId: string) => void;
+  unlinkWorkflow: (wfId: string) => void;
+  setWorkflowIds: (nodeIds: string[], edgeIds: string[], workflowId: string) => void;
+  updateBoardMeta: (updates: Partial<BoardMeta>) => void;
+  moveNodes: (updates: { id: string; position: { x: number; y: number } }[]) => void;
   updateCursor: (x: number, y: number) => void;
 }

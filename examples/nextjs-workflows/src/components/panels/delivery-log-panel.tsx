@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { X, ChevronDown, ChevronRight, CheckCircle, XCircle, Clock, RefreshCw, Play, Rewind, GripVertical } from "lucide-react";
 import { streamsApi, type Delivery } from "@/lib/api/streams-client";
-import { useWorkflowStore } from "@/lib/store/workflow-store";
+import { useBoardStore } from "@/lib/store/board-store";
 import { usePanelResize } from "@/hooks/use-panel-resize";
 
 interface DeliveryLogPanelProps {
@@ -11,7 +11,17 @@ interface DeliveryLogPanelProps {
 }
 
 export function DeliveryLogPanel({ onClose }: DeliveryLogPanelProps) {
-  const streamId = useWorkflowStore((s) => s.stream.streamId);
+  // Use selected workflow's stream, fall back to first with a streamId
+  const streamId = useBoardStore((s) => {
+    if (s.selectedWorkflowId) {
+      const wf = s.workflows.get(s.selectedWorkflowId);
+      if (wf?.stream.streamId) return wf.stream.streamId;
+    }
+    for (const wf of s.workflows.values()) {
+      if (wf.stream.streamId) return wf.stream.streamId;
+    }
+    return null;
+  });
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -40,7 +50,7 @@ export function DeliveryLogPanel({ onClose }: DeliveryLogPanelProps) {
   if (!streamId) return null;
 
   return (
-    <div className="group/panel relative flex h-full flex-col border-l bg-white" style={{ width, borderColor: "#e5e7eb" }}>
+    <div className="group/panel relative flex h-full select-text flex-col border-l bg-white" style={{ width, borderColor: "#e5e7eb" }}>
       {/* Resize handle */}
       <div
         onPointerDown={handlePointerDown}

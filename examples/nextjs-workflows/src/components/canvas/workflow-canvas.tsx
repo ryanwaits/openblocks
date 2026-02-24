@@ -5,12 +5,20 @@ import { useViewportStore } from "@/lib/store/viewport-store";
 import { useCanvasInteractionStore } from "@/lib/store/canvas-interaction-store";
 import { screenToCanvas } from "@/lib/canvas-utils";
 
+export interface BBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
 export interface CanvasHandle {
   resetZoom: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
   getSvgElement: () => SVGSVGElement | null;
   setViewport: (pos: { x: number; y: number }, scale: number) => void;
+  panToWorkflow: (bbox: BBox) => void;
 }
 
 interface WorkflowCanvasProps {
@@ -38,6 +46,7 @@ export const WorkflowCanvas = forwardRef<CanvasHandle, WorkflowCanvasProps>(func
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const handDragRef = useRef<{ startClientX: number; startClientY: number; startPosX: number; startPosY: number } | null>(null);
   const vpRef = useRef({ pos: { x: 0, y: 0 }, scale: 1 });
+  const panAnimRef = useRef<number | null>(null);
 
   function applyTransform(pos: { x: number; y: number }, scale: number) {
     vpRef.current = { pos, scale };
@@ -98,6 +107,47 @@ export const WorkflowCanvas = forwardRef<CanvasHandle, WorkflowCanvasProps>(func
     zoomOut: () => zoomBy(-1),
     getSvgElement: () => svgRef.current,
     setViewport: (pos, scale) => applyTransform(pos, scale),
+    panToWorkflow: (bbox: BBox) => {
+      if (panAnimRef.current) cancelAnimationFrame(panAnimRef.current);
+      const PADDING = 100;
+      const scaleX = dimensions.width / (bbox.w + PADDING * 2);
+      const scaleY = dimensions.height / (bbox.h + PADDING * 2);
+      const targetScale = Math.min(1.0, scaleX, scaleY);
+      const centerX = bbox.x + bbox.w / 2;
+      const centerY = bbox.y + bbox.h / 2;
+      const targetPos = {
+        x: dimensions.width / 2 - centerX * targetScale,
+        y: dimensions.height / 2 - centerY * targetScale,
+      };
+
+      const startPos = { ...vpRef.current.pos };
+      const startScale = vpRef.current.scale;
+      const startTime = performance.now();
+      const DURATION = 400;
+
+      function easeOut(t: number) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function tick(now: number) {
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / DURATION);
+        const e = easeOut(t);
+        const pos = {
+          x: startPos.x + (targetPos.x - startPos.x) * e,
+          y: startPos.y + (targetPos.y - startPos.y) * e,
+        };
+        const scale = startScale + (targetScale - startScale) * e;
+        applyTransform(pos, scale);
+        if (t < 1) {
+          panAnimRef.current = requestAnimationFrame(tick);
+        } else {
+          panAnimRef.current = null;
+          debouncedSave(pos, scale);
+        }
+      }
+      panAnimRef.current = requestAnimationFrame(tick);
+    },
   }), [dimensions, zoomBy, debouncedSave]);
 
   const measuredRef = useCallback((node: HTMLDivElement | null) => {
@@ -276,9 +326,27 @@ export const WorkflowCanvas = forwardRef<CanvasHandle, WorkflowCanvasProps>(func
 
           <g ref={cameraRef}>
             {children}
+            <MarqueeRectOverlay />
           </g>
         </svg>
       )}
     </div>
   );
 });
+
+function MarqueeRectOverlay() {
+  const marquee = useCanvasInteractionStore((s) => s.marqueeRect);
+  if (!marquee) return null;
+  return (
+    <rect
+      x={marquee.x}
+      y={marquee.y}
+      width={marquee.w}
+      height={marquee.h}
+      fill="rgba(123,97,255,0.08)"
+      stroke="#7b61ff"
+      strokeWidth={1}
+      pointerEvents="none"
+    />
+  );
+}

@@ -9,7 +9,7 @@ interface ViewportState {
 }
 
 function storageKey(workflowId: string) {
-  return `wf-viewport:${workflowId}`;
+  return `board-viewport:${workflowId}`;
 }
 
 export const useViewportStore = create<ViewportState>((set, get) => ({

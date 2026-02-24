@@ -1,15 +1,15 @@
 "use client";
 
 import { useCanvasInteractionStore } from "@/lib/store/canvas-interaction-store";
-import { useWorkflowStore } from "@/lib/store/workflow-store";
+import { useBoardStore } from "@/lib/store/board-store";
 import { NODE_DEFINITIONS } from "@/lib/workflow/node-definitions";
 import { getPortPosition } from "@/components/nodes/node-port";
 import { computeBezierPath } from "@/lib/workflow/edge-routing";
-import { NODE_WIDTH } from "@/components/nodes/base-node";
+import { NODE_WIDTH, getNodeHeight } from "@/components/nodes/base-node";
 
 export function ConnectionDraftLayer() {
   const draft = useCanvasInteractionStore((s) => s.connectionDraft);
-  const nodes = useWorkflowStore((s) => s.nodes);
+  const nodes = useBoardStore((s) => s.nodes);
 
   if (!draft) return null;
 
@@ -22,7 +22,8 @@ export function ConnectionDraftLayer() {
 
   const outputPorts = sourceDef.ports.filter((p) => p.direction === "output");
   const sourceIdx = outputPorts.indexOf(sourcePort);
-  const sourcePortPos = getPortPosition(sourcePort, NODE_WIDTH, sourceIdx, outputPorts.length);
+  const sourceHeight = getNodeHeight(sourceNode);
+  const sourcePortPos = getPortPosition(sourcePort, NODE_WIDTH, sourceIdx, outputPorts.length, sourceHeight);
 
   const sx = sourceNode.position.x + sourcePortPos.cx;
   const sy = sourceNode.position.y + sourcePortPos.cy;
