@@ -10,7 +10,9 @@ import {
 } from "@waits/lively-react";
 import { DEFAULT_BOARD, DEFAULT_BOARD_ID } from "@/lib/workflow/templates";
 import { useAuthStore } from "@/lib/store/auth-store";
-import { dashboardClient, buildInitialStorage } from "@/lib/sync/client";
+import { dashboardClient, buildInitialStorageFromSnapshot } from "@/lib/sync/client";
+import { loadSnapshot } from "@/lib/persistence/indexeddb";
+import { UNASSIGNED_WORKFLOW_ID } from "@/types/workflow";
 
 /* ------------------------------------------------------------------ */
 /*  Presence helpers                                                   */
@@ -76,10 +78,31 @@ function CardPresence() {
 export default function DashboardPage() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState("");
-  const { userId, displayName: storedName, setIdentity, restore } = useAuthStore();
+  const [workflowCount, setWorkflowCount] = useState<number | null>(null);
+  const { userId, displayName: storedName, restored, setIdentity, restore } = useAuthStore();
 
   // Restore identity from sessionStorage on mount
   useEffect(() => { restore(); }, [restore]);
+
+  // Load workflow count from IndexedDB snapshot
+  useEffect(() => {
+    loadSnapshot(DEFAULT_BOARD_ID).then((cached) => {
+      if (!cached) return;
+      try {
+        const storage = buildInitialStorageFromSnapshot(cached);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const workflows = storage.workflows as any;
+        if (!workflows) return;
+        let count = 0;
+        for (const key of workflows.keys()) {
+          if (key !== UNASSIGNED_WORKFLOW_ID) count++;
+        }
+        setWorkflowCount(count);
+      } catch { /* cache unreadable */ }
+    });
+  }, []);
+
+  if (!restored) return null;
 
   if (!userId) {
     return (
@@ -148,9 +171,11 @@ export default function DashboardPage() {
               <p className="mt-2 text-xs text-gray-500">
                 {DEFAULT_BOARD.description}
               </p>
-              <p className="mt-1 text-[11px] text-gray-400">
-                {DEFAULT_BOARD.workflows.length} workflow{DEFAULT_BOARD.workflows.length !== 1 ? "s" : ""}
-              </p>
+              {workflowCount != null && (
+                <p className="mt-1 text-[11px] text-gray-400">
+                  {workflowCount} workflow{workflowCount !== 1 ? "s" : ""}
+                </p>
+              )}
 
               {/* Live presence avatars */}
               {userId && (
@@ -159,7 +184,6 @@ export default function DashboardPage() {
                     roomId={DEFAULT_BOARD_ID}
                     userId={userId}
                     displayName={storedName}
-                    initialStorage={buildInitialStorage(DEFAULT_BOARD, DEFAULT_BOARD_ID)}
                     location="dashboard"
                   >
                     <CardPresence />
