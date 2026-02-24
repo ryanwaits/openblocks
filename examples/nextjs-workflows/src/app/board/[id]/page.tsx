@@ -345,7 +345,10 @@ function WorkflowPageInner({ boardId }: { boardId: string }) {
         />
 
         <div className="absolute bottom-4 right-4 z-30">
-          <StreamMetrics onClick={() => setDeliveryLogOpen(!deliveryLogOpen)} />
+          <StreamMetrics onBadgeClick={(wfId) => {
+            useBoardStore.getState().selectWorkflow(wfId);
+            setDeliveryLogOpen(true);
+          }} />
         </div>
       </div>
 
