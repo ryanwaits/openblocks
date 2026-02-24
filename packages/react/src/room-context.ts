@@ -98,11 +98,22 @@ export function RoomProvider({
     // Ensure connected — handles strict-mode remount after prior cleanup
     room.connect();
 
-    // Send initial presence metadata if provided
+    // Send location/metadata once connected (and on every reconnect).
+    // updatePresence requires an open WebSocket, so we cannot fire it
+    // synchronously after connect() — the handshake is async.
+    let unsubStatus: (() => void) | undefined;
     if (location || presenceMetadata) {
-      (room as any).updatePresence?.({
-        ...(location && { location }),
-        ...(presenceMetadata && { metadata: presenceMetadata }),
+      const sendPresence = () => {
+        (room as any).updatePresence?.({
+          ...(location && { location }),
+          ...(presenceMetadata && { metadata: presenceMetadata }),
+        });
+      };
+      if (room.getStatus() === "connected") {
+        sendPresence();
+      }
+      unsubStatus = room.subscribe("status", (status) => {
+        if (status === "connected") sendPresence();
       });
     }
 
@@ -118,6 +129,7 @@ export function RoomProvider({
 
     return () => {
       cancelled = true;
+      unsubStatus?.();
       unsubReset?.();
       mountedRef.current = false;
       // Defer leaveRoom so strict-mode's synchronous remount can cancel it
