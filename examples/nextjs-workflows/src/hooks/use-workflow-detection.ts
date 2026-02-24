@@ -43,34 +43,12 @@ export function useWorkflowDetection(mutations: WorkflowMutationsApi, boardId: s
         if (prev === key) continue; // unchanged
 
         const existingWfId = triggerToWfId.get(triggerId);
-        if (existingWfId) {
-          // Reset stale nodes no longer in the chain
-          const chainNodeSet = new Set(chain.nodeIds);
-          const chainEdgeSet = new Set(chain.edgeIds);
-          for (const n of nodes.values()) {
-            if (n.workflowId === existingWfId && !chainNodeSet.has(n.id)) {
-              mutations.setWorkflowIds([n.id], [], UNASSIGNED_WORKFLOW_ID);
-            }
-          }
-          for (const e of edges.values()) {
-            if (e.workflowId === existingWfId && !chainEdgeSet.has(e.id)) {
-              mutations.setWorkflowIds([], [e.id], UNASSIGNED_WORKFLOW_ID);
-            }
-          }
-          // Update chain membership
-          mutations.setWorkflowIds(chain.nodeIds, chain.edgeIds, existingWfId);
+        const webhookNodeId = chain.nodeIds.find(
+          (id) => nodes.get(id)?.type === "webhook-action",
+        );
 
-          // Auto-populate webhook URL on the webhook node
-          const webhookNode = chain.nodeIds
-            .map((id) => nodes.get(id))
-            .find((n) => n?.type === "webhook-action");
-          if (webhookNode && !(webhookNode.config as { url?: string }).url) {
-            const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/${existingWfId}`;
-            mutations.updateNode({
-              ...webhookNode,
-              config: { ...webhookNode.config, url: webhookUrl },
-            });
-          }
+        if (existingWfId) {
+          mutations.reassignWorkflowChain(existingWfId, chain.nodeIds, chain.edgeIds, webhookNodeId);
         } else {
           // Dedup: check if another workflow already contains this trigger
           let alreadyOwned = false;
@@ -83,27 +61,14 @@ export function useWorkflowDetection(mutations: WorkflowMutationsApi, boardId: s
           }
           if (alreadyOwned) continue;
 
-          // Create new workflow
           const wfId = crypto.randomUUID();
           const wfName = `Workflow ${workflows.size + 1}`;
-          mutations.addWorkflow({
-            id: wfId,
-            name: wfName,
-            stream: { ...DEFAULT_STREAM },
-          });
-          mutations.setWorkflowIds(chain.nodeIds, chain.edgeIds, wfId);
-
-          // Auto-populate webhook URL
-          const webhookNode = chain.nodeIds
-            .map((id) => nodes.get(id))
-            .find((n) => n?.type === "webhook-action");
-          if (webhookNode) {
-            const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/${wfId}`;
-            mutations.updateNode({
-              ...webhookNode,
-              config: { ...webhookNode.config, url: webhookUrl },
-            });
-          }
+          mutations.createWorkflowWithNodes(
+            { id: wfId, name: wfName, stream: { ...DEFAULT_STREAM } },
+            chain.nodeIds,
+            chain.edgeIds,
+            webhookNodeId,
+          );
         }
       }
 
